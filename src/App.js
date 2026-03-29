@@ -1,21 +1,17 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useContext, createContext } from "react";
 import { createClient } from "@supabase/supabase-js";
 
-const SUPA_URL    = "https://cqgpgryldmzogfygpybl.supabase.co";
-const SUPA_ANON   = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxZ3BncnlsZG16b2dmeWdweWJsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3MDMwMjksImV4cCI6MjA4ODI3OTAyOX0.MjkBexUvuAAU7sYcRs3uPaJh52jdMG723aqeDVuoe9w";
-const sb          = createClient(SUPA_URL, SUPA_ANON);
+const SUPA_URL  = "https://cqgpgryldmzogfygpybl.supabase.co";
+const SUPA_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxZ3BncnlsZG16b2dmeWdweWJsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3MDMwMjksImV4cCI6MjA4ODI3OTAyOX0.MjkBexUvuAAU7sYcRs3uPaJh52jdMG723aqeDVuoe9w";
+const sb        = createClient(SUPA_URL, SUPA_ANON);
 
-// ─── RESEND ───────────────────────────────────────────────────────────────────
+// ─── Resend ───────────────────────────────────────────────────────────────────
 const RESEND_KEY  = "re_MuY5yWVu_J3JoBwyfRfARsN6tUxP6fmzP";
 const RESEND_FROM = "Rilop RBO <onboarding@resend.dev>";
-
 const sendEmailResend = async ({ to, subject, html }) => {
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${RESEND_KEY}`,
-    },
+    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${RESEND_KEY}` },
     body: JSON.stringify({ from: RESEND_FROM, to: [to], subject, html }),
   });
   const data = await res.json();
@@ -23,25 +19,36 @@ const sendEmailResend = async ({ to, subject, html }) => {
   return data;
 };
 
-const C = {
+// ─── Theme ────────────────────────────────────────────────────────────────────
+const LIGHT = {
   teal:"#1a7a7a",tealD:"#0d5e5e",tealL:"#2a9b9b",tealXL:"#e6f5f5",tealM:"#b3e0e0",
   white:"#ffffff",grey50:"#f8fafb",grey100:"#eef2f3",grey200:"#d4dde0",
   grey400:"#8fa6ab",grey600:"#4a6468",grey800:"#1e3236",
-  red:"#e05a5a",green:"#2db87d",amber:"#e8a83a",
+  red:"#e05a5a",green:"#2db87d",amber:"#e8a83a",isDark:false,
 };
+const DARK = {
+  teal:"#2a9d9d",tealD:"#0d5e5e",tealL:"#3abcbc",tealXL:"#0d2828",tealM:"#4d8e8e",
+  white:"#122424",grey50:"#0a1818",grey100:"#162424",grey200:"#1e3535",
+  grey400:"#4d7878",grey600:"#7aa0a0",grey800:"#cee4e4",
+  red:"#e07878",green:"#3acc8d",amber:"#e8b858",isDark:true,
+};
+const ThemeCtx = createContext(LIGHT);
+const useTheme = () => useContext(ThemeCtx);
 
-const globalStyle = `
+// ─── Global Style ─────────────────────────────────────────────────────────────
+const getGlobalStyle = (C) => `
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=DM+Mono:wght@400;500&display=swap');
   *{box-sizing:border-box;margin:0;padding:0;}
-  body{font-family:'DM Sans',sans-serif;background:#f8fafb;color:#1e3236;}
+  body{font-family:'DM Sans',sans-serif;background:${C.grey50};color:${C.grey800};transition:background .2s,color .2s;}
   ::-webkit-scrollbar{width:6px;height:6px;}
-  ::-webkit-scrollbar-track{background:#eef2f3;}
-  ::-webkit-scrollbar-thumb{background:#b3e0e0;border-radius:3px;}
-  input,select,textarea{font-family:'DM Sans',sans-serif;}
+  ::-webkit-scrollbar-track{background:${C.grey100};}
+  ::-webkit-scrollbar-thumb{background:${C.tealM};border-radius:3px;}
+  input,select,textarea{font-family:'DM Sans',sans-serif;color-scheme:${C.isDark?"dark":"light"};}
   @keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
   @keyframes spin{to{transform:rotate(360deg);}}
 `;
 
+// ─── Icons ────────────────────────────────────────────────────────────────────
 const Icon = ({ name, size=18, color="currentColor" }) => {
   const icons = {
     dashboard:   <><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></>,
@@ -50,6 +57,10 @@ const Icon = ({ name, size=18, color="currentColor" }) => {
     types:       <><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></>,
     technicians: <><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></>,
     locations:   <><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></>,
+    settings:    <><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></>,
+    moon:        <><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></>,
+    sun:         <><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></>,
+    menu:        <><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></>,
     plus:        <><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></>,
     edit:        <><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></>,
     trash:       <><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></>,
@@ -72,10 +83,12 @@ const Icon = ({ name, size=18, color="currentColor" }) => {
   );
 };
 
+// ─── Utils ────────────────────────────────────────────────────────────────────
 const fmtDate     = d => d ? new Date(d+"T00:00:00").toLocaleDateString("pt-PT") : "—";
 const fmtDateTime = d => d ? new Date(d).toLocaleString("pt-PT") : "—";
 const qrUrl       = t => `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(t)}`;
 
+// ─── Report HTML ──────────────────────────────────────────────────────────────
 const buildReportHtml = ({ mov, cliente, tipologia, tecnico, local }) => {
   const duracao = mov.hora_inicio && mov.hora_fim ? (() => {
     const [h1,m1]=mov.hora_inicio.split(":").map(Number);
@@ -155,14 +168,19 @@ const buildReportHtml = ({ mov, cliente, tipologia, tecnico, local }) => {
 </div></body></html>`;
 };
 
-// ── UI primitives ──────────────────────────────────────────────────────────────
-const Badge = ({ children, color=C.teal }) => (
-  <span style={{background:color+"22",color,border:`1px solid ${color}44`,borderRadius:20,padding:"2px 10px",fontSize:12,fontWeight:600,whiteSpace:"nowrap"}}>{children}</span>
-);
+// ─── UI Primitives ────────────────────────────────────────────────────────────
+const Badge = ({ children, color }) => {
+  const C = useTheme();
+  const col = color || C.teal;
+  return (
+    <span style={{background:col+"22",color:col,border:`1px solid ${col}44`,borderRadius:20,padding:"2px 10px",fontSize:12,fontWeight:600,whiteSpace:"nowrap"}}>{children}</span>
+  );
+};
 
 const Btn = ({ children, onClick, variant="primary", size="md", icon, disabled, title }) => {
+  const C = useTheme();
   const styles = {
-    primary:   {background:C.teal,       color:C.white,  border:"none"},
+    primary:   {background:C.teal,       color:"#ffffff",border:"none"},
     secondary: {background:"transparent",color:C.teal,   border:`1.5px solid ${C.teal}`},
     ghost:     {background:"transparent",color:C.grey600,border:"none"},
     danger:    {background:C.red+"15",   color:C.red,    border:`1.5px solid ${C.red}44`},
@@ -176,120 +194,148 @@ const Btn = ({ children, onClick, variant="primary", size="md", icon, disabled, 
   );
 };
 
-const Input = ({ label, value, onChange, type="text", placeholder, required, textarea, rows=3 }) => (
-  <div style={{display:"flex",flexDirection:"column",gap:5}}>
-    {label&&<label style={{fontSize:13,fontWeight:500,color:C.grey600}}>{label}{required&&<span style={{color:C.red}}> *</span>}</label>}
-    {textarea
-      ? <textarea value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder} rows={rows} style={{border:`1.5px solid ${C.grey200}`,borderRadius:8,padding:"8px 12px",fontSize:14,outline:"none",resize:"vertical",background:C.white}}/>
-      : <input type={type} value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder} style={{border:`1.5px solid ${C.grey200}`,borderRadius:8,padding:"8px 12px",fontSize:14,outline:"none",height:38,background:C.white}}/>}
-  </div>
-);
+const Input = ({ label, value, onChange, type="text", placeholder, required, textarea, rows=3 }) => {
+  const C = useTheme();
+  const base = {border:`1.5px solid ${C.grey200}`,borderRadius:8,padding:"8px 12px",fontSize:14,outline:"none",background:C.white,color:C.grey800,width:"100%"};
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:5}}>
+      {label&&<label style={{fontSize:13,fontWeight:500,color:C.grey600}}>{label}{required&&<span style={{color:C.red}}> *</span>}</label>}
+      {textarea
+        ? <textarea value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder} rows={rows} style={{...base,resize:"vertical"}}/>
+        : <input type={type} value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder} style={{...base,height:38}}/>}
+    </div>
+  );
+};
 
-const Select = ({ label, value, onChange, options, required }) => (
-  <div style={{display:"flex",flexDirection:"column",gap:5}}>
-    {label&&<label style={{fontSize:13,fontWeight:500,color:C.grey600}}>{label}{required&&<span style={{color:C.red}}> *</span>}</label>}
-    <select value={value} onChange={e=>onChange(e.target.value)}
-      style={{border:`1.5px solid ${C.grey200}`,borderRadius:8,padding:"8px 12px",fontSize:14,outline:"none",height:38,background:C.white,cursor:"pointer"}}>
-      <option value="">Selecionar...</option>
-      {options.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}
-    </select>
-  </div>
-);
+const Select = ({ label, value, onChange, options, required }) => {
+  const C = useTheme();
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:5}}>
+      {label&&<label style={{fontSize:13,fontWeight:500,color:C.grey600}}>{label}{required&&<span style={{color:C.red}}> *</span>}</label>}
+      <select value={value} onChange={e=>onChange(e.target.value)}
+        style={{border:`1.5px solid ${C.grey200}`,borderRadius:8,padding:"8px 12px",fontSize:14,outline:"none",height:38,background:C.white,color:C.grey800,cursor:"pointer"}}>
+        <option value="">Selecionar...</option>
+        {options.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}
+      </select>
+    </div>
+  );
+};
 
-const Modal = ({ title, onClose, children, wide }) => (
-  <div style={{position:"fixed",inset:0,background:"#00000055",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={onClose}>
-    <div onClick={e=>e.stopPropagation()} style={{background:C.white,borderRadius:16,width:"100%",maxWidth:wide?760:520,maxHeight:"90vh",overflow:"auto",boxShadow:"0 25px 60px #00000030",animation:"fadeIn .2s ease"}}>
-      <div style={{padding:"20px 24px",borderBottom:`1px solid ${C.grey100}`,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-        <h3 style={{fontSize:17,fontWeight:600,color:C.grey800}}>{title}</h3>
-        <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",color:C.grey400,padding:4}}><Icon name="close" size={20}/></button>
+const Modal = ({ title, onClose, children, wide }) => {
+  const C = useTheme();
+  return (
+    <div style={{position:"fixed",inset:0,background:"#00000066",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={onClose}>
+      <div onClick={e=>e.stopPropagation()} style={{background:C.white,borderRadius:16,width:"100%",maxWidth:wide?760:520,maxHeight:"90vh",overflow:"auto",boxShadow:"0 25px 60px #00000040",animation:"fadeIn .2s ease"}}>
+        <div style={{padding:"20px 24px",borderBottom:`1px solid ${C.grey100}`,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+          <h3 style={{fontSize:17,fontWeight:600,color:C.grey800}}>{title}</h3>
+          <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",color:C.grey400,padding:4}}><Icon name="close" size={20}/></button>
+        </div>
+        <div style={{padding:24}}>{children}</div>
       </div>
-      <div style={{padding:24}}>{children}</div>
     </div>
-  </div>
-);
+  );
+};
 
-const Card = ({ children, style }) => (
-  <div style={{background:C.white,borderRadius:12,border:`1px solid ${C.grey100}`,boxShadow:"0 1px 8px #0d5e5e08",...style}}>{children}</div>
-);
+const Card = ({ children, style }) => {
+  const C = useTheme();
+  return <div style={{background:C.white,borderRadius:12,border:`1px solid ${C.grey100}`,boxShadow:`0 1px 8px #0d5e5e08`,...style}}>{children}</div>;
+};
 
-const StatCard = ({ label, value, icon, color=C.teal }) => (
-  <Card style={{padding:"20px 24px",display:"flex",alignItems:"center",gap:16}}>
-    <div style={{width:48,height:48,borderRadius:12,background:color+"18",display:"flex",alignItems:"center",justifyContent:"center"}}>
-      <Icon name={icon} size={22} color={color}/>
+const StatCard = ({ label, value, icon, color }) => {
+  const C = useTheme();
+  const col = color || C.teal;
+  return (
+    <Card style={{padding:"20px 24px",display:"flex",alignItems:"center",gap:16}}>
+      <div style={{width:48,height:48,borderRadius:12,background:col+"18",display:"flex",alignItems:"center",justifyContent:"center"}}>
+        <Icon name={icon} size={22} color={col}/>
+      </div>
+      <div>
+        <div style={{fontSize:26,fontWeight:700,color:C.grey800,lineHeight:1}}>{value}</div>
+        <div style={{fontSize:13,color:C.grey400,marginTop:4}}>{label}</div>
+      </div>
+    </Card>
+  );
+};
+
+const Loading = () => {
+  const C = useTheme();
+  return (
+    <div style={{display:"flex",alignItems:"center",justifyContent:"center",padding:60,gap:12,color:C.grey400}}>
+      <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={C.teal} strokeWidth="2" strokeLinecap="round" style={{animation:"spin .8s linear infinite"}}>
+        <circle cx="12" cy="12" r="10" strokeOpacity=".2"/><path d="M12 2a10 10 0 0 1 10 10"/>
+      </svg>
+      A carregar...
     </div>
-    <div>
-      <div style={{fontSize:26,fontWeight:700,color:C.grey800,lineHeight:1}}>{value}</div>
-      <div style={{fontSize:13,color:C.grey400,marginTop:4}}>{label}</div>
+  );
+};
+
+const ErrMsg = ({ msg, onRetry }) => {
+  const C = useTheme();
+  return (
+    <div style={{display:"flex",alignItems:"center",gap:12,padding:"14px 18px",background:C.red+"10",border:`1px solid ${C.red}33`,borderRadius:10,margin:"16px 0"}}>
+      <Icon name="alert" size={18} color={C.red}/>
+      <span style={{fontSize:14,color:C.red,flex:1}}>{msg}</span>
+      {onRetry&&<Btn size="sm" variant="danger" onClick={onRetry}>Tentar novamente</Btn>}
     </div>
-  </Card>
-);
+  );
+};
 
-const Loading = () => (
-  <div style={{display:"flex",alignItems:"center",justifyContent:"center",padding:60,gap:12,color:C.grey400}}>
-    <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={C.teal} strokeWidth="2" strokeLinecap="round" style={{animation:"spin .8s linear infinite"}}>
-      <circle cx="12" cy="12" r="10" strokeOpacity=".2"/><path d="M12 2a10 10 0 0 1 10 10"/>
-    </svg>
-    A carregar...
-  </div>
-);
-
-const ErrMsg = ({ msg, onRetry }) => (
-  <div style={{display:"flex",alignItems:"center",gap:12,padding:"14px 18px",background:C.red+"10",border:`1px solid ${C.red}33`,borderRadius:10,margin:"16px 0"}}>
-    <Icon name="alert" size={18} color={C.red}/>
-    <span style={{fontSize:14,color:C.red,flex:1}}>{msg}</span>
-    {onRetry&&<Btn size="sm" variant="danger" onClick={onRetry}>Tentar novamente</Btn>}
-  </div>
-);
-
-const Table = ({ cols, data, onEdit, onDelete, onView, extraActions, emptyMsg="Sem registos" }) => (
-  <div style={{overflowX:"auto"}}>
-    <table style={{width:"100%",borderCollapse:"collapse",fontSize:14}}>
-      <thead>
-        <tr style={{borderBottom:`2px solid ${C.grey100}`}}>
-          {cols.map(c=><th key={c.key+c.label} style={{padding:"12px 16px",textAlign:"left",fontSize:12,fontWeight:600,color:C.grey400,textTransform:"uppercase",letterSpacing:".5px",whiteSpace:"nowrap"}}>{c.label}</th>)}
-          {(onEdit||onDelete||onView||extraActions)&&<th style={{padding:"12px 16px",width:150}}/>}
-        </tr>
-      </thead>
-      <tbody>
-        {data.length===0&&<tr><td colSpan={cols.length+1} style={{padding:"32px 16px",textAlign:"center",color:C.grey400,fontSize:13}}>{emptyMsg}</td></tr>}
-        {data.map((row,i)=>(
-          <tr key={row.id||i} style={{borderBottom:`1px solid ${C.grey100}`,transition:"background .1s"}}
-            onMouseEnter={e=>e.currentTarget.style.background=C.grey50}
-            onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
-            {cols.map(c=><td key={c.key+c.label} style={{padding:"13px 16px",color:C.grey800,verticalAlign:"middle"}}>{c.render?c.render(row[c.key],row):(row[c.key]??"—")}</td>)}
-            {(onEdit||onDelete||onView||extraActions)&&(
-              <td style={{padding:"8px 16px"}}>
-                <div style={{display:"flex",gap:4,justifyContent:"flex-end",alignItems:"center"}}>
-                  {extraActions&&extraActions(row)}
-                  {onView   &&<Btn variant="ghost" size="sm" icon="eye"   onClick={()=>onView(row)}/>}
-                  {onEdit   &&<Btn variant="ghost" size="sm" icon="edit"  onClick={()=>onEdit(row)}/>}
-                  {onDelete &&<Btn variant="ghost" size="sm" icon="trash" onClick={()=>onDelete(row.id)}/>}
-                </div>
-              </td>
-            )}
+const Table = ({ cols, data, onEdit, onDelete, onView, extraActions, emptyMsg="Sem registos" }) => {
+  const C = useTheme();
+  return (
+    <div style={{overflowX:"auto"}}>
+      <table style={{width:"100%",borderCollapse:"collapse",fontSize:14}}>
+        <thead>
+          <tr style={{borderBottom:`2px solid ${C.grey100}`}}>
+            {cols.map(c=><th key={c.key+c.label} style={{padding:"12px 16px",textAlign:"left",fontSize:12,fontWeight:600,color:C.grey400,textTransform:"uppercase",letterSpacing:".5px",whiteSpace:"nowrap",background:C.white}}>{c.label}</th>)}
+            {(onEdit||onDelete||onView||extraActions)&&<th style={{padding:"12px 16px",width:150,background:C.white}}/>}
           </tr>
-        ))}
-      </tbody>
-    </table>
-  </div>
-);
-
-const PageHeader = ({ title, subtitle, action }) => (
-  <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:24,gap:16,flexWrap:"wrap"}}>
-    <div>
-      <h1 style={{fontSize:24,fontWeight:700,color:C.grey800}}>{title}</h1>
-      {subtitle&&<p style={{fontSize:14,color:C.grey400,marginTop:4}}>{subtitle}</p>}
+        </thead>
+        <tbody>
+          {data.length===0&&<tr><td colSpan={cols.length+1} style={{padding:"32px 16px",textAlign:"center",color:C.grey400,fontSize:13}}>{emptyMsg}</td></tr>}
+          {data.map((row,i)=>(
+            <tr key={row.id||i} style={{borderBottom:`1px solid ${C.grey100}`,transition:"background .1s"}}
+              onMouseEnter={e=>e.currentTarget.style.background=C.grey50}
+              onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+              {cols.map(c=><td key={c.key+c.label} style={{padding:"13px 16px",color:C.grey800,verticalAlign:"middle"}}>{c.render?c.render(row[c.key],row):(row[c.key]??"—")}</td>)}
+              {(onEdit||onDelete||onView||extraActions)&&(
+                <td style={{padding:"8px 16px"}}>
+                  <div style={{display:"flex",gap:4,justifyContent:"flex-end",alignItems:"center"}}>
+                    {extraActions&&extraActions(row)}
+                    {onView   &&<Btn variant="ghost" size="sm" icon="eye"   onClick={()=>onView(row)}/>}
+                    {onEdit   &&<Btn variant="ghost" size="sm" icon="edit"  onClick={()=>onEdit(row)}/>}
+                    {onDelete &&<Btn variant="ghost" size="sm" icon="trash" onClick={()=>onDelete(row.id)}/>}
+                  </div>
+                </td>
+              )}
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
-    {action}
-  </div>
-);
+  );
+};
 
-// ── Email Confirm Modal ────────────────────────────────────────────────────────
+const PageHeader = ({ title, subtitle, action }) => {
+  const C = useTheme();
+  return (
+    <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:24,gap:16,flexWrap:"wrap"}}>
+      <div>
+        <h1 style={{fontSize:24,fontWeight:700,color:C.grey800}}>{title}</h1>
+        {subtitle&&<p style={{fontSize:14,color:C.grey400,marginTop:4}}>{subtitle}</p>}
+      </div>
+      {action}
+    </div>
+  );
+};
+
+// ─── Email Confirm Modal ───────────────────────────────────────────────────────
 const EmailConfirmModal = ({ mov, lookup, onSent, onClose }) => {
+  const C = useTheme();
   const { cliente, tipologia, tecnico, local } = lookup(mov);
   const [emailTo,  setEmailTo]  = useState(cliente?.email || "");
   const [sending,  setSending]  = useState(false);
-  const [result,   setResult]   = useState(null); // "ok" | Error message
+  const [result,   setResult]   = useState(null);
 
   const doSend = async () => {
     if (!emailTo) return;
@@ -308,7 +354,7 @@ const EmailConfirmModal = ({ mov, lookup, onSent, onClose }) => {
   };
 
   return (
-    <Modal title="Enviar Relatório por Email" onClose={result === "ok" ? onClose : onClose}>
+    <Modal title="Enviar Relatório por Email" onClose={onClose}>
       {result === "ok" ? (
         <div style={{textAlign:"center",padding:"20px 0"}}>
           <div style={{width:56,height:56,borderRadius:"50%",background:C.green+"18",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px"}}>
@@ -320,18 +366,10 @@ const EmailConfirmModal = ({ mov, lookup, onSent, onClose }) => {
         </div>
       ) : (
         <>
-          {/* Info do relatório */}
           <div style={{background:C.grey50,borderRadius:10,padding:"14px 16px",marginBottom:20,border:`1px solid ${C.grey100}`}}>
             <div style={{fontSize:12,fontWeight:600,color:C.grey400,textTransform:"uppercase",letterSpacing:".5px",marginBottom:8}}>Relatório a enviar</div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-              {[
-                ["Cliente",   cliente?.nome],
-                ["Data",      fmtDate(mov.data)],
-                ["Tipologia", tipologia?.nome],
-                ["Técnico",   tecnico?.nome || "—"],
-                ["Créditos",  `${mov.creditos > 0 ? "+" : ""}${mov.creditos}`],
-                ["Local",     local?.nome || "—"],
-              ].map(([l,v])=>(
+              {[["Cliente",cliente?.nome],["Data",fmtDate(mov.data)],["Tipologia",tipologia?.nome],["Técnico",tecnico?.nome||"—"],["Créditos",`${mov.creditos>0?"+":""}${mov.creditos}`],["Local",local?.nome||"—"]].map(([l,v])=>(
                 <div key={l}>
                   <div style={{fontSize:11,fontWeight:600,color:C.grey400,textTransform:"uppercase",letterSpacing:".4px"}}>{l}</div>
                   <div style={{fontSize:13,color:C.grey800,marginTop:1}}>{v||"—"}</div>
@@ -343,50 +381,31 @@ const EmailConfirmModal = ({ mov, lookup, onSent, onClose }) => {
               <div style={{fontSize:13,color:C.grey600,lineHeight:1.5}}>{mov.descritivo}</div>
             </div>
           </div>
-
-          {/* Email destino editável */}
           <div style={{marginBottom:8}}>
-            <Input
-              label="Enviar para (pode alterar antes de enviar)"
-              value={emailTo}
-              onChange={setEmailTo}
-              type="email"
-              placeholder="email@cliente.pt"
-              required
-            />
+            <Input label="Enviar para (pode alterar antes de enviar)" value={emailTo} onChange={setEmailTo} type="email" placeholder="email@cliente.pt" required/>
             {cliente?.email && emailTo !== cliente.email && (
               <div style={{marginTop:6,fontSize:12,color:C.amber,display:"flex",alignItems:"center",gap:5}}>
-                <Icon name="alert" size={13} color={C.amber}/>
-                Email diferente do registado na ficha do cliente ({cliente.email})
+                <Icon name="alert" size={13} color={C.amber}/> Email diferente do registado na ficha ({cliente.email})
               </div>
             )}
             {!cliente?.email && (
               <div style={{marginTop:6,fontSize:12,color:C.amber,display:"flex",alignItems:"center",gap:5}}>
-                <Icon name="alert" size={13} color={C.amber}/>
-                O cliente não tem email na ficha — introduza manualmente
+                <Icon name="alert" size={13} color={C.amber}/> O cliente não tem email na ficha — introduza manualmente
               </div>
             )}
           </div>
-
-          {/* Erro */}
           {result && result !== "ok" && (
             <div style={{background:C.red+"10",border:`1px solid ${C.red}33`,borderRadius:8,padding:"10px 14px",marginBottom:12,fontSize:13,color:C.red,display:"flex",gap:8,alignItems:"center"}}>
-              <Icon name="alert" size={15} color={C.red}/>
-              {result}
+              <Icon name="alert" size={15} color={C.red}/>{result}
             </div>
           )}
-
-          {/* Aviso StackBlitz */}
           <div style={{background:C.amber+"12",border:`1px solid ${C.amber}33`,borderRadius:8,padding:"10px 14px",marginBottom:20,fontSize:12,color:C.grey600,display:"flex",gap:8,alignItems:"flex-start"}}>
-            <Icon name="alert" size={14} color={C.amber} style={{flexShrink:0,marginTop:1}}/>
-            <span>Em ambiente StackBlitz o envio pode falhar por restrições de rede (CORS). Em produção ou com a Edge Function do Supabase funcionará sem problemas.</span>
+            <Icon name="alert" size={14} color={C.amber}/>
+            <span>Em ambiente StackBlitz o envio pode falhar por restrições de rede (CORS). Em produção ou com a Edge Function do Supabase funcionará normalmente.</span>
           </div>
-
           <div style={{display:"flex",gap:10,justifyContent:"flex-end"}}>
             <Btn variant="secondary" onClick={onClose} disabled={sending}>Cancelar</Btn>
-            <Btn icon={sending?"loader":"mail"} onClick={doSend} disabled={sending||!emailTo}>
-              {sending ? "A enviar..." : "Enviar Relatório"}
-            </Btn>
+            <Btn icon={sending?"loader":"mail"} onClick={doSend} disabled={sending||!emailTo}>{sending?"A enviar...":"Enviar Relatório"}</Btn>
           </div>
         </>
       )}
@@ -394,16 +413,15 @@ const EmailConfirmModal = ({ mov, lookup, onSent, onClose }) => {
   );
 };
 
-// ── Email Report Button ────────────────────────────────────────────────────────
+// ─── Email Report Button ───────────────────────────────────────────────────────
 const EmailReportBtn = ({ mov, lookup, onSent }) => {
+  const C = useTheme();
   const sent = mov.relatorio_enviado_em;
   const [showModal, setShowModal] = useState(false);
   const { cliente } = lookup(mov);
-
   const tipText = sent
     ? `Enviado em ${fmtDateTime(sent)} — clique para reenviar`
     : `Enviar relatório para ${cliente?.email || "cliente"}`;
-
   return (
     <>
       <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:1,position:"relative"}}>
@@ -416,20 +434,14 @@ const EmailReportBtn = ({ mov, lookup, onSent }) => {
         </button>
         {sent&&<span style={{fontSize:9,color:C.green,fontWeight:700,letterSpacing:".3px"}}>enviado</span>}
       </div>
-      {showModal && (
-        <EmailConfirmModal
-          mov={mov}
-          lookup={lookup}
-          onSent={onSent}
-          onClose={()=>setShowModal(false)}
-        />
-      )}
+      {showModal&&<EmailConfirmModal mov={mov} lookup={lookup} onSent={onSent} onClose={()=>setShowModal(false)}/>}
     </>
   );
 };
 
-// ── Generic CRUD ───────────────────────────────────────────────────────────────
-const CrudPage = ({ title, table, cols, formFields, emptyForm }) => {
+// ─── Generic CRUD ─────────────────────────────────────────────────────────────
+const CrudPage = ({ title, table, cols, formFields, emptyForm, compact }) => {
+  const C = useTheme();
   const [rows,    setRows]    = useState([]);
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState(null);
@@ -468,7 +480,13 @@ const CrudPage = ({ title, table, cols, formFields, emptyForm }) => {
 
   return (
     <div>
-      <PageHeader title={title} subtitle={`${rows.length} registos`} action={<Btn icon="plus" onClick={openNew}>Novo</Btn>}/>
+      {!compact && <PageHeader title={title} subtitle={`${rows.length} registos`} action={<Btn icon="plus" onClick={openNew}>Novo</Btn>}/>}
+      {compact && (
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+          <span style={{fontSize:13,color:C.grey400}}>{rows.length} registos</span>
+          <Btn icon="plus" size="sm" onClick={openNew}>Novo</Btn>
+        </div>
+      )}
       {error&&<ErrMsg msg={error} onRetry={load}/>}
       <Card style={{padding:0,overflow:"hidden"}}>
         {loading?<Loading/>:<Table cols={cols} data={rows} onEdit={openEdit} onDelete={del}/>}
@@ -493,8 +511,9 @@ const CrudPage = ({ title, table, cols, formFields, emptyForm }) => {
   );
 };
 
-// ── Dashboard ─────────────────────────────────────────────────────────────────
+// ─── Dashboard ────────────────────────────────────────────────────────────────
 const Dashboard = () => {
+  const C = useTheme();
   const [stats,    setStats]    = useState({clientes:0,contratos:0,creditos:0,assistencias:0});
   const [recentes, setRecentes] = useState([]);
   const [tipStats, setTipStats] = useState([]);
@@ -522,9 +541,9 @@ const Dashboard = () => {
           sb.from("tecnicos").select("id,nome"),
         ]);
         setRecentes(assis.slice(0,5).map(m=>{
-          const con = (cRec||[]).find(c=>c.id===m.contrato_id);
-          const cli = con?(clRec||[]).find(c=>c.id===con.cliente_id):null;
-          const tec = m.tecnico_id?(tecRec||[]).find(t=>t.id===m.tecnico_id):null;
+          const con=(cRec||[]).find(c=>c.id===m.contrato_id);
+          const cli=con?(clRec||[]).find(c=>c.id===con.cliente_id):null;
+          const tec=m.tecnico_id?(tecRec||[]).find(t=>t.id===m.tecnico_id):null;
           return {...m,clienteNome:cli?.nome,tecnicoNome:tec?.nome};
         }));
       }
@@ -538,29 +557,29 @@ const Dashboard = () => {
     <div>
       <PageHeader title="Dashboard" subtitle="Visão geral do sistema RBO"/>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:16,marginBottom:28}}>
-        <StatCard label="Clientes"         value={stats.clientes}     icon="clients"    color={C.teal}/>
-        <StatCard label="Contratos Ativos" value={stats.contratos}    icon="contracts"  color={C.tealL}/>
-        <StatCard label="Créditos Totais"  value={stats.creditos}     icon="credit"     color={C.green}/>
-        <StatCard label="Assistências"     value={stats.assistencias} icon="wrench"     color={C.amber}/>
+        <StatCard label="Clientes"         value={stats.clientes}     icon="clients"   color={C.teal}/>
+        <StatCard label="Contratos Ativos" value={stats.contratos}    icon="contracts" color={C.tealL}/>
+        <StatCard label="Créditos Totais"  value={stats.creditos}     icon="credit"    color={C.green}/>
+        <StatCard label="Assistências"     value={stats.assistencias} icon="wrench"    color={C.amber}/>
       </div>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))",gap:20}}>
         <Card style={{padding:0,overflow:"hidden"}}>
-          <div style={{padding:"16px 20px",borderBottom:`1px solid ${C.grey100}`}}><h3 style={{fontSize:15,fontWeight:600}}>Últimas Assistências</h3></div>
+          <div style={{padding:"16px 20px",borderBottom:`1px solid ${C.grey100}`}}><h3 style={{fontSize:15,fontWeight:600,color:C.grey800}}>Últimas Assistências</h3></div>
           {recentes.length===0&&<div style={{padding:24,color:C.grey400,fontSize:13,textAlign:"center"}}>Sem assistências registadas</div>}
           {recentes.map(m=>(
-            <div key={m.id} style={{padding:"12px 20px",borderBottom:`1px solid ${C.grey50}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-              <div><div style={{fontSize:14,fontWeight:500}}>{m.clienteNome||"—"}</div><div style={{fontSize:12,color:C.grey400}}>{m.tecnicoNome||"—"} · {fmtDate(m.data)}</div></div>
+            <div key={m.id} style={{padding:"12px 20px",borderBottom:`1px solid ${C.grey100}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <div><div style={{fontSize:14,fontWeight:500,color:C.grey800}}>{m.clienteNome||"—"}</div><div style={{fontSize:12,color:C.grey400}}>{m.tecnicoNome||"—"} · {fmtDate(m.data)}</div></div>
               <Badge color={m.creditos<0?C.red:C.green}>{m.creditos>0?"+":""}{m.creditos} cr</Badge>
             </div>
           ))}
         </Card>
         <Card style={{padding:0,overflow:"hidden"}}>
-          <div style={{padding:"16px 20px",borderBottom:`1px solid ${C.grey100}`}}><h3 style={{fontSize:15,fontWeight:600}}>Contratos por Tipologia</h3></div>
+          <div style={{padding:"16px 20px",borderBottom:`1px solid ${C.grey100}`}}><h3 style={{fontSize:15,fontWeight:600,color:C.grey800}}>Contratos por Tipologia</h3></div>
           <div style={{padding:"12px 0"}}>
             {tipStats.length===0&&<div style={{padding:24,color:C.grey400,fontSize:13,textAlign:"center"}}>Sem tipologias</div>}
             {tipStats.map(t=>(
-              <div key={t.id} style={{padding:"10px 20px",display:"flex",justifyContent:"space-between"}}>
-                <span style={{fontSize:14}}>{t.nome}</span>
+              <div key={t.id} style={{padding:"10px 20px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                <span style={{fontSize:14,color:C.grey800}}>{t.nome}</span>
                 <Badge>{t.count} contrato{t.count!==1?"s":""}</Badge>
               </div>
             ))}
@@ -571,8 +590,9 @@ const Dashboard = () => {
   );
 };
 
-// ── Contract Detail ────────────────────────────────────────────────────────────
+// ─── Contract Detail ──────────────────────────────────────────────────────────
 const ContratoDetalhe = ({ contrato, onBack }) => {
+  const C = useTheme();
   const [movimentos, setMovimentos] = useState([]);
   const [tecnicos,   setTecnicos]   = useState([]);
   const [locais,     setLocais]     = useState([]);
@@ -606,7 +626,6 @@ const ContratoDetalhe = ({ contrato, onBack }) => {
   useEffect(()=>{ load(); },[load]);
 
   const saldo = movimentos.reduce((s,m)=>s+m.creditos,0);
-
   const openNew  = tipo => { setForm({...emptyMov,tipo}); setEditingId(null); setModal("mov"); };
   const openEdit = m   => { setForm({...m,tecnico_id:m.tecnico_id||"",local_id:m.local_id||"",hora_inicio:m.hora_inicio||"",hora_fim:m.hora_fim||""}); setEditingId(m.id); setModal("mov"); };
 
@@ -659,14 +678,14 @@ const ContratoDetalhe = ({ contrato, onBack }) => {
       </div>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:12,marginBottom:20}}>
         <div>
-          <h1 style={{fontSize:22,fontWeight:700}}>{cliente?.nome}</h1>
+          <h1 style={{fontSize:22,fontWeight:700,color:C.grey800}}>{cliente?.nome}</h1>
           <div style={{display:"flex",gap:8,marginTop:6,flexWrap:"wrap"}}>
             <Badge>{tipologia?.nome}</Badge>
             <Badge color={C.grey400}>Desde {fmtDate(contrato.data_contrato)}</Badge>
             <Badge color={saldo>10?C.green:saldo>0?C.amber:C.red}>{saldo} créditos</Badge>
           </div>
         </div>
-        <div style={{display:"flex",gap:8}}>
+        <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
           <Btn variant="secondary" size="sm" icon="credit" onClick={()=>openNew("credito")}>Adicionar Créditos</Btn>
           <Btn size="sm" icon="plus" onClick={()=>openNew("assistencia")}>Nova Assistência</Btn>
         </div>
@@ -674,14 +693,14 @@ const ContratoDetalhe = ({ contrato, onBack }) => {
 
       <Card style={{padding:"16px 20px",marginBottom:20,display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:12}}>
         {[["Responsável TI",cliente?.responsavel],["Telefone",cliente?.telefone],["Email",cliente?.email],["Localidade",cliente?.localidade],["Código Postal",cliente?.cp],["GPS",cliente?.gps]].map(([l,v])=>(
-          <div key={l}><div style={{fontSize:11,fontWeight:600,color:C.grey400,textTransform:"uppercase",letterSpacing:".5px"}}>{l}</div><div style={{fontSize:14,marginTop:2}}>{v||"—"}</div></div>
+          <div key={l}><div style={{fontSize:11,fontWeight:600,color:C.grey400,textTransform:"uppercase",letterSpacing:".5px"}}>{l}</div><div style={{fontSize:14,marginTop:2,color:C.grey800}}>{v||"—"}</div></div>
         ))}
         {cliente?.parque&&<div style={{gridColumn:"1/-1"}}><div style={{fontSize:11,fontWeight:600,color:C.grey400,textTransform:"uppercase",letterSpacing:".5px"}}>Parque Informático</div><div style={{fontSize:14,marginTop:2,color:C.grey600}}>{cliente.parque}</div></div>}
       </Card>
 
       <Card style={{padding:0,overflow:"hidden"}}>
         <div style={{padding:"14px 20px",borderBottom:`1px solid ${C.grey100}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-          <h3 style={{fontSize:15,fontWeight:600}}>Movimentos</h3>
+          <h3 style={{fontSize:15,fontWeight:600,color:C.grey800}}>Movimentos</h3>
           <div style={{fontSize:12,color:C.grey400,display:"flex",alignItems:"center",gap:6}}>
             <Icon name="mailDone" size={13} color={C.green}/> Verde = relatório enviado
           </div>
@@ -747,10 +766,10 @@ const ContratoDetalhe = ({ contrato, onBack }) => {
               <Btn icon="download" variant="secondary" onClick={()=>{ const a=document.createElement("a");a.href=blobUrl;a.download=`relatorio_${previewMov.id}_${previewMov.data}.html`;a.click(); }}>Download HTML</Btn>
               <EmailReportBtn mov={previewMov} lookup={lookup} onSent={async id=>{ await onSent(id); setPreviewMov(p=>({...p,relatorio_enviado_em:new Date().toISOString()})); }}/>
             </div>
-            <div style={{background:C.grey50,borderRadius:12,padding:20,display:"flex",gap:20,alignItems:"center",border:`1px solid ${C.grey100}`}}>
+            <div style={{background:C.grey50,borderRadius:12,padding:20,display:"flex",gap:20,alignItems:"center",border:`1px solid ${C.grey100}`,flexWrap:"wrap"}}>
               <img src={qrUrl("Assistencia Rilop Ref#"+previewMov.id+" | "+(cliente?.nome||"")+" | "+fmtDate(previewMov.data))} width={120} height={120} alt="QR" style={{borderRadius:8,border:`1px solid ${C.grey200}`,flexShrink:0}}/>
               <div>
-                <div style={{fontWeight:600,fontSize:15,marginBottom:6}}>QR Code de Verificação</div>
+                <div style={{fontWeight:600,fontSize:15,marginBottom:6,color:C.grey800}}>QR Code de Verificação</div>
                 <div style={{fontSize:13,color:C.grey600,lineHeight:1.6}}>Incluído no relatório. Ao digitalizar, o cliente pode verificar a autenticidade e descarregar o PDF.</div>
                 <div style={{marginTop:10,display:"flex",gap:6,flexWrap:"wrap"}}>
                   <Badge color={C.teal}>#{previewMov.id}</Badge>
@@ -767,8 +786,9 @@ const ContratoDetalhe = ({ contrato, onBack }) => {
   );
 };
 
-// ── Contratos List ─────────────────────────────────────────────────────────────
+// ─── Contratos List ───────────────────────────────────────────────────────────
 const Contratos = () => {
+  const C = useTheme();
   const [rows,       setRows]       = useState([]);
   const [clientes,   setClientes]   = useState([]);
   const [tipologias, setTipologias] = useState([]);
@@ -833,14 +853,14 @@ const Contratos = () => {
       <PageHeader title="Contratos" subtitle={`${rows.length} contratos`} action={<Btn icon="plus" onClick={()=>setModal(true)}>Novo Contrato</Btn>}/>
       <Card style={{padding:0,overflow:"hidden"}}>
         <div style={{padding:"14px 20px",borderBottom:`1px solid ${C.grey100}`}}>
-          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Pesquisar..."
-            style={{width:"100%",maxWidth:300,border:`1.5px solid ${C.grey200}`,borderRadius:8,padding:"7px 12px",fontSize:13,outline:"none"}}/>
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Pesquisar por cliente ou tipologia..."
+            style={{width:"100%",maxWidth:320,border:`1.5px solid ${C.grey200}`,borderRadius:8,padding:"7px 12px",fontSize:13,outline:"none",background:C.white,color:C.grey800}}/>
         </div>
         {loading?<Loading/>:<Table
           cols={[
-            {key:"cliente_id",    label:"Cliente",     render:v=>{const cl=clientes.find(x=>x.id===v);return <span style={{fontWeight:500}}>{cl?.nome||"—"}</span>;}},
+            {key:"cliente_id",    label:"Cliente",     render:v=>{const cl=clientes.find(x=>x.id===v);return <span style={{fontWeight:500,color:C.grey800}}>{cl?.nome||"—"}</span>;}},
             {key:"tipologia_id",  label:"Tipologia",   render:v=>{const t=tipologias.find(x=>x.id===v);return <Badge>{t?.nome||"—"}</Badge>;}},
-            {key:"data_contrato", label:"Data",         render:v=>fmtDate(v)},
+            {key:"data_contrato", label:"Data",        render:v=>fmtDate(v)},
             {key:"id",            label:"Últ. Assist.", render:v=>{const s=movStats[v];return s?.ultimaAssist?fmtDate(s.ultimaAssist):<span style={{color:C.grey400}}>—</span>;}},
             {key:"id",            label:"Créditos",    render:v=>{const cr=movStats[v]?.creditos||0;return <span style={{fontFamily:"'DM Mono',monospace",fontWeight:600,color:cr>10?C.green:cr>0?C.amber:C.red}}>{cr}</span>;}},
             {key:"ativo",         label:"Estado",      render:v=><Badge color={v?C.green:C.grey400}>{v?"Ativo":"Inativo"}</Badge>},
@@ -868,19 +888,84 @@ const Contratos = () => {
   );
 };
 
-// ── Sidebar + App ──────────────────────────────────────────────────────────────
+// ─── Definições ───────────────────────────────────────────────────────────────
+const Definicoes = () => {
+  const C = useTheme();
+  const [tab, setTab] = useState("tipologias");
+
+  const tabs = [
+    {id:"tipologias", label:"Tipologias",          icon:"types"},
+    {id:"tecnicos",   label:"Técnicos",            icon:"technicians"},
+    {id:"locais",     label:"Locais de Assistência", icon:"locations"},
+  ];
+
+  return (
+    <div>
+      <PageHeader title="Definições" subtitle="Listas de suporte e configuração"/>
+      {/* Tab bar */}
+      <div style={{display:"flex",gap:4,marginBottom:24,background:C.white,borderRadius:12,padding:6,border:`1px solid ${C.grey100}`,flexWrap:"wrap"}}>
+        {tabs.map(t=>{
+          const active = tab===t.id;
+          return (
+            <button key={t.id} onClick={()=>setTab(t.id)}
+              style={{display:"flex",alignItems:"center",gap:8,padding:"9px 16px",borderRadius:8,border:"none",cursor:"pointer",background:active?C.teal:"transparent",color:active?"#ffffff":C.grey600,fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:active?600:400,transition:"all .15s"}}>
+              <Icon name={t.icon} size={15} color={active?"#ffffff":C.grey400}/>
+              {t.label}
+            </button>
+          );
+        })}
+      </div>
+      {/* Content */}
+      {tab==="tipologias"&&(
+        <CrudPage key="tipologias" compact title="Tipologias" table="tipologias"
+          cols={[{key:"nome",label:"Nome"}]}
+          emptyForm={{nome:""}}
+          formFields={[{k:"nome",label:"Nome da Tipologia",required:true}]}/>
+      )}
+      {tab==="tecnicos"&&(
+        <CrudPage key="tecnicos" compact title="Técnicos" table="tecnicos"
+          cols={[{key:"nome",label:"Nome"},{key:"email",label:"Email"}]}
+          emptyForm={{nome:"",email:""}}
+          formFields={[{k:"nome",label:"Nome",required:true},{k:"email",label:"Email",type:"email"}]}/>
+      )}
+      {tab==="locais"&&(
+        <CrudPage key="locais" compact title="Locais de Assistência" table="locais"
+          cols={[{key:"nome",label:"Local"}]}
+          emptyForm={{nome:""}}
+          formFields={[{k:"nome",label:"Nome do Local",required:true}]}/>
+      )}
+    </div>
+  );
+};
+
+// ─── Nav Items ────────────────────────────────────────────────────────────────
 const navItems = [
-  {id:"dashboard", label:"Dashboard",  icon:"dashboard"},
-  {id:"contratos", label:"Contratos",  icon:"contracts"},
-  {id:"clientes",  label:"Clientes",   icon:"clients"},
-  {id:"tipologias",label:"Tipologias", icon:"types"},
-  {id:"tecnicos",  label:"Técnicos",   icon:"technicians"},
-  {id:"locais",    label:"Locais",     icon:"locations"},
+  {id:"dashboard",  label:"Dashboard",  icon:"dashboard"},
+  {id:"contratos",  label:"Contratos",  icon:"contracts"},
+  {id:"clientes",   label:"Clientes",   icon:"clients"},
+  {id:"definicoes", label:"Definições", icon:"settings"},
 ];
 
+// ─── App ──────────────────────────────────────────────────────────────────────
 export default function App() {
   const [page,     setPage]     = useState("dashboard");
   const [sideOpen, setSideOpen] = useState(true);
+  const [darkMode, setDarkMode] = useState(false);
+  const [isMobile, setIsMobile] = useState(()=>window.innerWidth<768);
+
+  const theme = darkMode ? DARK : LIGHT;
+
+  useEffect(()=>{
+    const fn = ()=>setIsMobile(window.innerWidth<768);
+    window.addEventListener("resize",fn);
+    return ()=>window.removeEventListener("resize",fn);
+  },[]);
+
+  // Auto-collapse sidebar on mobile
+  useEffect(()=>{ if(isMobile) setSideOpen(false); },[isMobile]);
+
+  const navigate = (id) => { setPage(id); if(isMobile) setSideOpen(false); };
+
   const SIDE_W = sideOpen ? 240 : 64;
 
   const pages = {
@@ -900,52 +985,101 @@ export default function App() {
                     {k:"email",label:"Email",type:"email"},
                     {k:"parque",label:"Parque Informático",textarea:true,rows:3,full:true},
                   ]}/>,
-    tipologias: <CrudPage title="Tipologias" table="tipologias"
-                  cols={[{key:"nome",label:"Nome"}]}
-                  emptyForm={{nome:""}}
-                  formFields={[{k:"nome",label:"Nome da Tipologia",required:true}]}/>,
-    tecnicos:   <CrudPage title="Técnicos" table="tecnicos"
-                  cols={[{key:"nome",label:"Nome"},{key:"email",label:"Email"}]}
-                  emptyForm={{nome:"",email:""}}
-                  formFields={[{k:"nome",label:"Nome",required:true},{k:"email",label:"Email",type:"email"}]}/>,
-    locais:     <CrudPage title="Locais de Assistência" table="locais"
-                  cols={[{key:"nome",label:"Local"}]}
-                  emptyForm={{nome:""}}
-                  formFields={[{k:"nome",label:"Nome do Local",required:true}]}/>,
+    definicoes: <Definicoes/>,
   };
 
   return (
-    <>
-      <style>{globalStyle}</style>
-      <div style={{display:"flex",minHeight:"100vh",background:C.grey50}}>
-        <aside style={{width:SIDE_W,minHeight:"100vh",background:C.tealD,display:"flex",flexDirection:"column",transition:"width .2s",flexShrink:0,position:"sticky",top:0,height:"100vh",overflow:"hidden"}}>
-          <div style={{padding:sideOpen?"24px 20px 20px":"24px 0 20px",display:"flex",alignItems:"center",gap:12,borderBottom:`1px solid ${C.tealL}30`,justifyContent:sideOpen?"flex-start":"center"}}>
-            <div style={{width:36,height:36,borderRadius:10,background:C.white,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-              <svg width="20" height="20" viewBox="0 0 50 50" fill="none"><path d="M8 42 C8 42 8 8 8 8 C8 4 12 4 12 4 C12 4 28 4 28 4 C42 4 42 18 34 22 C42 26 44 42 30 42 Z" fill={C.tealD}/></svg>
+    <ThemeCtx.Provider value={theme}>
+      <style>{getGlobalStyle(theme)}</style>
+
+      {/* Mobile overlay */}
+      {isMobile && sideOpen && (
+        <div onClick={()=>setSideOpen(false)}
+          style={{position:"fixed",inset:0,background:"#00000055",zIndex:99,backdropFilter:"blur(2px)"}}/>
+      )}
+
+      <div style={{display:"flex",minHeight:"100vh",background:theme.grey50}}>
+
+        {/* ── Sidebar ── */}
+        <aside style={{
+          width: isMobile ? (sideOpen?240:0) : SIDE_W,
+          minHeight:"100vh",
+          background:"#0d5e5e",
+          display:"flex",
+          flexDirection:"column",
+          transition:"width .22s ease",
+          flexShrink:0,
+          position: isMobile?"fixed":"sticky",
+          top:0,
+          left:0,
+          height:"100vh",
+          overflow:"hidden",
+          zIndex:isMobile?100:1,
+        }}>
+          {/* Logo */}
+          <div style={{padding:sideOpen?"22px 18px 18px":"22px 0 18px",display:"flex",alignItems:"center",gap:12,borderBottom:"1px solid rgba(42,155,155,0.2)",justifyContent:sideOpen?"flex-start":"center",flexShrink:0}}>
+            <div style={{width:36,height:36,borderRadius:10,background:"#ffffff",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+              <svg width="20" height="20" viewBox="0 0 50 50" fill="none">
+                <path d="M8 42 C8 42 8 8 8 8 C8 4 12 4 12 4 C12 4 28 4 28 4 C42 4 42 18 34 22 C42 26 44 42 30 42 Z" fill="#0d5e5e"/>
+              </svg>
             </div>
-            {sideOpen&&<div><div style={{fontWeight:700,fontSize:16,color:C.white,lineHeight:1}}>RBO</div><div style={{fontSize:11,color:C.tealM,marginTop:2}}>Rilop BackOffice</div></div>}
+            {sideOpen&&<div><div style={{fontWeight:700,fontSize:16,color:"#ffffff",lineHeight:1}}>RBO</div><div style={{fontSize:11,color:"#4d8e8e",marginTop:2}}>Rilop BackOffice</div></div>}
           </div>
-          <nav style={{flex:1,padding:"12px 0"}}>
+
+          {/* Nav */}
+          <nav style={{flex:1,padding:"10px 0",overflowY:"auto"}}>
             {navItems.map(item=>{
-              const active=page===item.id;
+              const active = page===item.id;
               return (
-                <button key={item.id} onClick={()=>setPage(item.id)}
-                  style={{width:"100%",display:"flex",alignItems:"center",gap:12,padding:sideOpen?"11px 20px":"11px 0",justifyContent:sideOpen?"flex-start":"center",background:active?C.tealL+"30":"transparent",border:"none",cursor:"pointer",borderLeft:active?`3px solid ${C.white}`:"3px solid transparent",transition:"all .15s"}}>
-                  <Icon name={item.icon} size={19} color={active?C.white:C.tealM}/>
-                  {sideOpen&&<span style={{fontSize:14,fontWeight:active?600:400,color:active?C.white:C.tealM}}>{item.label}</span>}
+                <button key={item.id} onClick={()=>navigate(item.id)}
+                  style={{width:"100%",display:"flex",alignItems:"center",gap:12,padding:sideOpen?"11px 18px":"11px 0",justifyContent:sideOpen?"flex-start":"center",background:active?"rgba(42,155,155,0.2)":"transparent",border:"none",cursor:"pointer",borderLeft:active?"3px solid #ffffff":"3px solid transparent",transition:"all .15s"}}>
+                  <Icon name={item.icon} size={19} color={active?"#ffffff":"#4d8e8e"}/>
+                  {sideOpen&&<span style={{fontSize:14,fontWeight:active?600:400,color:active?"#ffffff":"#4d8e8e"}}>{item.label}</span>}
                 </button>
               );
             })}
           </nav>
-          <button onClick={()=>setSideOpen(s=>!s)}
-            style={{padding:"14px",background:"transparent",border:"none",cursor:"pointer",color:C.tealM,display:"flex",justifyContent:sideOpen?"flex-end":"center",borderTop:`1px solid ${C.tealL}30`}}>
-            <Icon name={sideOpen?"chevronR":"chevronD"} size={16} color={C.tealM}/>
-          </button>
+
+          {/* Bottom controls */}
+          <div style={{borderTop:"1px solid rgba(42,155,155,0.2)",flexShrink:0}}>
+            {/* Dark mode toggle */}
+            <button onClick={()=>setDarkMode(d=>!d)}
+              title={darkMode?"Modo claro":"Modo escuro"}
+              style={{width:"100%",display:"flex",alignItems:"center",gap:12,padding:sideOpen?"11px 18px":"11px 0",justifyContent:sideOpen?"flex-start":"center",background:"transparent",border:"none",cursor:"pointer",transition:"all .15s"}}
+              onMouseEnter={e=>e.currentTarget.style.background="rgba(42,155,155,0.15)"}
+              onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+              <Icon name={darkMode?"sun":"moon"} size={18} color="#4d8e8e"/>
+              {sideOpen&&<span style={{fontSize:13,color:"#4d8e8e"}}>{darkMode?"Modo claro":"Modo escuro"}</span>}
+            </button>
+            {/* Collapse toggle */}
+            {!isMobile&&(
+              <button onClick={()=>setSideOpen(s=>!s)}
+                style={{width:"100%",padding:"12px 0",background:"transparent",border:"none",cursor:"pointer",display:"flex",justifyContent:"center",transition:"all .15s"}}
+                onMouseEnter={e=>e.currentTarget.style.background="rgba(42,155,155,0.15)"}
+                onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                <Icon name={sideOpen?"chevronR":"chevronD"} size={15} color="#4d8e8e"/>
+              </button>
+            )}
+          </div>
         </aside>
-        <main style={{flex:1,padding:"28px 32px",maxWidth:"100%",overflow:"hidden"}}>
-          {pages[page]}
-        </main>
+
+        {/* ── Main ── */}
+        <div style={{flex:1,display:"flex",flexDirection:"column",minWidth:0}}>
+          {/* Mobile top bar */}
+          {isMobile&&(
+            <div style={{position:"sticky",top:0,background:"#0d5e5e",padding:"12px 16px",display:"flex",alignItems:"center",gap:14,zIndex:50,flexShrink:0}}>
+              <button onClick={()=>setSideOpen(true)} style={{background:"none",border:"none",cursor:"pointer",padding:4,display:"flex",alignItems:"center"}}>
+                <Icon name="menu" size={22} color="#ffffff"/>
+              </button>
+              <span style={{color:"#ffffff",fontWeight:700,fontSize:16,letterSpacing:".5px"}}>RBO</span>
+              <span style={{color:"#4d8e8e",fontSize:12,marginLeft:4}}>· {navItems.find(n=>n.id===page)?.label||""}</span>
+            </div>
+          )}
+          <main style={{flex:1,padding:isMobile?"16px 14px":"28px 32px",maxWidth:"100%",overflow:"hidden"}}>
+            {pages[page]}
+          </main>
+        </div>
       </div>
-    </>
+    </ThemeCtx.Provider>
   );
 }
