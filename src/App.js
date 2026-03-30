@@ -917,19 +917,19 @@ const Definicoes = () => {
       </div>
       {/* Content */}
       {tab==="tipologias"&&(
-        <CrudPage key="tipologias" compact title="Tipologias" table="tipologias"
+        <CrudPage key="tipologias" compact title="Tipologias" table="rbo_tipologias"
           cols={[{key:"nome",label:"Nome"}]}
           emptyForm={{nome:""}}
           formFields={[{k:"nome",label:"Nome da Tipologia",required:true}]}/>
       )}
       {tab==="tecnicos"&&(
-        <CrudPage key="tecnicos" compact title="Técnicos" table="tecnicos"
+        <CrudPage key="tecnicos" compact title="Técnicos" table="rbo_tecnicos"
           cols={[{key:"nome",label:"Nome"},{key:"email",label:"Email"}]}
           emptyForm={{nome:"",email:""}}
           formFields={[{k:"nome",label:"Nome",required:true},{k:"email",label:"Email",type:"email"}]}/>
       )}
       {tab==="locais"&&(
-        <CrudPage key="locais" compact title="Locais de Assistência" table="locais"
+        <CrudPage key="locais" compact title="Locais de Assistência" table="rbo_locais"
           cols={[{key:"nome",label:"Local"}]}
           emptyForm={{nome:""}}
           formFields={[{k:"nome",label:"Nome do Local",required:true}]}/>
@@ -971,7 +971,7 @@ export default function App() {
   const pages = {
     dashboard:  <Dashboard/>,
     contratos:  <Contratos/>,
-    clientes:   <CrudPage title="Clientes" table="clientes"
+    clientes:   <CrudPage title="Clientes" table="rbo_clientes"
                   cols={[{key:"nome",label:"Nome"},{key:"responsavel",label:"Responsável TI"},{key:"localidade",label:"Localidade"},{key:"telefone",label:"Telefone"},{key:"email",label:"Email"}]}
                   emptyForm={{nome:"",responsavel:"",morada:"",localidade:"",cp:"",gps:"",telefone:"",email:"",parque:""}}
                   formFields={[
