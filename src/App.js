@@ -522,10 +522,10 @@ const Dashboard = () => {
   useEffect(()=>{
     (async()=>{
       const [cliRes,conRes,movRes,tipRes] = await Promise.all([
-        sb.from("clientes").select("id",{count:"exact",head:true}),
-        sb.from("contratos").select("id,ativo,tipologia_id"),
-        sb.from("movimentos").select("id,creditos,tipo,data,contrato_id,tecnico_id").order("data",{ascending:false}),
-        sb.from("tipologias").select("id,nome"),
+        sb.from("rbo_clientes").select("id",{count:"exact",head:true}),
+        sb.from("rbo_contratos").select("id,ativo,tipologia_id"),
+        sb.from("rbo_movimentos").select("id,creditos,tipo,data,contrato_id,tecnico_id").order("data",{ascending:false}),
+        sb.from("rbo_tipologias").select("id,nome"),
       ]);
       const movs  = movRes.data||[];
       const cons  = conRes.data||[];
@@ -534,11 +534,11 @@ const Dashboard = () => {
       setStats({clientes:cliRes.count||0,contratos:cons.filter(c=>c.ativo).length,creditos:movs.reduce((s,m)=>s+m.creditos,0),assistencias:assis.length});
       const recentConIds = [...new Set(assis.slice(0,5).map(m=>m.contrato_id))];
       if (recentConIds.length) {
-        const {data:cRec} = await sb.from("contratos").select("id,cliente_id").in("id",recentConIds);
+        const {data:cRec} = await sb.from("rbo_contratos").select("id,cliente_id").in("id",recentConIds);
         const cliIds = (cRec||[]).map(c=>c.cliente_id);
         const [{data:clRec},{data:tecRec}] = await Promise.all([
-          sb.from("clientes").select("id,nome").in("id",cliIds),
-          sb.from("tecnicos").select("id,nome"),
+          sb.from("rbo_clientes").select("id,nome").in("id",cliIds),
+          sb.from("rbo_tecnicos").select("id,nome"),
         ]);
         setRecentes(assis.slice(0,5).map(m=>{
           const con=(cRec||[]).find(c=>c.id===m.contrato_id);
@@ -609,11 +609,11 @@ const ContratoDetalhe = ({ contrato, onBack }) => {
   const load = useCallback(async()=>{
     setLoading(true);
     const [movRes,tecRes,locRes,cliRes,tipRes] = await Promise.all([
-      sb.from("movimentos").select("*").eq("contrato_id",contrato.id).order("data",{ascending:false}),
-      sb.from("tecnicos").select("*").order("nome"),
-      sb.from("locais").select("*").order("nome"),
-      sb.from("clientes").select("*").eq("id",contrato.cliente_id).single(),
-      sb.from("tipologias").select("*").eq("id",contrato.tipologia_id).single(),
+      sb.from("rbo_movimentos").select("*").eq("contrato_id",contrato.id).order("data",{ascending:false}),
+      sb.from("rbo_tecnicos").select("*").order("nome"),
+      sb.from("rbo_locais").select("*").order("nome"),
+      sb.from("rbo_clientes").select("*").eq("id",contrato.cliente_id).single(),
+      sb.from("rbo_tipologias").select("*").eq("id",contrato.tipologia_id).single(),
     ]);
     setMovimentos(movRes.data||[]);
     setTecnicos(tecRes.data||[]);
@@ -642,8 +642,8 @@ const ContratoDetalhe = ({ contrato, onBack }) => {
       tipo:form.tipo,
     };
     let err;
-    if (!editingId) ({error:err} = await sb.from("movimentos").insert([payload]));
-    else            ({error:err} = await sb.from("movimentos").update(payload).eq("id",editingId));
+    if (!editingId) ({error:err} = await sb.from("rbo_movimentos").insert([payload]));
+    else            ({error:err} = await sb.from("rbo_movimentos").update(payload).eq("id",editingId));
     if (err) alert("Erro: "+err.message);
     else { await load(); setModal(null); }
     setSaving(false);
@@ -651,13 +651,13 @@ const ContratoDetalhe = ({ contrato, onBack }) => {
 
   const delMov = async id => {
     if (!confirm("Eliminar movimento?")) return;
-    await sb.from("movimentos").delete().eq("id",id);
+    await sb.from("rbo_movimentos").delete().eq("id",id);
     await load();
   };
 
   const onSent = async movId => {
     const ts = new Date().toISOString();
-    await sb.from("movimentos").update({relatorio_enviado_em:ts}).eq("id",movId);
+    await sb.from("rbo_movimentos").update({relatorio_enviado_em:ts}).eq("id",movId);
     setMovimentos(ms=>ms.map(m=>m.id===movId?{...m,relatorio_enviado_em:ts}:m));
   };
 
@@ -803,10 +803,10 @@ const Contratos = () => {
   const load = useCallback(async()=>{
     setLoading(true);
     const [conRes,cliRes,tipRes,movRes] = await Promise.all([
-      sb.from("contratos").select("*").order("id",{ascending:false}),
-      sb.from("clientes").select("id,nome,email").order("nome"),
-      sb.from("tipologias").select("*").order("nome"),
-      sb.from("movimentos").select("id,contrato_id,creditos,tipo,data").order("data",{ascending:false}),
+      sb.from("rbo_contratos").select("*").order("id",{ascending:false}),
+      sb.from("rbo_clientes").select("id,nome,email").order("nome"),
+      sb.from("rbo_tipologias").select("*").order("nome"),
+      sb.from("rbo_movimentos").select("id,contrato_id,creditos,tipo,data").order("data",{ascending:false}),
     ]);
     setRows(conRes.data||[]);
     setClientes(cliRes.data||[]);
@@ -826,16 +826,16 @@ const Contratos = () => {
   const save = async () => {
     if (!form.cliente_id||!form.tipologia_id) return;
     setSaving(true);
-    const {data:novo,error} = await sb.from("contratos").insert([{cliente_id:Number(form.cliente_id),tipologia_id:Number(form.tipologia_id),data_contrato:form.data_contrato,ativo:true}]).select().single();
+    const {data:novo,error} = await sb.from("rbo_contratos").insert([{cliente_id:Number(form.cliente_id),tipologia_id:Number(form.tipologia_id),data_contrato:form.data_contrato,ativo:true}]).select().single();
     if (error) { alert("Erro: "+error.message); setSaving(false); return; }
-    await sb.from("movimentos").insert([{contrato_id:novo.id,data:form.data_contrato,hora_inicio:null,hora_fim:null,creditos:0,descritivo:"Contrato criado — adicione créditos iniciais",tecnico_id:null,local_id:null,tipo:"credito"}]);
+    await sb.from("rbo_movimentos").insert([{contrato_id:novo.id,data:form.data_contrato,hora_inicio:null,hora_fim:null,creditos:0,descritivo:"Contrato criado — adicione créditos iniciais",tecnico_id:null,local_id:null,tipo:"credito"}]);
     await load(); setSaving(false); setModal(false);
     setForm({cliente_id:"",tipologia_id:"",data_contrato:new Date().toISOString().split("T")[0],ativo:true});
   };
 
   const del = async id => {
     if (!confirm("Eliminar contrato e todos os seus movimentos?")) return;
-    await sb.from("contratos").delete().eq("id",id);
+    await sb.from("rbo_contratos").delete().eq("id",id);
     await load();
   };
 
