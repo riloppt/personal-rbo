@@ -1433,7 +1433,7 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, [loadProfile]);
 
-  // Garante meta viewport — crítico para browsers mobile não escalarem a página
+  // Garante meta viewport + desativa service worker (evita cache desatualizada)
   useEffect(()=>{
     let meta = document.querySelector('meta[name="viewport"]');
     if (!meta) {
@@ -1443,6 +1443,10 @@ export default function App() {
     }
     meta.content = 'width=device-width, initial-scale=1, viewport-fit=cover';
     setIsMobile(checkMobile());
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations()
+        .then(regs => regs.forEach(r => r.unregister()));
+    }
   },[]);
 
   useEffect(()=>{
