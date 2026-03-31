@@ -134,7 +134,7 @@ const buildReportHtml = ({ mov, cliente, tipologia, tecnico, local }) => {
   <div class="section"><div class="sec-title">Dados do Cliente</div>
     <div class="grid">
       <div class="field"><label>Empresa</label><div class="val">${cliente?.nome||"—"}</div></div>
-      <div class="field"><label>Responsável TI</label><div class="val">${cliente?.responsavel||"—"}</div></div>
+      <div class="field"><label>Técnico</label><div class="val">${tecnico?.nome||"—"}</div></div>
       <div class="field"><label>Morada</label><div class="val">${cliente?.morada||"—"}, ${cliente?.localidade||""}</div></div>
       <div class="field"><label>Contacto</label><div class="val">${cliente?.telefone||"—"}</div></div>
     </div>
@@ -717,7 +717,7 @@ const UtilizadoresPanel = ({ currentUserId }) => {
 };
 
 // ─── Generic CRUD ─────────────────────────────────────────────────────────────
-const CrudPage = ({ title, table, cols, formFields, emptyForm, compact, hasAtivo }) => {
+const CrudPage = ({ title, table, cols, formFields, emptyForm, compact, hasAtivo, fieldOptions }) => {
   const C = useTheme();
   const [rows,      setRows]      = useState([]);
   const [loading,   setLoading]   = useState(true);
@@ -827,8 +827,12 @@ const CrudPage = ({ title, table, cols, formFields, emptyForm, compact, hasAtivo
           <div style={{display:"grid",gridTemplateColumns:formFields.length>4?"1fr 1fr":"1fr",gap:14}}>
             {formFields.map(f=>(
               <div key={f.k} style={f.full?{gridColumn:"1/-1"}:{}}>
-                <Input label={f.label} value={form[f.k]||""} onChange={v=>setForm(p=>({...p,[f.k]:v}))}
-                  type={f.type} textarea={f.textarea} rows={f.rows} placeholder={f.placeholder} required={f.required}/>
+                {f.type==="select"
+                  ? <Select label={f.label} value={form[f.k]||""} onChange={v=>setForm(p=>({...p,[f.k]:v}))}
+                      options={fieldOptions?.[f.k]||[]} required={f.required}/>
+                  : <Input label={f.label} value={form[f.k]||""} onChange={v=>setForm(p=>({...p,[f.k]:v}))}
+                      type={f.type} textarea={f.textarea} rows={f.rows} placeholder={f.placeholder} required={f.required}/>
+                }
               </div>
             ))}
           </div>
@@ -1023,7 +1027,7 @@ const ContratoDetalhe = ({ contrato, onBack }) => {
       </div>
 
       <Card style={{padding:"16px 20px",marginBottom:20,display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:12}}>
-        {[["Responsável TI",cliente?.responsavel],["Telefone",cliente?.telefone],["Email",cliente?.email],["Localidade",cliente?.localidade],["Código Postal",cliente?.cp],["GPS",cliente?.gps]].map(([l,v])=>(
+        {[["Telefone",cliente?.telefone],["Email",cliente?.email],["Localidade",cliente?.localidade],["Código Postal",cliente?.cp],["GPS",cliente?.gps]].map(([l,v])=>(
           <div key={l}><div style={{fontSize:11,fontWeight:600,color:C.grey400,textTransform:"uppercase",letterSpacing:".5px"}}>{l}</div><div style={{fontSize:14,marginTop:2,color:C.grey800}}>{v||"—"}</div></div>
         ))}
         {cliente?.parque&&<div style={{gridColumn:"1/-1"}}><div style={{fontSize:11,fontWeight:600,color:C.grey400,textTransform:"uppercase",letterSpacing:".5px"}}>Parque Informático</div><div style={{fontSize:14,marginTop:2,color:C.grey600}}>{cliente.parque}</div></div>}
@@ -1467,27 +1471,41 @@ export default function App() {
 
   const SIDE_W = sideOpen ? 240 : 64;
 
-  const clientesPage = (
-    <CrudPage title="Clientes" table="rbo_clientes"
-      cols={[{key:"nome",label:"Nome"},{key:"responsavel",label:"Responsável TI"},{key:"localidade",label:"Localidade"},{key:"telefone",label:"Telefone"},{key:"email",label:"Email"}]}
-      emptyForm={{nome:"",responsavel:"",morada:"",localidade:"",cp:"",gps:"",telefone:"",email:"",parque:""}}
-      formFields={[
-        {k:"nome",label:"Nome da Empresa",required:true,full:true},
-        {k:"responsavel",label:"Responsável Informático"},
-        {k:"telefone",label:"Telefone",type:"tel"},
-        {k:"morada",label:"Morada",full:true},
-        {k:"localidade",label:"Localidade"},
-        {k:"cp",label:"Código Postal",placeholder:"0000-000"},
-        {k:"gps",label:"Coordenadas GPS",placeholder:"lat,lng"},
-        {k:"email",label:"Email",type:"email"},
-        {k:"parque",label:"Parque Informático",textarea:true,rows:3,full:true},
-      ]}/>
-  );
+  const ClientesPage = () => {
+    const [tecnicoOpts, setTecnicoOpts] = React.useState([]);
+    React.useEffect(()=>{
+      sb.from("rbo_profiles").select("id,nome").eq("is_tecnico",true).eq("ativo",true).order("nome")
+        .then(({data})=>setTecnicoOpts((data||[]).map(t=>({value:t.id,label:t.nome||t.email}))));
+    },[]);
+    return (
+      <CrudPage title="Clientes" table="rbo_clientes"
+        cols={[
+          {key:"nome",       label:"Nome"},
+          {key:"tecnico_id", label:"Técnico", render:(v)=>tecnicoOpts.find(t=>t.value===v)?.label||"—"},
+          {key:"localidade", label:"Localidade"},
+          {key:"telefone",   label:"Telefone"},
+          {key:"email",      label:"Email"},
+        ]}
+        emptyForm={{nome:"",tecnico_id:"",morada:"",localidade:"",cp:"",gps:"",telefone:"",email:"",parque:""}}
+        fieldOptions={{tecnico_id: tecnicoOpts}}
+        formFields={[
+          {k:"nome",      label:"Nome da Empresa",      required:true, full:true},
+          {k:"tecnico_id",label:"Técnico",              type:"select"},
+          {k:"telefone",  label:"Telefone",             type:"tel"},
+          {k:"morada",    label:"Morada",               full:true},
+          {k:"localidade",label:"Localidade"},
+          {k:"cp",        label:"Código Postal",        placeholder:"0000-000"},
+          {k:"gps",       label:"Coordenadas GPS",      placeholder:"lat,lng"},
+          {k:"email",     label:"Email",                type:"email"},
+          {k:"parque",    label:"Parque Informático",   textarea:true, rows:3, full:true},
+        ]}/>
+    );
+  };
 
   const pages = {
     dashboard:  <Dashboard/>,
     contratos:  <Contratos/>,
-    clientes:   clientesPage,
+    clientes:   <ClientesPage/>,
     definicoes: <Definicoes currentUserId={currentUserId}/>,
   };
 
