@@ -75,6 +75,9 @@ const Icon = ({ name, size=18, color="currentColor" }) => {
     qr:          <><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="5" y="5" width="3" height="3"/><rect x="16" y="5" width="3" height="3"/><rect x="5" y="16" width="3" height="3"/><line x1="14" y1="14" x2="17" y2="14"/><line x1="20" y1="14" x2="20" y2="17"/><line x1="14" y1="17" x2="17" y2="20"/></>,
     download:    <><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></>,
     alert:       <><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></>,
+    user:        <><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></>,
+    userPlus:    <><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></>,
+    logout:      <><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></>,
   };
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -436,6 +439,236 @@ const EmailReportBtn = ({ mov, lookup, onSent }) => {
       </div>
       {showModal&&<EmailConfirmModal mov={mov} lookup={lookup} onSent={onSent} onClose={()=>setShowModal(false)}/>}
     </>
+  );
+};
+
+
+// ─── Login Screen ─────────────────────────────────────────────────────────────
+const LoginScreen = () => {
+  const C = useTheme();
+  const [email,    setEmail]    = useState("");
+  const [password, setPassword] = useState("");
+  const [loading,  setLoading]  = useState(false);
+  const [error,    setError]    = useState(null);
+
+  const doLogin = async () => {
+    if (!email || !password) return;
+    setLoading(true); setError(null);
+    const { error } = await sb.auth.signInWithPassword({ email, password });
+    if (error) setError(error.message === "Invalid login credentials"
+      ? "Email ou password incorretos."
+      : error.message);
+    setLoading(false);
+  };
+
+  const handleKey = e => { if (e.key === "Enter") doLogin(); };
+
+  return (
+    <div style={{minHeight:"100vh",background:"#0a1818",display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+      <div style={{width:"100%",maxWidth:380}}>
+        {/* Logo */}
+        <div style={{textAlign:"center",marginBottom:40}}>
+          <div style={{width:56,height:56,borderRadius:16,background:"#0d5e5e",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px"}}>
+            <svg width="32" height="32" viewBox="0 0 50 50" fill="none">
+              <path d="M8 42 C8 42 8 8 8 8 C8 4 12 4 12 4 C12 4 28 4 28 4 C42 4 42 18 34 22 C42 26 44 42 30 42 Z" fill="#4d8e8e"/>
+            </svg>
+          </div>
+          <div style={{fontSize:26,fontWeight:700,color:"#ffffff",letterSpacing:".5px"}}>RBO</div>
+          <div style={{fontSize:13,color:"#4d8e8e",marginTop:4}}>Rilop BackOffice</div>
+        </div>
+
+        {/* Card */}
+        <div style={{background:"#122424",borderRadius:16,padding:"28px 28px 24px",border:"1px solid #1e3535"}}>
+          <h2 style={{fontSize:18,fontWeight:600,color:"#cee4e4",marginBottom:22}}>Iniciar sessão</h2>
+
+          <div style={{display:"flex",flexDirection:"column",gap:14}}>
+            <div>
+              <label style={{fontSize:12,fontWeight:600,color:"#4d8e8e",textTransform:"uppercase",letterSpacing:".5px",display:"block",marginBottom:6}}>Email</label>
+              <input type="email" value={email} onChange={e=>setEmail(e.target.value)} onKeyDown={handleKey}
+                placeholder="email@empresa.pt" autoComplete="email"
+                style={{width:"100%",background:"#0a1818",border:"1.5px solid #1e3535",borderRadius:9,padding:"10px 14px",fontSize:14,color:"#cee4e4",outline:"none",boxSizing:"border-box"}}
+                onFocus={e=>e.target.style.borderColor="#1a7a7a"}
+                onBlur={e=>e.target.style.borderColor="#1e3535"}/>
+            </div>
+            <div>
+              <label style={{fontSize:12,fontWeight:600,color:"#4d8e8e",textTransform:"uppercase",letterSpacing:".5px",display:"block",marginBottom:6}}>Password</label>
+              <input type="password" value={password} onChange={e=>setPassword(e.target.value)} onKeyDown={handleKey}
+                placeholder="••••••••" autoComplete="current-password"
+                style={{width:"100%",background:"#0a1818",border:"1.5px solid #1e3535",borderRadius:9,padding:"10px 14px",fontSize:14,color:"#cee4e4",outline:"none",boxSizing:"border-box"}}
+                onFocus={e=>e.target.style.borderColor="#1a7a7a"}
+                onBlur={e=>e.target.style.borderColor="#1e3535"}/>
+            </div>
+          </div>
+
+          {error && (
+            <div style={{marginTop:14,background:"#e07878" + "18",border:"1px solid #e07878" + "44",borderRadius:8,padding:"10px 14px",fontSize:13,color:"#e07878",display:"flex",gap:8,alignItems:"center"}}>
+              <Icon name="alert" size={14} color="#e07878"/>{error}
+            </div>
+          )}
+
+          <button onClick={doLogin} disabled={loading||!email||!password}
+            style={{width:"100%",marginTop:20,background:loading||!email||!password?"#0d5e5e88":"#1a7a7a",color:"#ffffff",border:"none",borderRadius:9,padding:"11px",fontSize:15,fontWeight:600,cursor:loading||!email||!password?"not-allowed":"pointer",transition:"background .15s",fontFamily:"'DM Sans',sans-serif"}}>
+            {loading ? "A entrar..." : "Entrar"}
+          </button>
+        </div>
+
+        <div style={{textAlign:"center",marginTop:20,fontSize:12,color:"#2a5050"}}>
+          Rilop BackOffice · Acesso restrito
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─── Access Denied ─────────────────────────────────────────────────────────────
+const AccessDenied = ({ email }) => (
+  <div style={{minHeight:"100vh",background:"#0a1818",display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+    <div style={{textAlign:"center",maxWidth:340}}>
+      <div style={{width:56,height:56,borderRadius:"50%",background:"#e0787818",border:"1px solid #e0787844",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 20px"}}>
+        <Icon name="alert" size={26} color="#e07878"/>
+      </div>
+      <div style={{fontSize:18,fontWeight:600,color:"#cee4e4",marginBottom:8}}>Sem acesso</div>
+      <div style={{fontSize:14,color:"#4d8e8e",lineHeight:1.6,marginBottom:24}}>
+        A conta <strong style={{color:"#7abfbf"}}>{email}</strong> não tem acesso ao RBO.<br/>Contacta o administrador.
+      </div>
+      <button onClick={()=>sb.auth.signOut()}
+        style={{background:"#1e3535",color:"#7abfbf",border:"1px solid #2a5050",borderRadius:8,padding:"9px 20px",fontSize:14,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>
+        Sair
+      </button>
+    </div>
+  </div>
+);
+
+// ─── Utilizadores Panel ───────────────────────────────────────────────────────
+const UtilizadoresPanel = ({ currentUserId }) => {
+  const C = useTheme();
+  const [users,   setUsers]   = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [modal,   setModal]   = useState(false);
+  const [saving,  setSaving]  = useState(false);
+  const [delErr,  setDelErr]  = useState(null);
+  const [form,    setForm]    = useState({email:"",nome:"",password:""});
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const { data } = await sb.from("rbo_profiles").select("*").order("created_at");
+    setUsers(data || []);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const toggleAtivo = async (user) => {
+    if (user.id === currentUserId) { alert("Não podes desativar a tua própria conta."); return; }
+    await sb.from("rbo_profiles").update({ ativo: !user.ativo }).eq("id", user.id);
+    await load();
+  };
+
+  const createUser = async () => {
+    if (!form.email || !form.password) return;
+    setSaving(true); setDelErr(null);
+    // 1. Criar utilizador no Supabase Auth
+    const { data, error } = await sb.auth.signUp({
+      email: form.email,
+      password: form.password,
+    });
+    if (error) { setDelErr("Erro ao criar utilizador: " + error.message); setSaving(false); return; }
+    // 2. Inserir/activar em rbo_profiles
+    const uid = data?.user?.id;
+    if (uid) {
+      await sb.from("rbo_profiles").upsert({ id: uid, email: form.email, nome: form.nome || null, ativo: true });
+    }
+    await load();
+    setSaving(false);
+    setModal(false);
+    setForm({email:"",nome:"",password:""});
+  };
+
+  return (
+    <div>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+        <span style={{fontSize:13,color:C.grey400}}>{users.length} utilizador{users.length!==1?"es":""}</span>
+        <Btn icon="userPlus" size="sm" onClick={()=>setModal(true)}>Novo utilizador</Btn>
+      </div>
+
+      {delErr && (
+        <div style={{display:"flex",alignItems:"flex-start",gap:10,padding:"12px 16px",background:C.amber+"12",border:`1px solid ${C.amber}44`,borderRadius:10,marginBottom:16}}>
+          <Icon name="alert" size={16} color={C.amber}/>
+          <span style={{fontSize:13,color:C.grey800,flex:1}}>{delErr}</span>
+          <button onClick={()=>setDelErr(null)} style={{background:"none",border:"none",cursor:"pointer",color:C.grey400}}><Icon name="close" size={14}/></button>
+        </div>
+      )}
+
+      <Card style={{padding:0,overflow:"hidden"}}>
+        {loading ? <Loading/> : (
+          <table style={{width:"100%",borderCollapse:"collapse",fontSize:14}}>
+            <thead>
+              <tr style={{borderBottom:`2px solid ${C.grey100}`}}>
+                {["Nome","Email","Estado",""].map(h=>(
+                  <th key={h} style={{padding:"12px 16px",textAlign:"left",fontSize:12,fontWeight:600,color:C.grey400,textTransform:"uppercase",letterSpacing:".5px",background:C.white}}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {users.length===0 && (
+                <tr><td colSpan={4} style={{padding:"32px 16px",textAlign:"center",color:C.grey400,fontSize:13}}>Sem utilizadores</td></tr>
+              )}
+              {users.map(u=>(
+                <tr key={u.id} style={{borderBottom:`1px solid ${C.grey100}`}}
+                  onMouseEnter={e=>e.currentTarget.style.background=C.grey50}
+                  onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                  <td style={{padding:"13px 16px",color:C.grey800,fontWeight:500}}>
+                    {u.nome || "—"}
+                    {u.id === currentUserId && <span style={{marginLeft:8,fontSize:11,background:C.teal+"22",color:C.teal,borderRadius:10,padding:"1px 8px",fontWeight:600}}>Tu</span>}
+                  </td>
+                  <td style={{padding:"13px 16px",color:C.grey600,fontSize:13}}>{u.email}</td>
+                  <td style={{padding:"13px 16px"}}>
+                    <Badge color={u.ativo?C.green:C.grey400}>{u.ativo?"Ativo":"Inativo"}</Badge>
+                  </td>
+                  <td style={{padding:"8px 16px"}}>
+                    <div style={{display:"flex",gap:4,justifyContent:"flex-end"}}>
+                      {u.id !== currentUserId && (
+                        <button onClick={()=>toggleAtivo(u)} title={u.ativo?"Inativar":"Ativar"}
+                          style={{background:"none",border:"none",cursor:"pointer",padding:"4px 6px",borderRadius:6,display:"flex",alignItems:"center",transition:"background .15s"}}
+                          onMouseEnter={e=>e.currentTarget.style.background=C.grey100}
+                          onMouseLeave={e=>e.currentTarget.style.background="none"}>
+                          <Icon name={u.ativo?"close":"eye"} size={14} color={u.ativo?C.amber:C.green}/>
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </Card>
+
+      {modal && (
+        <Modal title="Novo utilizador" onClose={()=>{setModal(false);setDelErr(null);}}>
+          <div style={{display:"flex",flexDirection:"column",gap:14}}>
+            <Input label="Nome" value={form.nome} onChange={v=>setForm(f=>({...f,nome:v}))} placeholder="Nome completo"/>
+            <Input label="Email" value={form.email} onChange={v=>setForm(f=>({...f,email:v}))} type="email" placeholder="email@empresa.pt" required/>
+            <Input label="Password temporária" value={form.password} onChange={v=>setForm(f=>({...f,password:v}))} type="password" placeholder="Mínimo 6 caracteres" required/>
+          </div>
+          {delErr && (
+            <div style={{marginTop:12,background:C.red+"10",border:`1px solid ${C.red}33`,borderRadius:8,padding:"10px 14px",fontSize:13,color:C.red,display:"flex",gap:8,alignItems:"center"}}>
+              <Icon name="alert" size={14} color={C.red}/>{delErr}
+            </div>
+          )}
+          <div style={{background:C.amber+"12",border:`1px solid ${C.amber}33`,borderRadius:8,padding:"10px 14px",marginTop:14,fontSize:12,color:C.grey600,display:"flex",gap:8}}>
+            <Icon name="alert" size={14} color={C.amber}/>
+            <span>O utilizador receberá um email de confirmação. Partilha a password temporária em separado.</span>
+          </div>
+          <div style={{display:"flex",gap:10,justifyContent:"flex-end",marginTop:20}}>
+            <Btn variant="secondary" onClick={()=>setModal(false)}>Cancelar</Btn>
+            <Btn onClick={createUser} disabled={saving||!form.email||!form.password}>
+              {saving?"A criar...":"Criar utilizador"}
+            </Btn>
+          </div>
+        </Modal>
+      )}
+    </div>
   );
 };
 
@@ -943,14 +1176,15 @@ const Contratos = () => {
 };
 
 // ─── Definições ───────────────────────────────────────────────────────────────
-const Definicoes = () => {
+const Definicoes = ({ currentUserId }) => {
   const C = useTheme();
   const [tab, setTab] = useState("tipologias");
 
   const tabs = [
-    {id:"tipologias", label:"Tipologias",          icon:"types"},
-    {id:"tecnicos",   label:"Técnicos",            icon:"technicians"},
-    {id:"locais",     label:"Locais de Assistência", icon:"locations"},
+    {id:"tipologias",   label:"Tipologias",           icon:"types"},
+    {id:"tecnicos",     label:"Técnicos",             icon:"technicians"},
+    {id:"locais",       label:"Locais de Assistência", icon:"locations"},
+    {id:"utilizadores", label:"Utilizadores",          icon:"user"},
   ];
 
   return (
@@ -987,6 +1221,9 @@ const Definicoes = () => {
           cols={[{key:"nome",label:"Local"}]}
           emptyForm={{nome:"",ativo:true}}
           formFields={[{k:"nome",label:"Nome do Local",required:true}]}/>
+      )}
+      {tab==="utilizadores"&&(
+        <UtilizadoresPanel currentUserId={currentUserId}/>
       )}
     </div>
   );
@@ -1055,6 +1292,12 @@ const BottomNav = ({ page, onNavigate, darkMode, onToggleDark }) => {
               <Icon name={darkMode?"sun":"moon"} size={20} color="#7abfbf"/>
               <span style={{fontSize:15,color:"#7abfbf"}}>{darkMode?"Modo claro":"Modo escuro"}</span>
             </button>
+            {/* Logout */}
+            <button onClick={()=>sb.auth.signOut()}
+              style={{width:"100%",display:"flex",alignItems:"center",gap:14,padding:"13px 24px",background:"transparent",border:"none",cursor:"pointer",borderLeft:"3px solid transparent"}}>
+              <Icon name="logout" size={20} color="#e07878"/>
+              <span style={{fontSize:15,color:"#e07878"}}>Terminar sessão</span>
+            </button>
           </div>
         </div>
       )}
@@ -1096,6 +1339,14 @@ const BottomNav = ({ page, onNavigate, darkMode, onToggleDark }) => {
             <span style={{fontSize:10,color:"#4d8e8e",letterSpacing:".2px"}}>{darkMode?"Claro":"Escuro"}</span>
           </button>
         )}
+        {/* Logout sempre visível */}
+        {!hasMore && (
+          <button onClick={()=>sb.auth.signOut()}
+            style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4,background:"transparent",border:"none",cursor:"pointer",borderTop:"2.5px solid transparent",paddingTop:2}}>
+            <Icon name="logout" size={20} color="#e07878"/>
+            <span style={{fontSize:10,color:"#e07878",letterSpacing:".2px"}}>Sair</span>
+          </button>
+        )}
       </nav>
     </>
   );
@@ -1109,12 +1360,36 @@ const checkMobile = () => {
 };
 
 export default function App() {
-  const [page,     setPage]     = useState("dashboard");
-  const [sideOpen, setSideOpen] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
-  const [isMobile, setIsMobile] = useState(checkMobile);
+  const [page,        setPage]        = useState("dashboard");
+  const [sideOpen,    setSideOpen]    = useState(true);
+  const [darkMode,    setDarkMode]    = useState(false);
+  const [isMobile,    setIsMobile]    = useState(checkMobile);
+  const [session,     setSession]     = useState(null);
+  const [profile,     setProfile]     = useState(null);   // rbo_profiles row
+  const [authLoading, setAuthLoading] = useState(true);
 
   const theme = darkMode ? DARK : LIGHT;
+
+  // ── Auth ──────────────────────────────────────────────────────────────────
+  const loadProfile = useCallback(async (userId) => {
+    const { data } = await sb.from("rbo_profiles").select("*").eq("id", userId).single();
+    setProfile(data || null);
+    setAuthLoading(false);
+  }, []);
+
+  useEffect(() => {
+    sb.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      if (session) loadProfile(session.user.id);
+      else setAuthLoading(false);
+    });
+    const { data: { subscription } } = sb.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      if (session) loadProfile(session.user.id);
+      else { setProfile(null); setAuthLoading(false); }
+    });
+    return () => subscription.unsubscribe();
+  }, [loadProfile]);
 
   // Garante meta viewport — crítico para browsers mobile não escalarem a página
   useEffect(()=>{
@@ -1139,6 +1414,8 @@ export default function App() {
   },[]);
 
   useEffect(()=>{ if(isMobile) setSideOpen(false); },[isMobile]);
+
+  const currentUserId = session?.user?.id || null;
 
   const navigate = id => { setPage(id); if(isMobile) setSideOpen(false); };
 
@@ -1165,8 +1442,19 @@ export default function App() {
     dashboard:  <Dashboard/>,
     contratos:  <Contratos/>,
     clientes:   clientesPage,
-    definicoes: <Definicoes/>,
+    definicoes: <Definicoes currentUserId={currentUserId}/>,
   };
+
+  // Auth guards
+  if (authLoading) return (
+    <div style={{minHeight:"100vh",background:"#0a1818",display:"flex",alignItems:"center",justifyContent:"center"}}>
+      <svg width={32} height={32} viewBox="0 0 24 24" fill="none" stroke="#1a7a7a" strokeWidth="2" strokeLinecap="round" style={{animation:"spin .8s linear infinite"}}>
+        <circle cx="12" cy="12" r="10" strokeOpacity=".2"/><path d="M12 2a10 10 0 0 1 10 10"/>
+      </svg>
+    </div>
+  );
+  if (!session) return <ThemeCtx.Provider value={theme}><style>{getGlobalStyle(theme)}</style><LoginScreen/></ThemeCtx.Provider>;
+  if (!profile || !profile.ativo) return <ThemeCtx.Provider value={theme}><style>{getGlobalStyle(theme)}</style><AccessDenied email={session.user.email}/></ThemeCtx.Provider>;
 
   return (
     <ThemeCtx.Provider value={theme}>
@@ -1206,12 +1494,31 @@ export default function App() {
             </nav>
             {/* Bottom controls */}
             <div style={{borderTop:"1px solid rgba(42,155,155,0.2)",flexShrink:0}}>
+              {/* User info */}
+              {sideOpen && (
+                <div style={{padding:"10px 18px",display:"flex",alignItems:"center",gap:10,borderBottom:"1px solid rgba(42,155,155,0.1)"}}>
+                  <div style={{width:30,height:30,borderRadius:"50%",background:"rgba(42,155,155,0.2)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                    <Icon name="user" size={15} color="#7abfbf"/>
+                  </div>
+                  <div style={{minWidth:0}}>
+                    <div style={{fontSize:12,fontWeight:600,color:"#cee4e4",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{profile?.nome || profile?.email}</div>
+                    {profile?.nome && <div style={{fontSize:10,color:"#4d8e8e",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{profile?.email}</div>}
+                  </div>
+                </div>
+              )}
               <button onClick={()=>setDarkMode(d=>!d)} title={darkMode?"Modo claro":"Modo escuro"}
                 style={{width:"100%",display:"flex",alignItems:"center",gap:12,padding:sideOpen?"11px 18px":"11px 0",justifyContent:sideOpen?"flex-start":"center",background:"transparent",border:"none",cursor:"pointer",transition:"all .15s"}}
                 onMouseEnter={e=>e.currentTarget.style.background="rgba(42,155,155,0.15)"}
                 onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
                 <Icon name={darkMode?"sun":"moon"} size={18} color="#4d8e8e"/>
                 {sideOpen&&<span style={{fontSize:13,color:"#4d8e8e"}}>{darkMode?"Modo claro":"Modo escuro"}</span>}
+              </button>
+              <button onClick={()=>sb.auth.signOut()} title="Terminar sessão"
+                style={{width:"100%",display:"flex",alignItems:"center",gap:12,padding:sideOpen?"11px 18px":"11px 0",justifyContent:sideOpen?"flex-start":"center",background:"transparent",border:"none",cursor:"pointer",transition:"all .15s"}}
+                onMouseEnter={e=>e.currentTarget.style.background="rgba(224,120,120,0.12)"}
+                onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                <Icon name="logout" size={18} color="#e07878"/>
+                {sideOpen&&<span style={{fontSize:13,color:"#e07878"}}>Terminar sessão</span>}
               </button>
               <button onClick={()=>setSideOpen(s=>!s)}
                 style={{width:"100%",padding:"12px 0",background:"transparent",border:"none",cursor:"pointer",display:"flex",justifyContent:"center",transition:"all .15s"}}
