@@ -1399,7 +1399,7 @@ const checkMobile = () => {
 export default function App() {
   const [page,        setPage]        = useState("dashboard");
   const [sideOpen,    setSideOpen]    = useState(true);
-  const [darkMode,    setDarkMode]    = useState(false);
+  const [darkMode,    setDarkMode]    = useState(true); // default até o perfil carregar
   const [isMobile,    setIsMobile]    = useState(checkMobile);
   const [session,     setSession]     = useState(null);
   const [profile,     setProfile]     = useState(null);   // rbo_profiles row
@@ -1411,6 +1411,7 @@ export default function App() {
   const loadProfile = useCallback(async (userId) => {
     const { data } = await sb.from("rbo_profiles").select("*").eq("id", userId).single();
     setProfile(data || null);
+    if (data) setDarkMode(data.dark_mode ?? true);
     setAuthLoading(false);
   }, []);
 
@@ -1455,6 +1456,14 @@ export default function App() {
   const currentUserId = session?.user?.id || null;
 
   const navigate = id => { setPage(id); if(isMobile) setSideOpen(false); };
+
+  const toggleDark = async () => {
+    const next = !darkMode;
+    setDarkMode(next);
+    if (currentUserId) {
+      await sb.from("rbo_profiles").update({ dark_mode: next }).eq("id", currentUserId);
+    }
+  };
 
   const SIDE_W = sideOpen ? 240 : 64;
 
@@ -1543,7 +1552,7 @@ export default function App() {
                   </div>
                 </div>
               )}
-              <button onClick={()=>setDarkMode(d=>!d)} title={darkMode?"Modo claro":"Modo escuro"}
+              <button onClick={toggleDark} title={darkMode?"Modo claro":"Modo escuro"}
                 style={{width:"100%",display:"flex",alignItems:"center",gap:12,padding:sideOpen?"11px 18px":"11px 0",justifyContent:sideOpen?"flex-start":"center",background:"transparent",border:"none",cursor:"pointer",transition:"all .15s"}}
                 onMouseEnter={e=>e.currentTarget.style.background="rgba(42,155,155,0.15)"}
                 onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
@@ -1604,7 +1613,7 @@ export default function App() {
           page={page}
           onNavigate={navigate}
           darkMode={darkMode}
-          onToggleDark={()=>setDarkMode(d=>!d)}
+          onToggleDark={toggleDark}
         />
       )}
     </ThemeCtx.Provider>
