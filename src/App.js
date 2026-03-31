@@ -1102,18 +1102,40 @@ const BottomNav = ({ page, onNavigate, darkMode, onToggleDark }) => {
 };
 
 // ─── App ──────────────────────────────────────────────────────────────────────
+// Detecção mobile robusta — funciona mesmo sem meta viewport
+const checkMobile = () => {
+  const w = window.visualViewport?.width ?? window.innerWidth;
+  return w < 768;
+};
+
 export default function App() {
   const [page,     setPage]     = useState("dashboard");
   const [sideOpen, setSideOpen] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
-  const [isMobile, setIsMobile] = useState(()=>window.innerWidth<768);
+  const [isMobile, setIsMobile] = useState(checkMobile);
 
   const theme = darkMode ? DARK : LIGHT;
 
+  // Garante meta viewport — crítico para browsers mobile não escalarem a página
   useEffect(()=>{
-    const fn = ()=>setIsMobile(window.innerWidth<768);
-    window.addEventListener("resize",fn);
-    return ()=>window.removeEventListener("resize",fn);
+    let meta = document.querySelector('meta[name="viewport"]');
+    if (!meta) {
+      meta = document.createElement('meta');
+      meta.name = 'viewport';
+      document.head.appendChild(meta);
+    }
+    meta.content = 'width=device-width, initial-scale=1, viewport-fit=cover';
+    setIsMobile(checkMobile());
+  },[]);
+
+  useEffect(()=>{
+    const fn = ()=>setIsMobile(checkMobile());
+    window.addEventListener("resize", fn);
+    window.visualViewport?.addEventListener("resize", fn);
+    return ()=>{
+      window.removeEventListener("resize", fn);
+      window.visualViewport?.removeEventListener("resize", fn);
+    };
   },[]);
 
   useEffect(()=>{ if(isMobile) setSideOpen(false); },[isMobile]);
