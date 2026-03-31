@@ -993,12 +993,113 @@ const Definicoes = () => {
 };
 
 // ─── Nav Items ────────────────────────────────────────────────────────────────
+// Para adicionar itens basta acrescentar aqui — o mobile adapta-se automaticamente
 const navItems = [
   {id:"dashboard",  label:"Dashboard",  icon:"dashboard"},
   {id:"contratos",  label:"Contratos",  icon:"contracts"},
   {id:"clientes",   label:"Clientes",   icon:"clients"},
   {id:"definicoes", label:"Definições", icon:"settings"},
 ];
+
+// Quantos itens ficam visíveis na bottom nav (o resto vai para "Mais")
+const BOTTOM_NAV_MAX = 4;
+
+// ─── Mobile Bottom Navigation ─────────────────────────────────────────────────
+const BottomNav = ({ page, onNavigate, darkMode, onToggleDark }) => {
+  const C = useTheme();
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const primary  = navItems.slice(0, BOTTOM_NAV_MAX);
+  const overflow = navItems.slice(BOTTOM_NAV_MAX);
+  const hasMore  = overflow.length > 0;
+  const moreActive = overflow.some(i => i.id === page);
+
+  const go = id => { onNavigate(id); setDrawerOpen(false); };
+
+  const NAV_H = 62;
+  const safeBottom = "env(safe-area-inset-bottom, 0px)";
+
+  return (
+    <>
+      {/* Overlay para o drawer "Mais" */}
+      {drawerOpen && (
+        <div onClick={()=>setDrawerOpen(false)}
+          style={{position:"fixed",inset:0,background:"#00000055",zIndex:198,backdropFilter:"blur(2px)"}}/>
+      )}
+
+      {/* Drawer "Mais" — desliza de baixo */}
+      {hasMore && (
+        <div style={{
+          position:"fixed", bottom: drawerOpen ? 0 : "-100%", left:0, right:0,
+          background:"#0d5e5e", borderRadius:"20px 20px 0 0",
+          zIndex:199, transition:"bottom .28s cubic-bezier(.4,0,.2,1)",
+          paddingBottom:`calc(${NAV_H}px + ${safeBottom})`,
+        }}>
+          <div style={{padding:"12px 0 4px",display:"flex",justifyContent:"center"}}>
+            <div style={{width:40,height:4,borderRadius:2,background:"rgba(255,255,255,0.2)"}}/>
+          </div>
+          <div style={{padding:"8px 0 4px"}}>
+            {overflow.map(item=>{
+              const active = page===item.id;
+              return (
+                <button key={item.id} onClick={()=>go(item.id)}
+                  style={{width:"100%",display:"flex",alignItems:"center",gap:14,padding:"13px 24px",background:active?"rgba(42,155,155,0.2)":"transparent",border:"none",cursor:"pointer",borderLeft:active?"3px solid #fff":"3px solid transparent",transition:"all .15s"}}>
+                  <Icon name={item.icon} size={20} color={active?"#ffffff":"#7abfbf"}/>
+                  <span style={{fontSize:15,fontWeight:active?600:400,color:active?"#ffffff":"#7abfbf"}}>{item.label}</span>
+                </button>
+              );
+            })}
+            {/* Dark mode no drawer */}
+            <button onClick={()=>{onToggleDark();setDrawerOpen(false);}}
+              style={{width:"100%",display:"flex",alignItems:"center",gap:14,padding:"13px 24px",background:"transparent",border:"none",cursor:"pointer",borderLeft:"3px solid transparent"}}>
+              <Icon name={darkMode?"sun":"moon"} size={20} color="#7abfbf"/>
+              <span style={{fontSize:15,color:"#7abfbf"}}>{darkMode?"Modo claro":"Modo escuro"}</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Bottom nav bar */}
+      <nav style={{
+        position:"fixed", bottom:0, left:0, right:0, height:NAV_H,
+        background:"#0d5e5e",
+        display:"flex", alignItems:"stretch",
+        borderTop:"1px solid rgba(42,155,155,0.25)",
+        zIndex:200,
+        paddingBottom:safeBottom,
+      }}>
+        {primary.map(item=>{
+          const active = page===item.id;
+          return (
+            <button key={item.id} onClick={()=>go(item.id)}
+              style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4,background:"transparent",border:"none",cursor:"pointer",borderTop:active?"2.5px solid #ffffff":"2.5px solid transparent",transition:"all .15s",paddingTop:2}}>
+              <Icon name={item.icon} size={20} color={active?"#ffffff":"#4d8e8e"}/>
+              <span style={{fontSize:10,fontWeight:active?700:400,color:active?"#ffffff":"#4d8e8e",letterSpacing:".2px"}}>{item.label}</span>
+            </button>
+          );
+        })}
+
+        {/* Botão "Mais" — aparece só se houver overflow */}
+        {hasMore && (
+          <button onClick={()=>setDrawerOpen(d=>!d)}
+            style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4,background:"transparent",border:"none",cursor:"pointer",borderTop:(moreActive||drawerOpen)?"2.5px solid #ffffff":"2.5px solid transparent",paddingTop:2}}>
+            <Icon name="menu" size={20} color={(moreActive||drawerOpen)?"#ffffff":"#4d8e8e"}/>
+            <span style={{fontSize:10,fontWeight:(moreActive||drawerOpen)?700:400,color:(moreActive||drawerOpen)?"#ffffff":"#4d8e8e",letterSpacing:".2px"}}>Mais</span>
+          </button>
+        )}
+
+        {/* Dark mode direto na nav se não houver overflow */}
+        {!hasMore && (
+          <button onClick={onToggleDark}
+            style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4,background:"transparent",border:"none",cursor:"pointer",borderTop:"2.5px solid transparent",paddingTop:2}}>
+            <Icon name={darkMode?"sun":"moon"} size={20} color="#4d8e8e"/>
+            <span style={{fontSize:10,color:"#4d8e8e",letterSpacing:".2px"}}>{darkMode?"Claro":"Escuro"}</span>
+          </button>
+        )}
+      </nav>
+    </>
+  );
+};
 
 // ─── App ──────────────────────────────────────────────────────────────────────
 export default function App() {
@@ -1015,30 +1116,33 @@ export default function App() {
     return ()=>window.removeEventListener("resize",fn);
   },[]);
 
-  // Auto-collapse sidebar on mobile
   useEffect(()=>{ if(isMobile) setSideOpen(false); },[isMobile]);
 
-  const navigate = (id) => { setPage(id); if(isMobile) setSideOpen(false); };
+  const navigate = id => { setPage(id); if(isMobile) setSideOpen(false); };
 
   const SIDE_W = sideOpen ? 240 : 64;
+
+  const clientesPage = (
+    <CrudPage title="Clientes" table="rbo_clientes"
+      cols={[{key:"nome",label:"Nome"},{key:"responsavel",label:"Responsável TI"},{key:"localidade",label:"Localidade"},{key:"telefone",label:"Telefone"},{key:"email",label:"Email"}]}
+      emptyForm={{nome:"",responsavel:"",morada:"",localidade:"",cp:"",gps:"",telefone:"",email:"",parque:""}}
+      formFields={[
+        {k:"nome",label:"Nome da Empresa",required:true,full:true},
+        {k:"responsavel",label:"Responsável Informático"},
+        {k:"telefone",label:"Telefone",type:"tel"},
+        {k:"morada",label:"Morada",full:true},
+        {k:"localidade",label:"Localidade"},
+        {k:"cp",label:"Código Postal",placeholder:"0000-000"},
+        {k:"gps",label:"Coordenadas GPS",placeholder:"lat,lng"},
+        {k:"email",label:"Email",type:"email"},
+        {k:"parque",label:"Parque Informático",textarea:true,rows:3,full:true},
+      ]}/>
+  );
 
   const pages = {
     dashboard:  <Dashboard/>,
     contratos:  <Contratos/>,
-    clientes:   <CrudPage title="Clientes" table="rbo_clientes"
-                  cols={[{key:"nome",label:"Nome"},{key:"responsavel",label:"Responsável TI"},{key:"localidade",label:"Localidade"},{key:"telefone",label:"Telefone"},{key:"email",label:"Email"}]}
-                  emptyForm={{nome:"",responsavel:"",morada:"",localidade:"",cp:"",gps:"",telefone:"",email:"",parque:""}}
-                  formFields={[
-                    {k:"nome",label:"Nome da Empresa",required:true,full:true},
-                    {k:"responsavel",label:"Responsável Informático"},
-                    {k:"telefone",label:"Telefone",type:"tel"},
-                    {k:"morada",label:"Morada",full:true},
-                    {k:"localidade",label:"Localidade"},
-                    {k:"cp",label:"Código Postal",placeholder:"0000-000"},
-                    {k:"gps",label:"Coordenadas GPS",placeholder:"lat,lng"},
-                    {k:"email",label:"Email",type:"email"},
-                    {k:"parque",label:"Parque Informático",textarea:true,rows:3,full:true},
-                  ]}/>,
+    clientes:   clientesPage,
     definicoes: <Definicoes/>,
   };
 
@@ -1046,94 +1150,97 @@ export default function App() {
     <ThemeCtx.Provider value={theme}>
       <style>{getGlobalStyle(theme)}</style>
 
-      {/* Mobile overlay */}
-      {isMobile && sideOpen && (
-        <div onClick={()=>setSideOpen(false)}
-          style={{position:"fixed",inset:0,background:"#00000055",zIndex:99,backdropFilter:"blur(2px)"}}/>
-      )}
-
       <div style={{display:"flex",minHeight:"100vh",background:theme.grey50}}>
 
-        {/* ── Sidebar ── */}
-        <aside style={{
-          width: isMobile ? (sideOpen?240:0) : SIDE_W,
-          minHeight:"100vh",
-          background:"#0d5e5e",
-          display:"flex",
-          flexDirection:"column",
-          transition:"width .22s ease",
-          flexShrink:0,
-          position: isMobile?"fixed":"sticky",
-          top:0,
-          left:0,
-          height:"100vh",
-          overflow:"hidden",
-          zIndex:isMobile?100:1,
-        }}>
-          {/* Logo */}
-          <div style={{padding:sideOpen?"22px 18px 18px":"22px 0 18px",display:"flex",alignItems:"center",gap:12,borderBottom:"1px solid rgba(42,155,155,0.2)",justifyContent:sideOpen?"flex-start":"center",flexShrink:0}}>
-            <div style={{width:36,height:36,borderRadius:10,background:"#ffffff",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-              <svg width="20" height="20" viewBox="0 0 50 50" fill="none">
-                <path d="M8 42 C8 42 8 8 8 8 C8 4 12 4 12 4 C12 4 28 4 28 4 C42 4 42 18 34 22 C42 26 44 42 30 42 Z" fill="#0d5e5e"/>
-              </svg>
+        {/* ── Desktop Sidebar ── */}
+        {!isMobile && (
+          <aside style={{
+            width:SIDE_W, minHeight:"100vh", background:"#0d5e5e",
+            display:"flex", flexDirection:"column",
+            transition:"width .22s ease", flexShrink:0,
+            position:"sticky", top:0, height:"100vh", overflow:"hidden", zIndex:1,
+          }}>
+            {/* Logo */}
+            <div style={{padding:sideOpen?"22px 18px 18px":"22px 0 18px",display:"flex",alignItems:"center",gap:12,borderBottom:"1px solid rgba(42,155,155,0.2)",justifyContent:sideOpen?"flex-start":"center",flexShrink:0}}>
+              <div style={{width:36,height:36,borderRadius:10,background:"#ffffff",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                <svg width="20" height="20" viewBox="0 0 50 50" fill="none">
+                  <path d="M8 42 C8 42 8 8 8 8 C8 4 12 4 12 4 C12 4 28 4 28 4 C42 4 42 18 34 22 C42 26 44 42 30 42 Z" fill="#0d5e5e"/>
+                </svg>
+              </div>
+              {sideOpen&&<div><div style={{fontWeight:700,fontSize:16,color:"#ffffff",lineHeight:1}}>RBO</div><div style={{fontSize:11,color:"#4d8e8e",marginTop:2}}>Rilop BackOffice</div></div>}
             </div>
-            {sideOpen&&<div><div style={{fontWeight:700,fontSize:16,color:"#ffffff",lineHeight:1}}>RBO</div><div style={{fontSize:11,color:"#4d8e8e",marginTop:2}}>Rilop BackOffice</div></div>}
-          </div>
-
-          {/* Nav */}
-          <nav style={{flex:1,padding:"10px 0",overflowY:"auto"}}>
-            {navItems.map(item=>{
-              const active = page===item.id;
-              return (
-                <button key={item.id} onClick={()=>navigate(item.id)}
-                  style={{width:"100%",display:"flex",alignItems:"center",gap:12,padding:sideOpen?"11px 18px":"11px 0",justifyContent:sideOpen?"flex-start":"center",background:active?"rgba(42,155,155,0.2)":"transparent",border:"none",cursor:"pointer",borderLeft:active?"3px solid #ffffff":"3px solid transparent",transition:"all .15s"}}>
-                  <Icon name={item.icon} size={19} color={active?"#ffffff":"#4d8e8e"}/>
-                  {sideOpen&&<span style={{fontSize:14,fontWeight:active?600:400,color:active?"#ffffff":"#4d8e8e"}}>{item.label}</span>}
-                </button>
-              );
-            })}
-          </nav>
-
-          {/* Bottom controls */}
-          <div style={{borderTop:"1px solid rgba(42,155,155,0.2)",flexShrink:0}}>
-            {/* Dark mode toggle */}
-            <button onClick={()=>setDarkMode(d=>!d)}
-              title={darkMode?"Modo claro":"Modo escuro"}
-              style={{width:"100%",display:"flex",alignItems:"center",gap:12,padding:sideOpen?"11px 18px":"11px 0",justifyContent:sideOpen?"flex-start":"center",background:"transparent",border:"none",cursor:"pointer",transition:"all .15s"}}
-              onMouseEnter={e=>e.currentTarget.style.background="rgba(42,155,155,0.15)"}
-              onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
-              <Icon name={darkMode?"sun":"moon"} size={18} color="#4d8e8e"/>
-              {sideOpen&&<span style={{fontSize:13,color:"#4d8e8e"}}>{darkMode?"Modo claro":"Modo escuro"}</span>}
-            </button>
-            {/* Collapse toggle */}
-            {!isMobile&&(
+            {/* Nav */}
+            <nav style={{flex:1,padding:"10px 0",overflowY:"auto"}}>
+              {navItems.map(item=>{
+                const active = page===item.id;
+                return (
+                  <button key={item.id} onClick={()=>navigate(item.id)}
+                    style={{width:"100%",display:"flex",alignItems:"center",gap:12,padding:sideOpen?"11px 18px":"11px 0",justifyContent:sideOpen?"flex-start":"center",background:active?"rgba(42,155,155,0.2)":"transparent",border:"none",cursor:"pointer",borderLeft:active?"3px solid #ffffff":"3px solid transparent",transition:"all .15s"}}>
+                    <Icon name={item.icon} size={19} color={active?"#ffffff":"#4d8e8e"}/>
+                    {sideOpen&&<span style={{fontSize:14,fontWeight:active?600:400,color:active?"#ffffff":"#4d8e8e"}}>{item.label}</span>}
+                  </button>
+                );
+              })}
+            </nav>
+            {/* Bottom controls */}
+            <div style={{borderTop:"1px solid rgba(42,155,155,0.2)",flexShrink:0}}>
+              <button onClick={()=>setDarkMode(d=>!d)} title={darkMode?"Modo claro":"Modo escuro"}
+                style={{width:"100%",display:"flex",alignItems:"center",gap:12,padding:sideOpen?"11px 18px":"11px 0",justifyContent:sideOpen?"flex-start":"center",background:"transparent",border:"none",cursor:"pointer",transition:"all .15s"}}
+                onMouseEnter={e=>e.currentTarget.style.background="rgba(42,155,155,0.15)"}
+                onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                <Icon name={darkMode?"sun":"moon"} size={18} color="#4d8e8e"/>
+                {sideOpen&&<span style={{fontSize:13,color:"#4d8e8e"}}>{darkMode?"Modo claro":"Modo escuro"}</span>}
+              </button>
               <button onClick={()=>setSideOpen(s=>!s)}
                 style={{width:"100%",padding:"12px 0",background:"transparent",border:"none",cursor:"pointer",display:"flex",justifyContent:"center",transition:"all .15s"}}
                 onMouseEnter={e=>e.currentTarget.style.background="rgba(42,155,155,0.15)"}
                 onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
                 <Icon name={sideOpen?"chevronR":"chevronD"} size={15} color="#4d8e8e"/>
               </button>
-            )}
-          </div>
-        </aside>
+            </div>
+          </aside>
+        )}
 
-        {/* ── Main ── */}
+        {/* ── Main content ── */}
         <div style={{flex:1,display:"flex",flexDirection:"column",minWidth:0}}>
-          {/* Mobile top bar */}
-          {isMobile&&(
-            <div style={{position:"sticky",top:0,background:"#0d5e5e",padding:"12px 16px",display:"flex",alignItems:"center",gap:14,zIndex:50,flexShrink:0}}>
-              <button onClick={()=>setSideOpen(true)} style={{background:"none",border:"none",cursor:"pointer",padding:4,display:"flex",alignItems:"center"}}>
-                <Icon name="menu" size={22} color="#ffffff"/>
-              </button>
-              <span style={{color:"#ffffff",fontWeight:700,fontSize:16,letterSpacing:".5px"}}>RBO</span>
-              <span style={{color:"#4d8e8e",fontSize:12,marginLeft:4}}>· {navItems.find(n=>n.id===page)?.label||""}</span>
+          {/* Mobile: top bar simples com título da página */}
+          {isMobile && (
+            <div style={{position:"sticky",top:0,background:"#0d5e5e",padding:"0 16px",height:52,display:"flex",alignItems:"center",justifyContent:"space-between",zIndex:50,flexShrink:0}}>
+              <div style={{display:"flex",alignItems:"center",gap:10}}>
+                <div style={{width:28,height:28,borderRadius:8,background:"#ffffff",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                  <svg width="16" height="16" viewBox="0 0 50 50" fill="none">
+                    <path d="M8 42 C8 42 8 8 8 8 C8 4 12 4 12 4 C12 4 28 4 28 4 C42 4 42 18 34 22 C42 26 44 42 30 42 Z" fill="#0d5e5e"/>
+                  </svg>
+                </div>
+                <span style={{color:"#ffffff",fontWeight:700,fontSize:15}}>RBO</span>
+              </div>
+              <span style={{color:"#7abfbf",fontSize:13,fontWeight:500}}>
+                {navItems.find(n=>n.id===page)?.label||""}
+              </span>
             </div>
           )}
-          <main style={{flex:1,padding:isMobile?"16px 14px":"28px 32px",maxWidth:"100%",overflow:"hidden"}}>
+
+          <main style={{
+            flex:1,
+            padding: isMobile ? "14px 12px" : "28px 32px",
+            paddingBottom: isMobile ? "calc(62px + env(safe-area-inset-bottom, 0px) + 12px)" : undefined,
+            maxWidth:"100%",
+            overflow:"hidden",
+          }}>
             {pages[page]}
           </main>
         </div>
       </div>
+
+      {/* ── Mobile Bottom Navigation ── */}
+      {isMobile && (
+        <BottomNav
+          page={page}
+          onNavigate={navigate}
+          darkMode={darkMode}
+          onToggleDark={()=>setDarkMode(d=>!d)}
+        />
+      )}
     </ThemeCtx.Provider>
   );
 }
