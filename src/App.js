@@ -1413,6 +1413,7 @@ export default function App() {
 
   // ── Auth ──────────────────────────────────────────────────────────────────
   const loadProfile = useCallback(async (userId) => {
+    setAuthLoading(true);
     const { data } = await sb.from("rbo_profiles").select("*").eq("id", userId).single();
     setProfile(data || null);
     if (data) setDarkMode(data.dark_mode ?? true);
