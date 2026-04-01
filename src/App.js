@@ -1,4 +1,3 @@
-// v2
 import React, { useState, useEffect, useCallback, useContext, createContext } from "react";
 import { createClient } from "@supabase/supabase-js";
 
@@ -860,7 +859,7 @@ const Dashboard = () => {
       const [cliRes,conRes,movRes,tipRes] = await Promise.all([
         sb.from("rbo_clientes").select("id",{count:"exact",head:true}),
         sb.from("rbo_contratos").select("id,ativo,tipologia_id"),
-        sb.from("rbo_movimentos").select("id,creditos,tipo,data,contrato_id,tecnico_id").order("data",{ascending:false}),
+        sb.from("rbo_movimentos").select("id,creditos,tipo,data,contrato_id,profile_tecnico_id").order("data",{ascending:false}),
         sb.from("rbo_tipologias").select("id,nome"),
       ]);
       const movs  = movRes.data||[];
@@ -1091,7 +1090,7 @@ const ContratoDetalhe = ({ contrato, onBack }) => {
       )}
 
       {previewMov&&(()=>{
-        const tec = previewMov.tecnico_id?tecnicos.find(t=>t.id===previewMov.tecnico_id):null;
+        const tec = previewMov.profile_tecnico_id?tecnicos.find(t=>t.id===previewMov.profile_tecnico_id):null;
         const loc = previewMov.local_id  ?locais.find(l=>l.id===previewMov.local_id)   :null;
         const html = buildReportHtml({mov:previewMov,cliente,tipologia,tecnico:tec,local:loc});
         const blobUrl = URL.createObjectURL(new Blob([html],{type:"text/html"}));
