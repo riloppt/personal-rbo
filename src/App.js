@@ -569,6 +569,31 @@ const UtilizadoresPanel = ({ currentUserId }) => {
     await load();
   };
 
+  const openEdit = (user) => {
+    setForm({id:user.id, nome:user.nome||"", email:user.email||"", password:"", is_tecnico:user.is_tecnico});
+    setErrMsg(null);
+    setModal("edit");
+  };
+
+  const saveUser = async () => {
+    if (!form.id) return;
+    setSaving(true); setErrMsg(null);
+    // Update profile
+    const { error: profErr } = await sb.from("rbo_profiles")
+      .update({ nome: form.nome||null, email: form.email||null })
+      .eq("id", form.id);
+    if (profErr) { setErrMsg("Erro ao guardar: " + profErr.message); setSaving(false); return; }
+    // Update password only for own account
+    if (form.password && form.id === currentUserId) {
+      const { error: passErr } = await sb.auth.updateUser({ password: form.password });
+      if (passErr) { setErrMsg("Perfil guardado mas erro na password: " + passErr.message); setSaving(false); await load(); return; }
+    }
+    await load();
+    setSaving(false);
+    setModal(false);
+    setForm({email:"",nome:"",password:"",is_tecnico:false});
+  };
+
   const deleteUser = async (user) => {
     if (user.id === currentUserId) { setErrMsg("Não podes eliminar a tua própria conta."); return; }
     // Verificar se tem movimentos associados
@@ -613,7 +638,7 @@ const UtilizadoresPanel = ({ currentUserId }) => {
     <div>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
         <span style={{fontSize:13,color:C.grey400}}>{users.length} utilizador{users.length!==1?"es":""}</span>
-        <Btn icon="userPlus" size="sm" onClick={()=>{setModal(true);setErrMsg(null);}}>Novo utilizador</Btn>
+        <Btn icon="userPlus" size="sm" onClick={()=>{setForm({email:"",nome:"",password:"",is_tecnico:false});setErrMsg(null);setModal("new");}}>Novo utilizador</Btn>
       </div>
 
       {errMsg && (
@@ -659,8 +684,22 @@ const UtilizadoresPanel = ({ currentUserId }) => {
                     </td>
                     <td style={{padding:"8px 16px"}}>
                       <div style={{display:"flex",gap:4,justifyContent:"flex-end"}}>
+                        {u.id === currentUserId && (
+                          <button onClick={()=>openEdit(u)} title="Editar o meu perfil"
+                            style={{background:"none",border:"none",cursor:"pointer",padding:"4px 6px",borderRadius:6,display:"flex",alignItems:"center",transition:"background .15s"}}
+                            onMouseEnter={e=>e.currentTarget.style.background=C.grey100}
+                            onMouseLeave={e=>e.currentTarget.style.background="none"}>
+                            <Icon name="edit" size={14} color={C.teal}/>
+                          </button>
+                        )}
                         {u.id !== currentUserId && (
                           <>
+                            <button onClick={()=>openEdit(u)} title="Editar utilizador"
+                              style={{background:"none",border:"none",cursor:"pointer",padding:"4px 6px",borderRadius:6,display:"flex",alignItems:"center",transition:"background .15s"}}
+                              onMouseEnter={e=>e.currentTarget.style.background=C.grey100}
+                              onMouseLeave={e=>e.currentTarget.style.background="none"}>
+                              <Icon name="edit" size={14} color={C.teal}/>
+                            </button>
                             <button onClick={()=>toggleAtivo(u)} title={u.ativo?"Inativar":"Ativar"}
                               style={{background:"none",border:"none",cursor:"pointer",padding:"4px 6px",borderRadius:6,display:"flex",alignItems:"center",transition:"background .15s"}}
                               onMouseEnter={e=>e.currentTarget.style.background=C.grey100}
@@ -686,18 +725,31 @@ const UtilizadoresPanel = ({ currentUserId }) => {
       </Card>
 
       {modal && (
-        <Modal title="Novo utilizador" onClose={()=>{setModal(false);setErrMsg(null);}}>
+        <Modal title={modal==="edit" ? "Editar utilizador" : "Novo utilizador"} onClose={()=>{setModal(false);setErrMsg(null);}}>
           <div style={{display:"flex",flexDirection:"column",gap:14}}>
             <Input label="Nome" value={form.nome} onChange={v=>setForm(f=>({...f,nome:v}))} placeholder="Nome completo"/>
-            <Input label="Email" value={form.email} onChange={v=>setForm(f=>({...f,email:v}))} type="email" placeholder="email@empresa.pt" required/>
-            <Input label="Password" value={form.password} onChange={v=>setForm(f=>({...f,password:v}))} type="password" placeholder="Mínimo 6 caracteres" required/>
-            <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",background:C.grey50,borderRadius:8,border:`1px solid ${C.grey100}`}}>
-              <input type="checkbox" id="is_tecnico" checked={form.is_tecnico} onChange={e=>setForm(f=>({...f,is_tecnico:e.target.checked}))}
-                style={{width:16,height:16,accentColor:C.teal,cursor:"pointer"}}/>
-              <label htmlFor="is_tecnico" style={{fontSize:14,color:C.grey800,cursor:"pointer"}}>
-                Este utilizador é também um <strong>técnico</strong> (aparece na seleção de assistências)
-              </label>
-            </div>
+            <Input label="Email" value={form.email} onChange={v=>setForm(f=>({...f,email:v}))} type="email" placeholder="email@empresa.pt" required={modal==="new"}/>
+            {(modal==="new" || form.id===currentUserId) && (
+              <Input label={modal==="edit"?"Nova password (deixar em branco para não alterar)":"Password"}
+                value={form.password} onChange={v=>setForm(f=>({...f,password:v}))}
+                type="password" placeholder={modal==="edit"?"••••••••":"Mínimo 6 caracteres"}
+                required={modal==="new"}/>
+            )}
+            {modal==="new" && (
+              <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",background:C.grey50,borderRadius:8,border:`1px solid ${C.grey100}`}}>
+                <input type="checkbox" id="is_tecnico" checked={form.is_tecnico} onChange={e=>setForm(f=>({...f,is_tecnico:e.target.checked}))}
+                  style={{width:16,height:16,accentColor:C.teal,cursor:"pointer"}}/>
+                <label htmlFor="is_tecnico" style={{fontSize:14,color:C.grey800,cursor:"pointer"}}>
+                  Este utilizador é também um <strong>técnico</strong> (aparece na seleção de assistências)
+                </label>
+              </div>
+            )}
+            {modal==="edit" && form.id!==currentUserId && (
+              <div style={{background:C.amber+"12",border:`1px solid ${C.amber}33`,borderRadius:8,padding:"10px 14px",fontSize:12,color:C.grey600,display:"flex",gap:8}}>
+                <Icon name="alert" size={14} color={C.amber}/>
+                <span>A password só pode ser alterada pelo próprio utilizador.</span>
+              </div>
+            )}
           </div>
           {errMsg && (
             <div style={{marginTop:12,background:C.red+"10",border:`1px solid ${C.red}33`,borderRadius:8,padding:"10px 14px",fontSize:13,color:C.red,display:"flex",gap:8,alignItems:"center"}}>
@@ -706,8 +758,9 @@ const UtilizadoresPanel = ({ currentUserId }) => {
           )}
           <div style={{display:"flex",gap:10,justifyContent:"flex-end",marginTop:20}}>
             <Btn variant="secondary" onClick={()=>setModal(false)}>Cancelar</Btn>
-            <Btn onClick={createUser} disabled={saving||!form.email||!form.password}>
-              {saving?"A criar...":"Criar utilizador"}
+            <Btn onClick={modal==="edit" ? saveUser : createUser}
+              disabled={saving||(modal==="new"&&(!form.email||!form.password))}>
+              {saving ? (modal==="edit"?"A guardar...":"A criar...") : (modal==="edit"?"Guardar":"Criar utilizador")}
             </Btn>
           </div>
         </Modal>
