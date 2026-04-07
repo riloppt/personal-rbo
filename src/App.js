@@ -1288,6 +1288,7 @@ const Definicoes = ({ currentUserId }) => {
   const tabs = [
     {id:"tipologias",   label:"Tipologias",            icon:"types"},
     {id:"locais",       label:"Locais de Assistência", icon:"locations"},
+    {id:"categorias",   label:"Categorias",            icon:"key"},
     {id:"utilizadores", label:"Utilizadores",           icon:"user"},
   ];
 
@@ -1319,6 +1320,12 @@ const Definicoes = ({ currentUserId }) => {
           cols={[{key:"nome",label:"Local"}]}
           emptyForm={{nome:"",ativo:true}}
           formFields={[{k:"nome",label:"Nome do Local",required:true}]}/>
+      )}
+      {tab==="categorias"&&(
+        <CrudPage key="categorias" compact title="Categorias de Credenciais" table="rbo_credential_categories"
+          cols={[{key:"nome",label:"Categoria"}]}
+          emptyForm={{nome:""}}
+          formFields={[{k:"nome",label:"Nome da Categoria",required:true}]}/>
       )}
       {tab==="utilizadores"&&(
         <UtilizadoresPanel currentUserId={currentUserId}/>
@@ -1576,20 +1583,24 @@ const CopyBtn = ({ value, isPassword }) => {
 
 const CredenciaisPanel = ({ clienteId }) => {
   const C = useTheme();
-  const [creds,   setCreds]   = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [modal,   setModal]   = useState(false);
-  const [saving,  setSaving]  = useState(false);
-  const [editId,  setEditId]  = useState(null);
-  const [showPwd, setShowPwd] = useState({});
+  const [creds,      setCreds]      = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [loading,    setLoading]    = useState(true);
+  const [modal,      setModal]      = useState(false);
+  const [saving,     setSaving]     = useState(false);
+  const [editId,     setEditId]     = useState(null);
+  const [showPwd,    setShowPwd]    = useState({});
   const empty = {categoria:"",url_ip:"",utilizador:"",password:"",notas:""};
   const [form, setForm] = useState(empty);
 
   const load = useCallback(async () => {
     setLoading(true);
-    const { data } = await sb.from("rbo_client_credentials")
-      .select("*").eq("cliente_id", clienteId).order("ordem").order("id");
-    setCreds(data || []);
+    const [credsRes, catsRes] = await Promise.all([
+      sb.from("rbo_client_credentials").select("*").eq("cliente_id", clienteId).order("ordem").order("id"),
+      sb.from("rbo_credential_categories").select("nome").order("nome"),
+    ]);
+    setCreds(credsRes.data || []);
+    setCategories((catsRes.data || []).map(c => c.nome));
     setLoading(false);
   }, [clienteId]);
 
@@ -1602,6 +1613,10 @@ const CredenciaisPanel = ({ clienteId }) => {
     setSaving(true);
     const { id: _id, created_at: _ca, ...rest } = form;
     const payload = { ...rest, cliente_id: clienteId };
+    // Auto-save new category if not in list
+    if (form.categoria && !categories.includes(form.categoria)) {
+      await sb.from("rbo_credential_categories").insert([{nome: form.categoria}]);
+    }
     let err;
     if (!editId) ({ error: err } = await sb.from("rbo_client_credentials").insert([payload]));
     else         ({ error: err } = await sb.from("rbo_client_credentials").update(rest).eq("id", editId));
@@ -1702,7 +1717,24 @@ const CredenciaisPanel = ({ clienteId }) => {
         <Modal title={editId ? "Editar credencial" : "Nova credencial"} onClose={()=>setModal(false)}>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
             <div style={{gridColumn:"1/-1"}}>
-              <Input label="Categoria / Serviço" value={form.categoria} onChange={v=>setForm(f=>({...f,categoria:v}))} placeholder="ex: AnyDesk, Servidor, NAS..."/>
+              <div style={{display:"flex",flexDirection:"column",gap:5}}>
+                <label style={{fontSize:13,fontWeight:500,color:C.grey600}}>Categoria / Serviço</label>
+                <input
+                  list="cred-categories"
+                  value={form.categoria}
+                  onChange={e=>setForm(f=>({...f,categoria:e.target.value}))}
+                  placeholder="Escolhe ou escreve uma nova..."
+                  style={{border:`1.5px solid ${C.grey200}`,borderRadius:8,padding:"8px 12px",fontSize:14,outline:"none",height:38,background:C.white,color:C.grey800,width:"100%"}}
+                />
+                <datalist id="cred-categories">
+                  {categories.map(c=><option key={c} value={c}/>)}
+                </datalist>
+                {form.categoria && !categories.includes(form.categoria) && (
+                  <div style={{fontSize:11,color:C.amber,display:"flex",alignItems:"center",gap:4}}>
+                    <Icon name="plus" size={11} color={C.amber}/> Nova categoria — será adicionada automaticamente
+                  </div>
+                )}
+              </div>
             </div>
             <div style={{gridColumn:"1/-1"}}>
               <Input label="URL / IP" value={form.url_ip} onChange={v=>setForm(f=>({...f,url_ip:v}))} placeholder="ex: 192.168.1.1 ou https://..."/>
