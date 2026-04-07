@@ -1616,14 +1616,19 @@ const CredenciaisPanel = ({ clienteId }) => {
   const save = async () => {
     setSaving(true);
     const { id: _id, created_at: _ca, ...rest } = form;
-    const payload = { ...rest, cliente_id: clienteId };
-    // Auto-save new category if not in list
     if (form.categoria && !categories.includes(form.categoria)) {
       await sb.from("rbo_credential_categories").insert([{nome: form.categoria}]);
     }
     let err;
-    if (!editId) ({ error: err } = await sb.from("rbo_client_credentials").insert([payload]));
-    else         ({ error: err } = await sb.from("rbo_client_credentials").update(rest).eq("id", editId));
+    if (!editId) {
+      const payload = { ...rest, cliente_id: clienteId, ordem: creds.length };
+      ({ error: err } = await sb.from("rbo_client_credentials").insert([payload]));
+    } else {
+      const currentOrdem = creds.find(c => c.id === editId)?.ordem ?? rest.ordem ?? 0;
+      ({ error: err } = await sb.from("rbo_client_credentials")
+        .update({ ...rest, ordem: currentOrdem })
+        .eq("id", editId));
+    }
     if (err) alert("Erro: " + err.message);
     else { await load(); setModal(false); }
     setSaving(false);
