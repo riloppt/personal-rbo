@@ -78,6 +78,10 @@ const Icon = ({ name, size=18, color="currentColor" }) => {
     user:        <><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></>,
     userPlus:    <><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></>,
     logout:      <><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></>,
+    copy:        <><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></>,
+    check:       <><polyline points="20 6 9 12 4 10"/></>,
+    eyeOff:      <><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></>,
+    key:         <><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></>,
   };
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1083,9 +1087,11 @@ const ContratoDetalhe = ({ contrato, onBack }) => {
         {[["Telefone",cliente?.telefone],["Email",cliente?.email],["Localidade",cliente?.localidade],["Código Postal",cliente?.cp],["GPS",cliente?.gps]].map(([l,v])=>(
           <div key={l}><div style={{fontSize:11,fontWeight:600,color:C.grey400,textTransform:"uppercase",letterSpacing:".5px"}}>{l}</div><div style={{fontSize:14,marginTop:2,color:C.grey800}}>{v||"—"}</div></div>
         ))}
-        {cliente?.parque&&<div style={{gridColumn:"1/-1"}}><div style={{fontSize:11,fontWeight:600,color:C.grey400,textTransform:"uppercase",letterSpacing:".5px"}}>Parque Informático</div><div style={{fontSize:14,marginTop:2,color:C.grey600}}>{cliente.parque}</div></div>}
       </Card>
 
+      {cliente && <CredenciaisPanel clienteId={cliente.id}/>}
+
+      <div style={{marginTop:16}}/>
       <Card style={{padding:0,overflow:"hidden"}}>
         <div style={{padding:"14px 20px",borderBottom:`1px solid ${C.grey100}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
           <h3 style={{fontSize:15,fontWeight:600,color:C.grey800}}>Movimentos</h3>
@@ -1529,6 +1535,196 @@ export default function App() {
 
   const SIDE_W = sideOpen ? 240 : 64;
 
+
+// ─── Credenciais Panel ────────────────────────────────────────────────────────
+const CopyBtn = ({ value, isPassword }) => {
+  const C = useTheme();
+  const [state, setState] = useState("idle"); // idle | copied | clearing
+
+  const copy = async () => {
+    if (!value) return;
+    try {
+      await navigator.clipboard.writeText(value);
+      setState("copied");
+      if (isPassword) {
+        // Clear clipboard after 15s
+        setTimeout(async () => {
+          setState("clearing");
+          try { await navigator.clipboard.writeText(""); } catch(_) {}
+          setTimeout(() => setState("idle"), 800);
+        }, 15000);
+      } else {
+        setTimeout(() => setState("idle"), 2000);
+      }
+    } catch(_) { setState("idle"); }
+  };
+
+  const col = state === "copied" ? C.green : state === "clearing" ? C.amber : C.grey400;
+  const ic  = state === "copied" ? "check" : state === "clearing" ? "close" : "copy";
+  const tip = state === "copied"
+    ? (isPassword ? "Copiado — apaga em 15s" : "Copiado!")
+    : state === "clearing" ? "A limpar clipboard..."
+    : (isPassword ? "Copiar password (15s)" : "Copiar");
+
+  return (
+    <button onClick={copy} title={tip}
+      style={{background:"none",border:"none",cursor:value?"pointer":"default",padding:"3px 5px",borderRadius:5,display:"flex",alignItems:"center",opacity:value?1:0.3,transition:"all .15s"}}
+      onMouseEnter={e=>{if(value)e.currentTarget.style.background=C.grey100;}}
+      onMouseLeave={e=>e.currentTarget.style.background="none"}>
+      <Icon name={ic} size={13} color={col}/>
+    </button>
+  );
+};
+
+const CredenciaisPanel = ({ clienteId }) => {
+  const C = useTheme();
+  const [creds,   setCreds]   = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [modal,   setModal]   = useState(false);
+  const [saving,  setSaving]  = useState(false);
+  const [editId,  setEditId]  = useState(null);
+  const [showPwd, setShowPwd] = useState({});
+  const empty = {categoria:"",url_ip:"",utilizador:"",password:"",notas:""};
+  const [form, setForm] = useState(empty);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const { data } = await sb.from("rbo_client_credentials")
+      .select("*").eq("cliente_id", clienteId).order("ordem").order("id");
+    setCreds(data || []);
+    setLoading(false);
+  }, [clienteId]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const openNew  = ()  => { setForm(empty); setEditId(null); setModal(true); };
+  const openEdit = c   => { setForm({...c}); setEditId(c.id); setModal(true); };
+
+  const save = async () => {
+    setSaving(true);
+    const { id: _id, created_at: _ca, ...rest } = form;
+    const payload = { ...rest, cliente_id: clienteId };
+    let err;
+    if (!editId) ({ error: err } = await sb.from("rbo_client_credentials").insert([payload]));
+    else         ({ error: err } = await sb.from("rbo_client_credentials").update(rest).eq("id", editId));
+    if (err) alert("Erro: " + err.message);
+    else { await load(); setModal(false); }
+    setSaving(false);
+  };
+
+  const del = async id => {
+    if (!confirm("Eliminar credencial?")) return;
+    await sb.from("rbo_client_credentials").delete().eq("id", id);
+    await load();
+  };
+
+  const togglePwd = id => setShowPwd(s => ({...s, [id]: !s[id]}));
+
+  return (
+    <Card style={{padding:0,overflow:"hidden",marginTop:16}}>
+      <div style={{padding:"14px 20px",borderBottom:`1px solid ${C.grey100}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
+          <Icon name="key" size={15} color={C.teal}/>
+          <h3 style={{fontSize:15,fontWeight:600,color:C.grey800}}>Credenciais e Acessos</h3>
+        </div>
+        <Btn size="sm" icon="plus" onClick={openNew}>Nova</Btn>
+      </div>
+
+      {loading ? <Loading/> : creds.length === 0 ? (
+        <div style={{padding:"24px 20px",textAlign:"center",color:C.grey400,fontSize:13}}>
+          Sem credenciais registadas
+        </div>
+      ) : (
+        <div>
+          {creds.map((c, i) => (
+            <div key={c.id} style={{padding:"14px 20px",borderBottom:i<creds.length-1?`1px solid ${C.grey100}`:"none"}}>
+              {/* Header row */}
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10}}>
+                <div style={{display:"flex",alignItems:"center",gap:8}}>
+                  {c.categoria && (
+                    <span style={{fontSize:13,fontWeight:700,color:C.teal,background:C.teal+"15",borderRadius:6,padding:"2px 10px"}}>{c.categoria}</span>
+                  )}
+                  {c.url_ip && (
+                    <span style={{fontSize:12,color:C.grey600,fontFamily:"'DM Mono',monospace"}}>{c.url_ip}</span>
+                  )}
+                </div>
+                <div style={{display:"flex",gap:2}}>
+                  <Btn variant="ghost" size="sm" icon="edit"  onClick={()=>openEdit(c)}/>
+                  <Btn variant="ghost" size="sm" icon="trash" onClick={()=>del(c.id)}/>
+                </div>
+              </div>
+
+              {/* Credentials grid */}
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                {/* Utilizador */}
+                {c.utilizador && (
+                  <div style={{background:C.grey50,borderRadius:8,padding:"8px 12px",border:`1px solid ${C.grey100}`}}>
+                    <div style={{fontSize:10,fontWeight:600,color:C.grey400,textTransform:"uppercase",letterSpacing:".5px",marginBottom:4}}>Utilizador</div>
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:6}}>
+                      <span style={{fontSize:13,color:C.grey800,fontFamily:"'DM Mono',monospace",wordBreak:"break-all"}}>{c.utilizador}</span>
+                      <CopyBtn value={c.utilizador} isPassword={false}/>
+                    </div>
+                  </div>
+                )}
+
+                {/* Password */}
+                {c.password && (
+                  <div style={{background:C.grey50,borderRadius:8,padding:"8px 12px",border:`1px solid ${C.grey100}`}}>
+                    <div style={{fontSize:10,fontWeight:600,color:C.grey400,textTransform:"uppercase",letterSpacing:".5px",marginBottom:4}}>Password</div>
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:6}}>
+                      <span style={{fontSize:13,color:C.grey800,fontFamily:"'DM Mono',monospace",wordBreak:"break-all",flex:1}}>
+                        {showPwd[c.id] ? c.password : "••••••••"}
+                      </span>
+                      <div style={{display:"flex",gap:2,flexShrink:0}}>
+                        <button onClick={()=>togglePwd(c.id)} title={showPwd[c.id]?"Ocultar":"Mostrar"}
+                          style={{background:"none",border:"none",cursor:"pointer",padding:"3px 5px",borderRadius:5,display:"flex",alignItems:"center"}}
+                          onMouseEnter={e=>e.currentTarget.style.background=C.grey100}
+                          onMouseLeave={e=>e.currentTarget.style.background="none"}>
+                          <Icon name={showPwd[c.id]?"eyeOff":"eye"} size={13} color={C.grey400}/>
+                        </button>
+                        <CopyBtn value={c.password} isPassword={true}/>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Notas */}
+              {c.notas && (
+                <div style={{marginTop:8,fontSize:12,color:C.grey600,lineHeight:1.6,whiteSpace:"pre-wrap",background:C.grey50,borderRadius:6,padding:"6px 10px",border:`1px solid ${C.grey100}`}}>
+                  {c.notas}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {modal && (
+        <Modal title={editId ? "Editar credencial" : "Nova credencial"} onClose={()=>setModal(false)}>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+            <div style={{gridColumn:"1/-1"}}>
+              <Input label="Categoria / Serviço" value={form.categoria} onChange={v=>setForm(f=>({...f,categoria:v}))} placeholder="ex: AnyDesk, Servidor, NAS..."/>
+            </div>
+            <div style={{gridColumn:"1/-1"}}>
+              <Input label="URL / IP" value={form.url_ip} onChange={v=>setForm(f=>({...f,url_ip:v}))} placeholder="ex: 192.168.1.1 ou https://..."/>
+            </div>
+            <Input label="Utilizador" value={form.utilizador} onChange={v=>setForm(f=>({...f,utilizador:v}))} placeholder="email ou username"/>
+            <Input label="Password" value={form.password} onChange={v=>setForm(f=>({...f,password:v}))} type="password" placeholder="••••••••"/>
+            <div style={{gridColumn:"1/-1"}}>
+              <Input label="Notas" value={form.notas} onChange={v=>setForm(f=>({...f,notas:v}))} textarea rows={3} placeholder="Informações adicionais..."/>
+            </div>
+          </div>
+          <div style={{display:"flex",gap:10,justifyContent:"flex-end",marginTop:20}}>
+            <Btn variant="secondary" onClick={()=>setModal(false)}>Cancelar</Btn>
+            <Btn onClick={save} disabled={saving}>{saving?"A guardar...":"Guardar"}</Btn>
+          </div>
+        </Modal>
+      )}
+    </Card>
+  );
+};
+
   const ClientesPage = () => {
     const [tecnicoOpts, setTecnicoOpts] = React.useState([]);
     React.useEffect(()=>{
@@ -1544,7 +1740,7 @@ export default function App() {
           {key:"telefone",   label:"Telefone"},
           {key:"email",      label:"Email"},
         ]}
-        emptyForm={{nome:"",tecnico_id:"",morada:"",localidade:"",cp:"",gps:"",telefone:"",email:"",parque:""}}
+        emptyForm={{nome:"",tecnico_id:"",morada:"",localidade:"",cp:"",gps:"",telefone:"",email:""}}
         fieldOptions={{tecnico_id: tecnicoOpts}}
         formFields={[
           {k:"nome",      label:"Nome da Empresa",      required:true, full:true},
@@ -1555,7 +1751,6 @@ export default function App() {
           {k:"cp",        label:"Código Postal",        placeholder:"0000-000"},
           {k:"gps",       label:"Coordenadas GPS",      placeholder:"lat,lng"},
           {k:"email",     label:"Email",                type:"email"},
-          {k:"parque",    label:"Parque Informático",   textarea:true, rows:3, full:true},
         ]}/>
     );
   };
