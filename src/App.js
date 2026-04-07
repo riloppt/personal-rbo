@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useContext, createContext } from "react";
+import React, { useState, useEffect, useCallback, useContext, createContext, useRef } from "react";
 import { createClient } from "@supabase/supabase-js";
 
 const SUPA_URL  = "https://cqgpgryldmzogfygpybl.supabase.co";
@@ -82,6 +82,7 @@ const Icon = ({ name, size=18, color="currentColor" }) => {
     check:       <><polyline points="20 6 9 12 4 10"/></>,
     eyeOff:      <><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></>,
     key:         <><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></>,
+    grip:        <><circle cx="9" cy="5" r="1" fill="currentColor" stroke="none"/><circle cx="9" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="9" cy="19" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="5" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="19" r="1" fill="currentColor" stroke="none"/></>,
   };
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1590,6 +1591,9 @@ const CredenciaisPanel = ({ clienteId }) => {
   const [saving,     setSaving]     = useState(false);
   const [editId,     setEditId]     = useState(null);
   const [showPwd,    setShowPwd]    = useState({});
+  const [dragging,   setDragging]   = useState(null);
+  const [dragOver,   setDragOver]   = useState(null);
+  const touchRef = useRef(null);
   const empty = {categoria:"",url_ip:"",utilizador:"",password:"",notas:""};
   const [form, setForm] = useState(empty);
 
@@ -1633,6 +1637,49 @@ const CredenciaisPanel = ({ clienteId }) => {
 
   const togglePwd = id => setShowPwd(s => ({...s, [id]: !s[id]}));
 
+  const reorderList = (fromId, toId) => {
+    const from = creds.find(c => c.id === fromId);
+    const rest  = creds.filter(c => c.id !== fromId);
+    const toIdx = rest.findIndex(c => c.id === toId);
+    const next  = [...rest];
+    next.splice(toIdx >= 0 ? toIdx : rest.length, 0, from);
+    return next;
+  };
+
+  const saveOrder = async (newList) => {
+    setCreds(newList); // optimistic
+    await Promise.all(newList.map((c, i) =>
+      sb.from("rbo_client_credentials").update({ ordem: i }).eq("id", c.id)
+    ));
+  };
+
+  // Desktop DnD
+  const onDragStart = (e, id) => { setDragging(id); e.dataTransfer.effectAllowed = "move"; };
+  const onDragOver  = (e, id) => { e.preventDefault(); if (id !== dragging) setDragOver(id); };
+  const onDragEnd   = ()      => { setDragging(null); setDragOver(null); };
+  const onDrop      = async (e, id) => {
+    e.preventDefault();
+    if (dragging && dragging !== id) await saveOrder(reorderList(dragging, id));
+    setDragging(null); setDragOver(null);
+  };
+
+  // Mobile touch DnD
+  const onTouchStart = (e, id) => { touchRef.current = id; setDragging(id); };
+  const onTouchMove  = (e) => {
+    e.preventDefault();
+    const t = e.touches[0];
+    const el = document.elementFromPoint(t.clientX, t.clientY);
+    const credEl = el?.closest("[data-cred-id]");
+    const overId = credEl ? Number(credEl.getAttribute("data-cred-id")) : null;
+    if (overId && overId !== touchRef.current) setDragOver(overId);
+  };
+  const onTouchEnd = async () => {
+    if (touchRef.current && dragOver && touchRef.current !== dragOver) {
+      await saveOrder(reorderList(touchRef.current, dragOver));
+    }
+    setDragging(null); setDragOver(null); touchRef.current = null;
+  };
+
   return (
     <Card style={{padding:0,overflow:"hidden",marginTop:16}}>
       <div style={{padding:"14px 20px",borderBottom:`1px solid ${C.grey100}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
@@ -1650,10 +1697,34 @@ const CredenciaisPanel = ({ clienteId }) => {
       ) : (
         <div>
           {creds.map((c, i) => (
-            <div key={c.id} style={{padding:"14px 20px",borderBottom:i<creds.length-1?`1px solid ${C.grey100}`:"none"}}>
+            <div
+              key={c.id}
+              data-cred-id={c.id}
+              draggable
+              onDragStart={e=>onDragStart(e,c.id)}
+              onDragOver={e=>onDragOver(e,c.id)}
+              onDragEnd={onDragEnd}
+              onDrop={e=>onDrop(e,c.id)}
+              style={{
+                padding:"14px 20px",
+                borderBottom:i<creds.length-1?`1px solid ${C.grey100}`:"none",
+                opacity: dragging===c.id ? 0.35 : 1,
+                background: dragOver===c.id ? C.teal+"12" : "transparent",
+                borderLeft: dragOver===c.id ? `3px solid ${C.teal}` : "3px solid transparent",
+                transition:"opacity .15s, background .1s, border .1s",
+              }}>
               {/* Header row */}
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10}}>
                 <div style={{display:"flex",alignItems:"center",gap:8}}>
+                  {/* Grip handle */}
+                  <div
+                    title="Arrastar para reordenar"
+                    style={{cursor:"grab",padding:"4px 2px",color:C.grey400,flexShrink:0,touchAction:"none"}}
+                    onTouchStart={e=>onTouchStart(e,c.id)}
+                    onTouchMove={onTouchMove}
+                    onTouchEnd={onTouchEnd}>
+                    <Icon name="grip" size={14} color={C.grey400}/>
+                  </div>
                   {c.categoria && (
                     <span style={{fontSize:13,fontWeight:700,color:C.teal,background:C.teal+"15",borderRadius:6,padding:"2px 10px"}}>{c.categoria}</span>
                   )}
