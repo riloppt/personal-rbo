@@ -774,7 +774,7 @@ const UtilizadoresPanel = ({ currentUserId }) => {
 };
 
 // ─── Generic CRUD ─────────────────────────────────────────────────────────────
-const CrudPage = ({ title, table, cols, formFields, emptyForm, compact, hasAtivo, fieldOptions }) => {
+const CrudPage = ({ title, table, cols, formFields, emptyForm, compact, hasAtivo, fieldOptions, onView }) => {
   const C = useTheme();
   const [rows,      setRows]      = useState([]);
   const [loading,   setLoading]   = useState(true);
@@ -867,6 +867,7 @@ const CrudPage = ({ title, table, cols, formFields, emptyForm, compact, hasAtivo
             ...(hasAtivo ? [{key:"ativo",label:"Estado",render:v=><Badge color={v===false?C.grey400:C.green}>{v===false?"Inativo":"Ativo"}</Badge>}] : []),
           ]}
           data={visibleRows}
+          onView={onView}
           onEdit={openEdit}
           onDelete={del}
           extraActions={hasAtivo ? row=>(
@@ -1089,9 +1090,6 @@ const ContratoDetalhe = ({ contrato, onBack }) => {
         ))}
       </Card>
 
-      {cliente && <CredenciaisPanel clienteId={cliente.id}/>}
-
-      <div style={{marginTop:16}}/>
       <Card style={{padding:0,overflow:"hidden"}}>
         <div style={{padding:"14px 20px",borderBottom:`1px solid ${C.grey100}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
           <h3 style={{fontSize:15,fontWeight:600,color:C.grey800}}>Movimentos</h3>
@@ -1725,14 +1723,98 @@ const CredenciaisPanel = ({ clienteId }) => {
   );
 };
 
+
+// ─── Cliente Detalhe ──────────────────────────────────────────────────────────
+const ClienteDetalhe = ({ cliente: clienteInicial, tecnicoOpts, onBack }) => {
+  const C = useTheme();
+  const [cliente,  setCliente]  = useState(clienteInicial);
+  const [modal,    setModal]    = useState(false);
+  const [form,     setForm]     = useState({...clienteInicial});
+  const [saving,   setSaving]   = useState(false);
+
+  const save = async () => {
+    setSaving(true);
+    const { id: _id, created_at: _ca, ...rest } = form;
+    const { data, error } = await sb.from("rbo_clientes").update(rest).eq("id", cliente.id).select().single();
+    if (error) { alert("Erro: " + error.message); setSaving(false); return; }
+    setCliente(data);
+    setSaving(false);
+    setModal(false);
+  };
+
+  const tecNome = tecnicoOpts.find(t => t.value === cliente.tecnico_id)?.label || "—";
+
+  return (
+    <div>
+      {/* Back */}
+      <button onClick={onBack} style={{background:"none",border:"none",cursor:"pointer",color:C.teal,fontSize:14,display:"flex",alignItems:"center",gap:6,padding:0,marginBottom:20}}>
+        ← Voltar aos clientes
+      </button>
+
+      {/* Header */}
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:12,marginBottom:20}}>
+        <div>
+          <h1 style={{fontSize:22,fontWeight:700,color:C.grey800}}>{cliente.nome}</h1>
+          {tecNome !== "—" && <div style={{fontSize:13,color:C.grey400,marginTop:4}}>Técnico: {tecNome}</div>}
+        </div>
+        <Btn size="sm" icon="edit" onClick={()=>{setForm({...cliente});setModal(true);}}>Editar dados</Btn>
+      </div>
+
+      {/* Info card */}
+      <Card style={{padding:"16px 20px",marginBottom:4,display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:12}}>
+        {[["Telefone",cliente.telefone],["Email",cliente.email],["Morada",cliente.morada],["Localidade",cliente.localidade],["Código Postal",cliente.cp],["GPS",cliente.gps]].map(([l,v])=>(
+          v ? <div key={l}>
+            <div style={{fontSize:11,fontWeight:600,color:C.grey400,textTransform:"uppercase",letterSpacing:".5px"}}>{l}</div>
+            <div style={{fontSize:14,marginTop:2,color:C.grey800}}>{v}</div>
+          </div> : null
+        ))}
+      </Card>
+
+      {/* Credenciais */}
+      <CredenciaisPanel clienteId={cliente.id}/>
+
+      {/* Edit modal */}
+      {modal && (
+        <Modal title="Editar cliente" onClose={()=>setModal(false)} wide>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+            <div style={{gridColumn:"1/-1"}}>
+              <Input label="Nome da Empresa" value={form.nome||""} onChange={v=>setForm(f=>({...f,nome:v}))} required/>
+            </div>
+            <div style={{gridColumn:"1/-1"}}>
+              <Select label="Técnico" value={form.tecnico_id||""} onChange={v=>setForm(f=>({...f,tecnico_id:v}))} options={tecnicoOpts}/>
+            </div>
+            <Input label="Telefone" value={form.telefone||""} onChange={v=>setForm(f=>({...f,telefone:v}))} type="tel"/>
+            <Input label="Email" value={form.email||""} onChange={v=>setForm(f=>({...f,email:v}))} type="email"/>
+            <div style={{gridColumn:"1/-1"}}>
+              <Input label="Morada" value={form.morada||""} onChange={v=>setForm(f=>({...f,morada:v}))}/>
+            </div>
+            <Input label="Localidade" value={form.localidade||""} onChange={v=>setForm(f=>({...f,localidade:v}))}/>
+            <Input label="Código Postal" value={form.cp||""} onChange={v=>setForm(f=>({...f,cp:v}))} placeholder="0000-000"/>
+            <Input label="Coordenadas GPS" value={form.gps||""} onChange={v=>setForm(f=>({...f,gps:v}))} placeholder="lat,lng"/>
+          </div>
+          <div style={{display:"flex",gap:10,justifyContent:"flex-end",marginTop:20}}>
+            <Btn variant="secondary" onClick={()=>setModal(false)}>Cancelar</Btn>
+            <Btn onClick={save} disabled={saving}>{saving?"A guardar...":"Guardar"}</Btn>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+};
+
   const ClientesPage = () => {
+    const [detalhe, setDetalhe] = React.useState(null);
+    const [reload,  setReload]  = React.useState(0);
     const [tecnicoOpts, setTecnicoOpts] = React.useState([]);
     React.useEffect(()=>{
       sb.from("rbo_profiles").select("id,nome").eq("is_tecnico",true).eq("ativo",true).order("nome")
         .then(({data})=>setTecnicoOpts((data||[]).map(t=>({value:t.id,label:t.nome||t.email}))));
     },[]);
+
+    if (detalhe) return <ClienteDetalhe cliente={detalhe} tecnicoOpts={tecnicoOpts} onBack={()=>{setDetalhe(null);setReload(r=>r+1);}}/>;
+
     return (
-      <CrudPage title="Clientes" table="rbo_clientes"
+      <CrudPage key={reload} title="Clientes" table="rbo_clientes"
         cols={[
           {key:"nome",       label:"Nome"},
           {key:"tecnico_id", label:"Técnico", render:(v)=>tecnicoOpts.find(t=>t.value===v)?.label||"—"},
@@ -1751,7 +1833,9 @@ const CredenciaisPanel = ({ clienteId }) => {
           {k:"cp",        label:"Código Postal",        placeholder:"0000-000"},
           {k:"gps",       label:"Coordenadas GPS",      placeholder:"lat,lng"},
           {k:"email",     label:"Email",                type:"email"},
-        ]}/>
+        ]}
+        onView={r=>setDetalhe(r)}
+      />
     );
   };
 
