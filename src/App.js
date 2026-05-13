@@ -95,6 +95,9 @@ const Icon = ({ name, size=18, color="currentColor" }) => {
 const fmtDate     = d => d ? new Date(d+"T00:00:00").toLocaleDateString("pt-PT") : "—";
 const fmtDateTime = d => d ? new Date(d).toLocaleString("pt-PT") : "—";
 const qrUrl       = t => `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(t)}`;
+const maskPhone   = v => v.replace(/\D/g,'').slice(0,9).replace(/(\d{3})(\d{3})(\d{0,3})/,'$1 $2 $3').trim();
+const maskNif     = v => v.replace(/\D/g,'').slice(0,9).replace(/(\d{3})(\d{3})(\d{0,3})/,'$1 $2 $3').trim();
+const maskCP      = v => { const d = v.replace(/\D/g,'').slice(0,7); return d.length>4 ? d.slice(0,4)+'-'+d.slice(4) : d; };
 
 // ─── Report HTML ──────────────────────────────────────────────────────────────
 const buildReportHtml = ({ mov, cliente, tipologia, tecnico, local }) => {
@@ -992,28 +995,31 @@ const ContratoDetalhe = ({ contrato, onBack }) => {
   const [locais,     setLocais]     = useState([]);
   const [cliente,    setCliente]    = useState(null);
   const [tipologia,  setTipologia]  = useState(null);
+  const [equipamentos, setEquipamentos] = useState([]);
   const [loading,    setLoading]    = useState(true);
   const [modal,      setModal]      = useState(null);
   const [previewMov, setPreviewMov] = useState(null);
   const [saving,     setSaving]     = useState(false);
   const [editingId,  setEditingId]  = useState(null);
-  const emptyMov = {data:new Date().toISOString().split("T")[0],hora_inicio:"",hora_fim:"",creditos:"",descritivo:"",profile_tecnico_id:"",local_id:"",tipo:"assistencia"};
+  const emptyMov = {data:new Date().toISOString().split("T")[0],hora_inicio:"",hora_fim:"",creditos:"",descritivo:"",profile_tecnico_id:"",local_id:"",equipment_id:"",tipo:"assistencia"};
   const [form, setForm] = useState(emptyMov);
 
   const load = useCallback(async()=>{
     setLoading(true);
-    const [movRes,tecRes,locRes,cliRes,tipRes] = await Promise.all([
+    const [movRes,tecRes,locRes,cliRes,tipRes,eqRes] = await Promise.all([
       sb.from("rbo_movimentos").select("*").eq("contrato_id",contrato.id).order("data",{ascending:false}),
       sb.from("rbo_profiles").select("id,nome,email").eq("is_tecnico",true).order("nome"),
       sb.from("rbo_locais").select("*").order("nome"),
       sb.from("rbo_clientes").select("*").eq("id",contrato.cliente_id).single(),
       sb.from("rbo_tipologias").select("*").eq("id",contrato.tipologia_id).single(),
+      sb.from("rbo_client_equipment").select("id,descricao,tipo_id").eq("cliente_id",contrato.cliente_id).eq("ativo",true),
     ]);
     setMovimentos(movRes.data||[]);
     setTecnicos(tecRes.data||[]);
     setLocais(locRes.data||[]);
     setCliente(cliRes.data);
     setTipologia(tipRes.data);
+    setEquipamentos(eqRes.data||[]);
     setLoading(false);
   },[contrato.id]);
 
@@ -1021,7 +1027,7 @@ const ContratoDetalhe = ({ contrato, onBack }) => {
 
   const saldo = movimentos.reduce((s,m)=>s+m.creditos,0);
   const openNew  = tipo => { setForm({...emptyMov,tipo}); setEditingId(null); setModal("mov"); };
-  const openEdit = m   => { setForm({...m,profile_tecnico_id:m.profile_tecnico_id||"",local_id:m.local_id||"",hora_inicio:m.hora_inicio||"",hora_fim:m.hora_fim||""}); setEditingId(m.id); setModal("mov"); };
+  const openEdit = m   => { setForm({...m,profile_tecnico_id:m.profile_tecnico_id||"",local_id:m.local_id||"",hora_inicio:m.hora_inicio||"",hora_fim:m.hora_fim||"",equipment_id:m.equipment_id||""}); setEditingId(m.id); setModal("mov"); };
 
   const saveMov = async () => {
     const cred = Number(form.creditos);
@@ -1033,6 +1039,7 @@ const ContratoDetalhe = ({ contrato, onBack }) => {
       creditos:cred, descritivo:form.descritivo,
       profile_tecnico_id:form.profile_tecnico_id||null,
       local_id:form.local_id?Number(form.local_id):null,
+      equipment_id:form.equipment_id?Number(form.equipment_id):null,
       tipo:form.tipo,
     };
     let err;
@@ -1108,6 +1115,7 @@ const ContratoDetalhe = ({ contrato, onBack }) => {
             {key:"descritivo",  label:"Descritivo", render:v=><span style={{color:C.grey600,fontSize:13}}>{v}</span>},
             {key:"profile_tecnico_id", label:"Técnico", render:v=>v?tecnicos.find(t=>t.id===v)?.nome:"—"},
             {key:"local_id",    label:"Local",      render:v=>v?locais.find(l=>l.id===v)?.nome:"—"},
+            {key:"equipment_id",label:"Equipamento",render:v=>v?equipamentos.find(e=>e.id===v)?.descricao||"—":"—"},
           ]}
           data={movimentos}
           onEdit={openEdit}
@@ -1137,6 +1145,7 @@ const ContratoDetalhe = ({ contrato, onBack }) => {
               <F k="hora_fim"    label="Hora de Fim"    type="time"/>
               <Select label="Técnico" value={form.profile_tecnico_id||""} onChange={v=>setForm(f=>({...f,profile_tecnico_id:v}))} options={tecnicos.map(t=>({value:t.id,label:t.nome}))}/>
               <Select label="Local"   value={String(form.local_id  ||"")} onChange={v=>setForm(f=>({...f,local_id:v}))}   options={locais.map(l=>({value:String(l.id),label:l.nome}))}/>
+              {equipamentos.length>0&&<div style={{gridColumn:"1/-1"}}><Select label="Equipamento (opcional)" value={String(form.equipment_id||"")} onChange={v=>setForm(f=>({...f,equipment_id:v}))} options={equipamentos.map(e=>({value:String(e.id),label:e.descricao}))}/></div>}
             </>}
             <div style={{gridColumn:"1/-1"}}><Input label="Descritivo" value={form.descritivo} onChange={v=>setForm(f=>({...f,descritivo:v}))} textarea rows={3} required/></div>
           </div>
@@ -1290,6 +1299,7 @@ const Definicoes = ({ currentUserId }) => {
     {id:"tipologias",   label:"Tipologias",            icon:"types"},
     {id:"locais",       label:"Locais de Assistência", icon:"locations"},
     {id:"categorias",   label:"Categorias",            icon:"key"},
+    {id:"equipamentos", label:"Tipos de Equipamento",  icon:"wrench"},
     {id:"utilizadores", label:"Utilizadores",           icon:"user"},
   ];
 
@@ -1327,6 +1337,12 @@ const Definicoes = ({ currentUserId }) => {
           cols={[{key:"nome",label:"Categoria"}]}
           emptyForm={{nome:""}}
           formFields={[{k:"nome",label:"Nome da Categoria",required:true}]}/>
+      )}
+      {tab==="equipamentos"&&(
+        <CrudPage key="equipamentos" compact title="Tipos de Equipamento" table="rbo_equipment_types"
+          cols={[{key:"nome",label:"Nome"}]}
+          emptyForm={{nome:""}}
+          formFields={[{k:"nome",label:"Nome do Tipo",required:true}]}/>
       )}
       {tab==="utilizadores"&&(
         <UtilizadoresPanel currentUserId={currentUserId}/>
@@ -1544,6 +1560,249 @@ export default function App() {
 
 
 // ─── Credenciais Panel ────────────────────────────────────────────────────────
+// ─── Contactos Panel ──────────────────────────────────────────────────────────
+const ContactosPanel = ({ clienteId }) => {
+  const C = useTheme();
+  const [contacts, setContacts] = useState([]);
+  const [loading,  setLoading]  = useState(true);
+  const [modal,    setModal]    = useState(false);
+  const [saving,   setSaving]   = useState(false);
+  const [editId,   setEditId]   = useState(null);
+  const empty = {nome:"",email:"",telefone:"",telemovel:""};
+  const [form, setForm] = useState(empty);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const { data } = await sb.from("rbo_client_contacts").select("*").eq("cliente_id", clienteId).order("id");
+    setContacts(data || []);
+    setLoading(false);
+  }, [clienteId]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const openNew  = ()  => { setForm(empty); setEditId(null); setModal(true); };
+  const openEdit = c   => { setForm({...c}); setEditId(c.id); setModal(true); };
+
+  const save = async () => {
+    if (!form.nome) return alert("Nome é obrigatório");
+    if (!form.telefone && !form.telemovel) return alert("Pelo menos telefone ou telemóvel é obrigatório");
+    setSaving(true);
+    const { id: _id, created_at: _ca, ...rest } = form;
+    let err;
+    if (!editId) ({ error: err } = await sb.from("rbo_client_contacts").insert([{ ...rest, cliente_id: clienteId }]));
+    else         ({ error: err } = await sb.from("rbo_client_contacts").update(rest).eq("id", editId));
+    if (err) alert("Erro: " + err.message);
+    else { await load(); setModal(false); }
+    setSaving(false);
+  };
+
+  const del = async id => {
+    if (!confirm("Eliminar contacto?")) return;
+    await sb.from("rbo_client_contacts").delete().eq("id", id);
+    await load();
+  };
+
+  return (
+    <Card style={{padding:0,overflow:"hidden",marginTop:16}}>
+      <div style={{padding:"14px 20px",borderBottom:`1px solid ${C.grey100}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
+          <Icon name="clients" size={15} color={C.teal}/>
+          <h3 style={{fontSize:15,fontWeight:600,color:C.grey800}}>Contactos</h3>
+        </div>
+        <Btn size="sm" icon="plus" onClick={openNew}>Novo</Btn>
+      </div>
+      {loading ? <Loading/> : contacts.length===0 ? (
+        <div style={{padding:"24px 20px",textAlign:"center",color:C.grey400,fontSize:13}}>Sem contactos registados</div>
+      ) : (
+        <div>
+          {contacts.map((c,i)=>(
+            <div key={c.id} style={{padding:"14px 20px",borderBottom:i<contacts.length-1?`1px solid ${C.grey100}`:"none"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
+                <span style={{fontWeight:600,fontSize:14,color:C.grey800}}>{c.nome}</span>
+                <div style={{display:"flex",gap:2}}>
+                  <Btn variant="ghost" size="sm" icon="edit"  onClick={()=>openEdit(c)}/>
+                  <Btn variant="ghost" size="sm" icon="trash" onClick={()=>del(c.id)}/>
+                </div>
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
+                {c.email&&(
+                  <div style={{background:C.grey50,borderRadius:8,padding:"7px 10px",border:`1px solid ${C.grey100}`}}>
+                    <div style={{fontSize:10,fontWeight:600,color:C.grey400,textTransform:"uppercase",letterSpacing:".5px",marginBottom:3}}>Email</div>
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:4}}>
+                      <span style={{fontSize:13,color:C.grey800,wordBreak:"break-all"}}>{c.email}</span>
+                      <CopyBtn value={c.email} isPassword={false}/>
+                    </div>
+                  </div>
+                )}
+                {c.telefone&&(
+                  <div style={{background:C.grey50,borderRadius:8,padding:"7px 10px",border:`1px solid ${C.grey100}`}}>
+                    <div style={{fontSize:10,fontWeight:600,color:C.grey400,textTransform:"uppercase",letterSpacing:".5px",marginBottom:3}}>Telefone</div>
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:4}}>
+                      <span style={{fontSize:13,color:C.grey800}}>{c.telefone}</span>
+                      <CopyBtn value={c.telefone} isPassword={false}/>
+                    </div>
+                  </div>
+                )}
+                {c.telemovel&&(
+                  <div style={{background:C.grey50,borderRadius:8,padding:"7px 10px",border:`1px solid ${C.grey100}`}}>
+                    <div style={{fontSize:10,fontWeight:600,color:C.grey400,textTransform:"uppercase",letterSpacing:".5px",marginBottom:3}}>Telemóvel</div>
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:4}}>
+                      <span style={{fontSize:13,color:C.grey800}}>{c.telemovel}</span>
+                      <CopyBtn value={c.telemovel} isPassword={false}/>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      {modal&&(
+        <Modal title={editId?"Editar contacto":"Novo contacto"} onClose={()=>setModal(false)}>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+            <div style={{gridColumn:"1/-1"}}><Input label="Nome" value={form.nome} onChange={v=>setForm(f=>({...f,nome:v}))} required/></div>
+            <div style={{gridColumn:"1/-1"}}><Input label="Email" value={form.email} onChange={v=>setForm(f=>({...f,email:v}))} type="email"/></div>
+            <Input label="Telefone"  value={form.telefone}  onChange={v=>setForm(f=>({...f,telefone:maskPhone(v)}))}  placeholder="XXX XXX XXX"/>
+            <Input label="Telemóvel" value={form.telemovel} onChange={v=>setForm(f=>({...f,telemovel:maskPhone(v)}))} placeholder="XXX XXX XXX"/>
+          </div>
+          <div style={{fontSize:12,color:C.amber,marginTop:8}}>* Pelo menos telefone ou telemóvel é obrigatório</div>
+          <div style={{display:"flex",gap:10,justifyContent:"flex-end",marginTop:20}}>
+            <Btn variant="secondary" onClick={()=>setModal(false)}>Cancelar</Btn>
+            <Btn onClick={save} disabled={saving}>{saving?"A guardar...":"Guardar"}</Btn>
+          </div>
+        </Modal>
+      )}
+    </Card>
+  );
+};
+
+// ─── Equipamentos Panel ───────────────────────────────────────────────────────
+const EquipamentosPanel = ({ clienteId }) => {
+  const C = useTheme();
+  const [equipamentos,  setEquipamentos]  = useState([]);
+  const [tipos,         setTipos]         = useState([]);
+  const [loading,       setLoading]       = useState(true);
+  const [modal,         setModal]         = useState(false);
+  const [saving,        setSaving]        = useState(false);
+  const [editId,        setEditId]        = useState(null);
+  const [showInativos,  setShowInativos]  = useState(false);
+  const empty = {descricao:"",tipo_id:"",num_serie:"",localizacao:""};
+  const [form, setForm] = useState(empty);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const [eqRes,tipRes] = await Promise.all([
+      sb.from("rbo_client_equipment").select("*").eq("cliente_id",clienteId).order("tipo_id").order("descricao"),
+      sb.from("rbo_equipment_types").select("*").order("nome"),
+    ]);
+    setEquipamentos(eqRes.data||[]);
+    setTipos(tipRes.data||[]);
+    setLoading(false);
+  }, [clienteId]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const openNew  = ()  => { setForm(empty); setEditId(null); setModal(true); };
+  const openEdit = e   => { setForm({descricao:e.descricao,tipo_id:String(e.tipo_id||""),num_serie:e.num_serie||"",localizacao:e.localizacao||""}); setEditId(e.id); setModal(true); };
+
+  const save = async () => {
+    if (!form.descricao) return alert("Descrição é obrigatória");
+    if (!form.tipo_id)   return alert("Tipo é obrigatório");
+    setSaving(true);
+    const payload = {descricao:form.descricao,tipo_id:Number(form.tipo_id),num_serie:form.num_serie||null,localizacao:form.localizacao||null};
+    let err;
+    if (!editId) ({ error: err } = await sb.from("rbo_client_equipment").insert([{...payload,cliente_id:clienteId,ativo:true}]));
+    else         ({ error: err } = await sb.from("rbo_client_equipment").update(payload).eq("id",editId));
+    if (err) alert("Erro: " + err.message);
+    else { await load(); setModal(false); }
+    setSaving(false);
+  };
+
+  const toggleAtivo = async e => {
+    await sb.from("rbo_client_equipment").update({ativo:!e.ativo}).eq("id",e.id);
+    await load();
+  };
+
+  const del = async id => {
+    const { data:movs } = await sb.from("rbo_movimentos").select("id").eq("equipment_id",id).limit(1);
+    if (movs&&movs.length>0) { alert("Não é possível eliminar — tem movimentos associados. Pode inativá-lo."); return; }
+    if (!confirm("Eliminar equipamento?")) return;
+    await sb.from("rbo_client_equipment").delete().eq("id",id);
+    await load();
+  };
+
+  const tipoNome = id => tipos.find(t=>t.id===id)?.nome||"—";
+  const tipoOpts = tipos.map(t=>({value:String(t.id),label:t.nome}));
+  const inativos = equipamentos.filter(e=>!e.ativo);
+  const visible  = showInativos ? equipamentos : equipamentos.filter(e=>e.ativo);
+
+  return (
+    <Card style={{padding:0,overflow:"hidden",marginTop:16}}>
+      <div style={{padding:"14px 20px",borderBottom:`1px solid ${C.grey100}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
+          <Icon name="wrench" size={15} color={C.teal}/>
+          <h3 style={{fontSize:15,fontWeight:600,color:C.grey800}}>Equipamentos</h3>
+        </div>
+        <div style={{display:"flex",gap:8,alignItems:"center"}}>
+          {inativos.length>0&&(
+            <Btn variant="ghost" size="sm" onClick={()=>setShowInativos(s=>!s)}>
+              {showInativos?"Ocultar inativos":`Mostrar inativos (${inativos.length})`}
+            </Btn>
+          )}
+          <Btn size="sm" icon="plus" onClick={openNew}>Novo</Btn>
+        </div>
+      </div>
+      {loading ? <Loading/> : visible.length===0 ? (
+        <div style={{padding:"24px 20px",textAlign:"center",color:C.grey400,fontSize:13}}>Sem equipamentos registados</div>
+      ) : (
+        <div>
+          {visible.map((e,i)=>(
+            <div key={e.id} style={{padding:"13px 20px",borderBottom:i<visible.length-1?`1px solid ${C.grey100}`:"none",opacity:e.ativo?1:0.55,transition:"opacity .2s"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8}}>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginBottom:4}}>
+                    <span style={{fontWeight:600,fontSize:14,color:C.grey800}}>{e.descricao}</span>
+                    <Badge color={e.ativo?C.teal:C.grey400}>{tipoNome(e.tipo_id)}</Badge>
+                    {!e.ativo&&<Badge color={C.grey400}>Inativo</Badge>}
+                  </div>
+                  <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
+                    {e.num_serie&&<span style={{fontSize:12,color:C.grey600}}>N/S: <span style={{fontFamily:"'DM Mono',monospace"}}>{e.num_serie}</span></span>}
+                    {e.localizacao&&<span style={{fontSize:12,color:C.grey600}}>📍 {e.localizacao}</span>}
+                  </div>
+                </div>
+                <div style={{display:"flex",gap:2,flexShrink:0,alignItems:"center"}}>
+                  <button onClick={()=>toggleAtivo(e)} title={e.ativo?"Inativar":"Ativar"}
+                    style={{background:"none",border:"none",cursor:"pointer",padding:"4px 8px",borderRadius:6,fontSize:12,color:e.ativo?C.amber:C.green,fontWeight:600,fontFamily:"'DM Sans',sans-serif",transition:"background .15s"}}
+                    onMouseEnter={ev=>ev.currentTarget.style.background=C.grey100}
+                    onMouseLeave={ev=>ev.currentTarget.style.background="none"}>
+                    {e.ativo?"Inativar":"Ativar"}
+                  </button>
+                  <Btn variant="ghost" size="sm" icon="edit"  onClick={()=>openEdit(e)}/>
+                  <Btn variant="ghost" size="sm" icon="trash" onClick={()=>del(e.id)}/>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      {modal&&(
+        <Modal title={editId?"Editar equipamento":"Novo equipamento"} onClose={()=>setModal(false)}>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+            <div style={{gridColumn:"1/-1"}}><Input label="Descrição" value={form.descricao} onChange={v=>setForm(f=>({...f,descricao:v}))} required/></div>
+            <div style={{gridColumn:"1/-1"}}><Select label="Tipo" value={form.tipo_id} onChange={v=>setForm(f=>({...f,tipo_id:v}))} options={tipoOpts} required/></div>
+            <Input label="Número de Série" value={form.num_serie}   onChange={v=>setForm(f=>({...f,num_serie:v}))}   placeholder="ex: SN-123456"/>
+            <Input label="Localização"     value={form.localizacao} onChange={v=>setForm(f=>({...f,localizacao:v}))} placeholder="ex: Sala de servidores"/>
+          </div>
+          <div style={{display:"flex",gap:10,justifyContent:"flex-end",marginTop:20}}>
+            <Btn variant="secondary" onClick={()=>setModal(false)}>Cancelar</Btn>
+            <Btn onClick={save} disabled={saving}>{saving?"A guardar...":"Guardar"}</Btn>
+          </div>
+        </Modal>
+      )}
+    </Card>
+  );
+};
+
 const CopyBtn = ({ value, isPassword }) => {
   const C = useTheme();
   const [state, setState] = useState("idle"); // idle | copied | clearing
@@ -1842,6 +2101,12 @@ const ClienteDetalhe = ({ cliente: clienteInicial, tecnicoOpts, onBack }) => {
   const [saving,   setSaving]   = useState(false);
 
   const save = async () => {
+    if (!form.nome)                       return alert("Nome é obrigatório");
+    if (!form.morada)                     return alert("Morada é obrigatória");
+    if (!form.cp)                         return alert("Código Postal é obrigatório");
+    if (!form.localidade)                 return alert("Localidade é obrigatória");
+    if (!form.email)                      return alert("Email é obrigatório");
+    if (!form.telefone && !form.telemovel) return alert("Pelo menos telefone ou telemóvel é obrigatório");
     setSaving(true);
     const { id: _id, created_at: _ca, ...rest } = form;
     const { data, error } = await sb.from("rbo_clientes").update(rest).eq("id", cliente.id).select().single();
@@ -1870,17 +2135,31 @@ const ClienteDetalhe = ({ cliente: clienteInicial, tecnicoOpts, onBack }) => {
       </div>
 
       {/* Info card */}
-      <Card style={{padding:"16px 20px",marginBottom:4,display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:12}}>
-        {[["Telefone",cliente.telefone],["Email",cliente.email],["Morada",cliente.morada],["Localidade",cliente.localidade],["Código Postal",cliente.cp],["GPS",cliente.gps]].map(([l,v])=>(
-          v ? <div key={l}>
-            <div style={{fontSize:11,fontWeight:600,color:C.grey400,textTransform:"uppercase",letterSpacing:".5px"}}>{l}</div>
-            <div style={{fontSize:14,marginTop:2,color:C.grey800}}>{v}</div>
-          </div> : null
-        ))}
+      <Card style={{padding:"16px 20px",marginBottom:4}}>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:12}}>
+          {[["NIF",cliente.nif],["Telefone",cliente.telefone],["Telemóvel",cliente.telemovel],["Email",cliente.email],["Morada",cliente.morada],["Localidade",cliente.localidade],["Código Postal",cliente.cp],["GPS",cliente.gps]].map(([l,v])=>(
+            v ? <div key={l}>
+              <div style={{fontSize:11,fontWeight:600,color:C.grey400,textTransform:"uppercase",letterSpacing:".5px"}}>{l}</div>
+              <div style={{fontSize:14,marginTop:2,color:C.grey800}}>{v}</div>
+            </div> : null
+          ))}
+        </div>
+        {cliente.observacoes&&(
+          <div style={{marginTop:12,paddingTop:12,borderTop:`1px solid ${C.grey100}`}}>
+            <div style={{fontSize:11,fontWeight:600,color:C.grey400,textTransform:"uppercase",letterSpacing:".5px",marginBottom:4}}>Observações</div>
+            <div style={{fontSize:14,color:C.grey800,lineHeight:1.6,whiteSpace:"pre-wrap"}}>{cliente.observacoes}</div>
+          </div>
+        )}
       </Card>
+
+      {/* Contactos */}
+      <ContactosPanel clienteId={cliente.id}/>
 
       {/* Credenciais */}
       <CredenciaisPanel clienteId={cliente.id}/>
+
+      {/* Equipamentos */}
+      <EquipamentosPanel clienteId={cliente.id}/>
 
       {/* Edit modal */}
       {modal && (
@@ -1889,17 +2168,33 @@ const ClienteDetalhe = ({ cliente: clienteInicial, tecnicoOpts, onBack }) => {
             <div style={{gridColumn:"1/-1"}}>
               <Input label="Nome da Empresa" value={form.nome||""} onChange={v=>setForm(f=>({...f,nome:v}))} required/>
             </div>
+            <Input label="NIF" value={form.nif||""} onChange={v=>setForm(f=>({...f,nif:maskNif(v)}))} placeholder="XXX XXX XXX"/>
+            <div/>
             <div style={{gridColumn:"1/-1"}}>
-              <Select label="Técnico" value={form.tecnico_id||""} onChange={v=>setForm(f=>({...f,tecnico_id:v}))} options={tecnicoOpts}/>
+              <Input label="Morada" value={form.morada||""} onChange={v=>setForm(f=>({...f,morada:v}))} required/>
             </div>
-            <Input label="Telefone" value={form.telefone||""} onChange={v=>setForm(f=>({...f,telefone:v}))} type="tel"/>
-            <Input label="Email" value={form.email||""} onChange={v=>setForm(f=>({...f,email:v}))} type="email"/>
+            <Input label="Código Postal" value={form.cp||""} onChange={v=>setForm(f=>({...f,cp:maskCP(v)}))} placeholder="0000-000" required/>
+            <Input label="Localidade" value={form.localidade||""} onChange={v=>setForm(f=>({...f,localidade:v}))} required/>
+            <div style={{gridColumn:"1/-1",display:"flex",gap:8,alignItems:"flex-end"}}>
+              <div style={{flex:1}}>
+                <Input label="Coordenadas GPS" value={form.gps||""} onChange={v=>setForm(f=>({...f,gps:v}))} placeholder="lat,lng"/>
+              </div>
+              <Btn variant="secondary" size="sm" onClick={()=>{
+                if (!navigator.geolocation) return alert("Geolocalização não suportada");
+                navigator.geolocation.getCurrentPosition(
+                  p=>setForm(f=>({...f,gps:`${p.coords.latitude.toFixed(6)},${p.coords.longitude.toFixed(6)}`})),
+                  ()=>alert("Não foi possível obter a localização")
+                );
+              }}>📍 Obter</Btn>
+            </div>
+            <Input label="Email" value={form.email||""} onChange={v=>setForm(f=>({...f,email:v}))} type="email" required/>
+            <div/>
+            <Input label="Telefone"  value={form.telefone||""}  onChange={v=>setForm(f=>({...f,telefone:maskPhone(v)}))}  placeholder="XXX XXX XXX"/>
+            <Input label="Telemóvel" value={form.telemovel||""} onChange={v=>setForm(f=>({...f,telemovel:maskPhone(v)}))} placeholder="XXX XXX XXX"/>
+            <div style={{gridColumn:"1/-1",fontSize:12,color:C.amber}}>* Pelo menos telefone ou telemóvel é obrigatório</div>
             <div style={{gridColumn:"1/-1"}}>
-              <Input label="Morada" value={form.morada||""} onChange={v=>setForm(f=>({...f,morada:v}))}/>
+              <Input label="Observações" value={form.observacoes||""} onChange={v=>setForm(f=>({...f,observacoes:v}))} textarea rows={3}/>
             </div>
-            <Input label="Localidade" value={form.localidade||""} onChange={v=>setForm(f=>({...f,localidade:v}))}/>
-            <Input label="Código Postal" value={form.cp||""} onChange={v=>setForm(f=>({...f,cp:v}))} placeholder="0000-000"/>
-            <Input label="Coordenadas GPS" value={form.gps||""} onChange={v=>setForm(f=>({...f,gps:v}))} placeholder="lat,lng"/>
           </div>
           <div style={{display:"flex",gap:10,justifyContent:"flex-end",marginTop:20}}>
             <Btn variant="secondary" onClick={()=>setModal(false)}>Cancelar</Btn>
