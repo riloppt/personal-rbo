@@ -1339,8 +1339,8 @@ const Definicoes = ({ currentUserId }) => {
 // Para adicionar itens basta acrescentar aqui — o mobile adapta-se automaticamente
 const navItems = [
   {id:"dashboard",  label:"Dashboard",  icon:"dashboard"},
-  {id:"contratos",  label:"Contratos",  icon:"contracts"},
   {id:"clientes",   label:"Clientes",   icon:"clients"},
+  {id:"contratos",  label:"Contratos",  icon:"contracts"},
   {id:"definicoes", label:"Definições", icon:"settings"},
 ];
 
@@ -1467,7 +1467,7 @@ const checkMobile = () => {
 
 export default function App() {
   const [page,        setPage]        = useState("dashboard");
-  const [sideOpen,    setSideOpen]    = useState(true);
+  const [sideOpen,    setSideOpen]    = useState(false);
   const [darkMode,    setDarkMode]    = useState(true); // default até o perfil carregar
   const [isMobile,    setIsMobile]    = useState(checkMobile);
   const [session,     setSession]     = useState(null);
