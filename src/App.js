@@ -2104,7 +2104,7 @@ const ClienteDetalhe = ({ cliente: clienteInicial, tecnicoOpts, onBack, initialE
 
   useEffect(() => {
     if (initialEdit) { setForm({...clienteInicial}); setModal(true); }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); // eslint-disable-line
 
   const save = async () => {
     if (!form.nome)                        return alert("Nome é obrigatório");
