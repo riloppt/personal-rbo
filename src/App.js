@@ -2094,19 +2094,24 @@ const CredenciaisPanel = ({ clienteId }) => {
 
 
 // ─── Cliente Detalhe ──────────────────────────────────────────────────────────
-const ClienteDetalhe = ({ cliente: clienteInicial, tecnicoOpts, onBack }) => {
+const ClienteDetalhe = ({ cliente: clienteInicial, tecnicoOpts, onBack, initialEdit }) => {
   const C = useTheme();
   const [cliente,  setCliente]  = useState(clienteInicial);
   const [modal,    setModal]    = useState(false);
   const [form,     setForm]     = useState({...clienteInicial});
   const [saving,   setSaving]   = useState(false);
+  const [tab,      setTab]      = useState("dados");
+
+  useEffect(() => {
+    if (initialEdit) { setForm({...clienteInicial}); setModal(true); }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const save = async () => {
-    if (!form.nome)                       return alert("Nome é obrigatório");
-    if (!form.morada)                     return alert("Morada é obrigatória");
-    if (!form.cp)                         return alert("Código Postal é obrigatório");
-    if (!form.localidade)                 return alert("Localidade é obrigatória");
-    if (!form.email)                      return alert("Email é obrigatório");
+    if (!form.nome)                        return alert("Nome é obrigatório");
+    if (!form.morada)                      return alert("Morada é obrigatória");
+    if (!form.cp)                          return alert("Código Postal é obrigatório");
+    if (!form.localidade)                  return alert("Localidade é obrigatória");
+    if (!form.email)                       return alert("Email é obrigatório");
     if (!form.telefone && !form.telemovel) return alert("Pelo menos telefone ou telemóvel é obrigatório");
     setSaving(true);
     const { id: _id, created_at: _ca, ...rest } = form;
@@ -2119,6 +2124,13 @@ const ClienteDetalhe = ({ cliente: clienteInicial, tecnicoOpts, onBack }) => {
 
   const tecNome = tecnicoOpts.find(t => t.value === cliente.tecnico_id)?.label || "—";
 
+  const tabs = [
+    {id:"dados",        label:"Dados",        icon:"user"},
+    {id:"contactos",    label:"Contactos",    icon:"clients"},
+    {id:"credenciais",  label:"Credenciais",  icon:"key"},
+    {id:"equipamentos", label:"Equipamentos", icon:"wrench"},
+  ];
+
   return (
     <div>
       {/* Back */}
@@ -2127,40 +2139,53 @@ const ClienteDetalhe = ({ cliente: clienteInicial, tecnicoOpts, onBack }) => {
       </button>
 
       {/* Header */}
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:12,marginBottom:20}}>
-        <div>
-          <h1 style={{fontSize:22,fontWeight:700,color:C.grey800}}>{cliente.nome}</h1>
-          {tecNome !== "—" && <div style={{fontSize:13,color:C.grey400,marginTop:4}}>Técnico: {tecNome}</div>}
-        </div>
-        <Btn size="sm" icon="edit" onClick={()=>{setForm({...cliente});setModal(true);}}>Editar dados</Btn>
+      <div style={{marginBottom:20}}>
+        <h1 style={{fontSize:22,fontWeight:700,color:C.grey800}}>{cliente.nome}</h1>
+        {tecNome !== "—" && <div style={{fontSize:13,color:C.grey400,marginTop:4}}>Técnico: {tecNome}</div>}
       </div>
 
-      {/* Info card */}
-      <Card style={{padding:"16px 20px",marginBottom:4}}>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:12}}>
-          {[["NIF",cliente.nif],["Telefone",cliente.telefone],["Telemóvel",cliente.telemovel],["Email",cliente.email],["Morada",cliente.morada],["Localidade",cliente.localidade],["Código Postal",cliente.cp],["GPS",cliente.gps]].map(([l,v])=>(
-            v ? <div key={l}>
-              <div style={{fontSize:11,fontWeight:600,color:C.grey400,textTransform:"uppercase",letterSpacing:".5px"}}>{l}</div>
-              <div style={{fontSize:14,marginTop:2,color:C.grey800}}>{v}</div>
-            </div> : null
-          ))}
-        </div>
-        {cliente.observacoes&&(
-          <div style={{marginTop:12,paddingTop:12,borderTop:`1px solid ${C.grey100}`}}>
-            <div style={{fontSize:11,fontWeight:600,color:C.grey400,textTransform:"uppercase",letterSpacing:".5px",marginBottom:4}}>Observações</div>
-            <div style={{fontSize:14,color:C.grey800,lineHeight:1.6,whiteSpace:"pre-wrap"}}>{cliente.observacoes}</div>
+      {/* Tab bar */}
+      <div style={{display:"flex",gap:4,marginBottom:20,background:C.white,borderRadius:12,padding:6,border:`1px solid ${C.grey100}`,flexWrap:"wrap"}}>
+        {tabs.map(t=>{
+          const active = tab===t.id;
+          return (
+            <button key={t.id} onClick={()=>setTab(t.id)}
+              style={{display:"flex",alignItems:"center",gap:8,padding:"9px 16px",borderRadius:8,border:"none",cursor:"pointer",background:active?C.teal:"transparent",color:active?"#ffffff":C.grey600,fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:active?600:400,transition:"all .15s"}}>
+              <Icon name={t.icon} size={15} color={active?"#ffffff":C.grey400}/>
+              {t.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Tab: Dados */}
+      {tab==="dados" && (
+        <Card style={{padding:"16px 20px"}}>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:12}}>
+            {[["NIF",cliente.nif],["Telefone",cliente.telefone],["Telemóvel",cliente.telemovel],["Email",cliente.email],["Morada",cliente.morada],["Localidade",cliente.localidade],["Código Postal",cliente.cp],["GPS",cliente.gps]].map(([l,v])=>(
+              v ? <div key={l}>
+                <div style={{fontSize:11,fontWeight:600,color:C.grey400,textTransform:"uppercase",letterSpacing:".5px"}}>{l}</div>
+                <div style={{fontSize:14,marginTop:2,color:C.grey800}}>{v}</div>
+              </div> : null
+            ))}
           </div>
-        )}
-      </Card>
+          {cliente.observacoes && (
+            <div style={{marginTop:12,paddingTop:12,borderTop:`1px solid ${C.grey100}`}}>
+              <div style={{fontSize:11,fontWeight:600,color:C.grey400,textTransform:"uppercase",letterSpacing:".5px",marginBottom:4}}>Observações</div>
+              <div style={{fontSize:14,color:C.grey800,lineHeight:1.6,whiteSpace:"pre-wrap"}}>{cliente.observacoes}</div>
+            </div>
+          )}
+        </Card>
+      )}
 
-      {/* Contactos */}
-      <ContactosPanel clienteId={cliente.id}/>
+      {/* Tab: Contactos */}
+      {tab==="contactos" && <ContactosPanel clienteId={cliente.id}/>}
 
-      {/* Credenciais */}
-      <CredenciaisPanel clienteId={cliente.id}/>
+      {/* Tab: Credenciais */}
+      {tab==="credenciais" && <CredenciaisPanel clienteId={cliente.id}/>}
 
-      {/* Equipamentos */}
-      <EquipamentosPanel clienteId={cliente.id}/>
+      {/* Tab: Equipamentos */}
+      {tab==="equipamentos" && <EquipamentosPanel clienteId={cliente.id}/>}
 
       {/* Edit modal */}
       {modal && (
@@ -2175,7 +2200,7 @@ const ClienteDetalhe = ({ cliente: clienteInicial, tecnicoOpts, onBack }) => {
               <Input label="Morada" value={form.morada||""} onChange={v=>setForm(f=>({...f,morada:v}))} required/>
             </div>
             <Input label="Código Postal" value={form.cp||""} onChange={v=>setForm(f=>({...f,cp:maskCP(v)}))} placeholder="0000-000" required/>
-            <Input label="Localidade" value={form.localidade||""} onChange={v=>setForm(f=>({...f,localidade:v}))} required/>
+            <Input label="Localidade"    value={form.localidade||""} onChange={v=>setForm(f=>({...f,localidade:v}))} required/>
             <div style={{gridColumn:"1/-1",display:"flex",gap:8,alignItems:"flex-end"}}>
               <div style={{flex:1}}>
                 <Input label="Coordenadas GPS" value={form.gps||""} onChange={v=>setForm(f=>({...f,gps:v}))} placeholder="lat,lng"/>
@@ -2208,15 +2233,18 @@ const ClienteDetalhe = ({ cliente: clienteInicial, tecnicoOpts, onBack }) => {
 };
 
   const ClientesPage = () => {
-    const [detalhe, setDetalhe] = React.useState(null);
-    const [reload,  setReload]  = React.useState(0);
+    const [detalhe,     setDetalhe]     = React.useState(null);
+    const [editMode,    setEditMode]    = React.useState(false);
+    const [reload,      setReload]      = React.useState(0);
     const [tecnicoOpts, setTecnicoOpts] = React.useState([]);
     React.useEffect(()=>{
       sb.from("rbo_profiles").select("id,nome").eq("is_tecnico",true).eq("ativo",true).order("nome")
         .then(({data})=>setTecnicoOpts((data||[]).map(t=>({value:t.id,label:t.nome||t.email}))));
     },[]);
 
-    if (detalhe) return <ClienteDetalhe cliente={detalhe} tecnicoOpts={tecnicoOpts} onBack={()=>{setDetalhe(null);setReload(r=>r+1);}}/>;
+    const onBack = () => { setDetalhe(null); setEditMode(false); setReload(r=>r+1); };
+
+    if (detalhe) return <ClienteDetalhe cliente={detalhe} tecnicoOpts={tecnicoOpts} initialEdit={editMode} onBack={onBack}/>;
 
     return (
       <CrudPage key={reload} title="Clientes" table="rbo_clientes"
@@ -2239,7 +2267,7 @@ const ClienteDetalhe = ({ cliente: clienteInicial, tecnicoOpts, onBack }) => {
           {k:"gps",       label:"Coordenadas GPS",      placeholder:"lat,lng"},
           {k:"email",     label:"Email",                type:"email"},
         ]}
-        onView={r=>setDetalhe(r)}
+        onView={r=>{ setEditMode(true); setDetalhe(r); }}
         viewIcon="edit"
         noInlineEdit
       />
