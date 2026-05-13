@@ -778,7 +778,7 @@ const UtilizadoresPanel = ({ currentUserId }) => {
 };
 
 // ─── Generic CRUD ─────────────────────────────────────────────────────────────
-const CrudPage = ({ title, table, cols, formFields, emptyForm, compact, hasAtivo, fieldOptions, onView, noInlineEdit, viewIcon }) => {
+const CrudPage = ({ title, table, cols, formFields, emptyForm, compact, hasAtivo, fieldOptions, onView, onNew, noInlineEdit, viewIcon }) => {
   const C = useTheme();
   const [rows,      setRows]      = useState([]);
   const [loading,   setLoading]   = useState(true);
@@ -841,7 +841,7 @@ const CrudPage = ({ title, table, cols, formFields, emptyForm, compact, hasAtivo
 
   return (
     <div>
-      {!compact && <PageHeader title={title} subtitle={`${visibleRows.length} registos`} action={<Btn icon="plus" onClick={openNew}>Novo</Btn>}/>}
+      {!compact && <PageHeader title={title} subtitle={`${visibleRows.length} registos`} action={<Btn icon="plus" onClick={onNew||openNew}>Novo</Btn>}/>}
       {compact && (
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
           <span style={{fontSize:13,color:C.grey400}}>{visibleRows.length} registos</span>
@@ -852,7 +852,7 @@ const CrudPage = ({ title, table, cols, formFields, emptyForm, compact, hasAtivo
                 {showInativos ? "Ocultar inativos" : `Mostrar inativos (${inativosCount})`}
               </button>
             )}
-            <Btn icon="plus" size="sm" onClick={openNew}>Novo</Btn>
+            <Btn icon="plus" size="sm" onClick={onNew||openNew}>Novo</Btn>
           </div>
         </div>
       )}
@@ -2094,17 +2094,13 @@ const CredenciaisPanel = ({ clienteId }) => {
 
 
 // ─── Cliente Detalhe ──────────────────────────────────────────────────────────
-const ClienteDetalhe = ({ cliente: clienteInicial, tecnicoOpts, onBack, initialEdit }) => {
+const ClienteDetalhe = ({ cliente: clienteInicial, tecnicoOpts, onBack }) => {
   const C = useTheme();
-  const [cliente,  setCliente]  = useState(clienteInicial);
-  const [modal,    setModal]    = useState(false);
-  const [form,     setForm]     = useState({...clienteInicial});
-  const [saving,   setSaving]   = useState(false);
-  const [tab,      setTab]      = useState("dados");
-
-  useEffect(() => {
-    if (initialEdit) { setForm({...clienteInicial}); setModal(true); }
-  }, []); // eslint-disable-line
+  const [cliente,       setCliente]       = useState(clienteInicial);
+  const [form,          setForm]          = useState({...clienteInicial});
+  const [saving,        setSaving]        = useState(false);
+  const [editingDados,  setEditingDados]  = useState(false);
+  const [tab,           setTab]           = useState("dados");
 
   const save = async () => {
     if (!form.nome)                        return alert("Nome é obrigatório");
@@ -2118,9 +2114,12 @@ const ClienteDetalhe = ({ cliente: clienteInicial, tecnicoOpts, onBack, initialE
     const { data, error } = await sb.from("rbo_clientes").update(rest).eq("id", cliente.id).select().single();
     if (error) { alert("Erro: " + error.message); setSaving(false); return; }
     setCliente(data);
+    setForm({...data});
     setSaving(false);
-    setModal(false);
+    setEditingDados(false);
   };
+
+  const cancelEdit = () => { setForm({...cliente}); setEditingDados(false); };
 
   const tecNome = tecnicoOpts.find(t => t.value === cliente.tecnico_id)?.label || "—";
 
@@ -2130,6 +2129,13 @@ const ClienteDetalhe = ({ cliente: clienteInicial, tecnicoOpts, onBack, initialE
     {id:"credenciais",  label:"Credenciais",  icon:"key"},
     {id:"equipamentos", label:"Equipamentos", icon:"wrench"},
   ];
+
+  const InfoField = ({ label, value }) => value ? (
+    <div>
+      <div style={{fontSize:11,fontWeight:600,color:C.grey400,textTransform:"uppercase",letterSpacing:".5px"}}>{label}</div>
+      <div style={{fontSize:14,marginTop:2,color:C.grey800}}>{value}</div>
+    </div>
+  ) : null;
 
   return (
     <div>
@@ -2149,7 +2155,7 @@ const ClienteDetalhe = ({ cliente: clienteInicial, tecnicoOpts, onBack, initialE
         {tabs.map(t=>{
           const active = tab===t.id;
           return (
-            <button key={t.id} onClick={()=>setTab(t.id)}
+            <button key={t.id} onClick={()=>{ setTab(t.id); if(t.id!=="dados") setEditingDados(false); }}
               style={{display:"flex",alignItems:"center",gap:8,padding:"9px 16px",borderRadius:8,border:"none",cursor:"pointer",background:active?C.teal:"transparent",color:active?"#ffffff":C.grey600,fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:active?600:400,transition:"all .15s"}}>
               <Icon name={t.icon} size={15} color={active?"#ffffff":C.grey400}/>
               {t.label}
@@ -2160,20 +2166,73 @@ const ClienteDetalhe = ({ cliente: clienteInicial, tecnicoOpts, onBack, initialE
 
       {/* Tab: Dados */}
       {tab==="dados" && (
-        <Card style={{padding:"16px 20px"}}>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:12}}>
-            {[["NIF",cliente.nif],["Telefone",cliente.telefone],["Telemóvel",cliente.telemovel],["Email",cliente.email],["Morada",cliente.morada],["Localidade",cliente.localidade],["Código Postal",cliente.cp],["GPS",cliente.gps]].map(([l,v])=>(
-              v ? <div key={l}>
-                <div style={{fontSize:11,fontWeight:600,color:C.grey400,textTransform:"uppercase",letterSpacing:".5px"}}>{l}</div>
-                <div style={{fontSize:14,marginTop:2,color:C.grey800}}>{v}</div>
-              </div> : null
-            ))}
-          </div>
-          {cliente.observacoes && (
-            <div style={{marginTop:12,paddingTop:12,borderTop:`1px solid ${C.grey100}`}}>
-              <div style={{fontSize:11,fontWeight:600,color:C.grey400,textTransform:"uppercase",letterSpacing:".5px",marginBottom:4}}>Observações</div>
-              <div style={{fontSize:14,color:C.grey800,lineHeight:1.6,whiteSpace:"pre-wrap"}}>{cliente.observacoes}</div>
-            </div>
+        <Card style={{padding:"20px 24px"}}>
+          {!editingDados ? (
+            <>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+                <span style={{fontSize:14,fontWeight:600,color:C.grey600}}>Informações do cliente</span>
+                <Btn size="sm" icon="edit" onClick={()=>{ setForm({...cliente}); setEditingDados(true); }}>Editar dados</Btn>
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(190px,1fr))",gap:16}}>
+                <InfoField label="NIF"           value={cliente.nif}/>
+                <InfoField label="Telefone"      value={cliente.telefone}/>
+                <InfoField label="Telemóvel"     value={cliente.telemovel}/>
+                <InfoField label="Email"         value={cliente.email}/>
+                <InfoField label="Morada"        value={cliente.morada}/>
+                <InfoField label="Localidade"    value={cliente.localidade}/>
+                <InfoField label="Código Postal" value={cliente.cp}/>
+                <InfoField label="GPS"           value={cliente.gps}/>
+              </div>
+              {cliente.observacoes && (
+                <div style={{marginTop:16,paddingTop:16,borderTop:`1px solid ${C.grey100}`}}>
+                  <div style={{fontSize:11,fontWeight:600,color:C.grey400,textTransform:"uppercase",letterSpacing:".5px",marginBottom:6}}>Observações</div>
+                  <div style={{fontSize:14,color:C.grey800,lineHeight:1.6,whiteSpace:"pre-wrap"}}>{cliente.observacoes}</div>
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              <div style={{fontSize:14,fontWeight:600,color:C.grey600,marginBottom:16}}>Editar dados do cliente</div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+                <div style={{gridColumn:"1/-1"}}>
+                  <Input label="Nome da Empresa" value={form.nome||""} onChange={v=>setForm(f=>({...f,nome:v}))} required/>
+                </div>
+                <div style={{gridColumn:"1/-1"}}>
+                  <Select label="Técnico" value={form.tecnico_id||""} onChange={v=>setForm(f=>({...f,tecnico_id:v}))} options={tecnicoOpts}/>
+                </div>
+                <Input label="NIF" value={form.nif||""} onChange={v=>setForm(f=>({...f,nif:maskNif(v)}))} placeholder="XXX XXX XXX"/>
+                <div/>
+                <div style={{gridColumn:"1/-1"}}>
+                  <Input label="Morada" value={form.morada||""} onChange={v=>setForm(f=>({...f,morada:v}))} required/>
+                </div>
+                <Input label="Código Postal" value={form.cp||""} onChange={v=>setForm(f=>({...f,cp:maskCP(v)}))} placeholder="0000-000" required/>
+                <Input label="Localidade"    value={form.localidade||""} onChange={v=>setForm(f=>({...f,localidade:v}))} required/>
+                <div style={{gridColumn:"1/-1",display:"flex",gap:8,alignItems:"flex-end"}}>
+                  <div style={{flex:1}}>
+                    <Input label="Coordenadas GPS" value={form.gps||""} onChange={v=>setForm(f=>({...f,gps:v}))} placeholder="lat,lng"/>
+                  </div>
+                  <Btn variant="secondary" size="sm" onClick={()=>{
+                    if (!navigator.geolocation) return alert("Geolocalização não suportada");
+                    navigator.geolocation.getCurrentPosition(
+                      p=>setForm(f=>({...f,gps:`${p.coords.latitude.toFixed(6)},${p.coords.longitude.toFixed(6)}`})),
+                      ()=>alert("Não foi possível obter a localização")
+                    );
+                  }}>📍 Obter</Btn>
+                </div>
+                <Input label="Email" value={form.email||""} onChange={v=>setForm(f=>({...f,email:v}))} type="email" required/>
+                <div/>
+                <Input label="Telefone"  value={form.telefone||""}  onChange={v=>setForm(f=>({...f,telefone:maskPhone(v)}))}  placeholder="XXX XXX XXX"/>
+                <Input label="Telemóvel" value={form.telemovel||""} onChange={v=>setForm(f=>({...f,telemovel:maskPhone(v)}))} placeholder="XXX XXX XXX"/>
+                <div style={{gridColumn:"1/-1",fontSize:12,color:C.amber}}>* Pelo menos telefone ou telemóvel é obrigatório</div>
+                <div style={{gridColumn:"1/-1"}}>
+                  <Input label="Observações" value={form.observacoes||""} onChange={v=>setForm(f=>({...f,observacoes:v}))} textarea rows={3}/>
+                </div>
+              </div>
+              <div style={{display:"flex",gap:10,justifyContent:"flex-end",marginTop:20}}>
+                <Btn variant="secondary" onClick={cancelEdit}>Cancelar</Btn>
+                <Btn onClick={save} disabled={saving}>{saving?"A guardar...":"Guardar"}</Btn>
+              </div>
+            </>
           )}
         </Card>
       )}
@@ -2186,91 +2245,108 @@ const ClienteDetalhe = ({ cliente: clienteInicial, tecnicoOpts, onBack, initialE
 
       {/* Tab: Equipamentos */}
       {tab==="equipamentos" && <EquipamentosPanel clienteId={cliente.id}/>}
-
-      {/* Edit modal */}
-      {modal && (
-        <Modal title="Editar cliente" onClose={()=>setModal(false)} wide>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
-            <div style={{gridColumn:"1/-1"}}>
-              <Input label="Nome da Empresa" value={form.nome||""} onChange={v=>setForm(f=>({...f,nome:v}))} required/>
-            </div>
-            <Input label="NIF" value={form.nif||""} onChange={v=>setForm(f=>({...f,nif:maskNif(v)}))} placeholder="XXX XXX XXX"/>
-            <div/>
-            <div style={{gridColumn:"1/-1"}}>
-              <Input label="Morada" value={form.morada||""} onChange={v=>setForm(f=>({...f,morada:v}))} required/>
-            </div>
-            <Input label="Código Postal" value={form.cp||""} onChange={v=>setForm(f=>({...f,cp:maskCP(v)}))} placeholder="0000-000" required/>
-            <Input label="Localidade"    value={form.localidade||""} onChange={v=>setForm(f=>({...f,localidade:v}))} required/>
-            <div style={{gridColumn:"1/-1",display:"flex",gap:8,alignItems:"flex-end"}}>
-              <div style={{flex:1}}>
-                <Input label="Coordenadas GPS" value={form.gps||""} onChange={v=>setForm(f=>({...f,gps:v}))} placeholder="lat,lng"/>
-              </div>
-              <Btn variant="secondary" size="sm" onClick={()=>{
-                if (!navigator.geolocation) return alert("Geolocalização não suportada");
-                navigator.geolocation.getCurrentPosition(
-                  p=>setForm(f=>({...f,gps:`${p.coords.latitude.toFixed(6)},${p.coords.longitude.toFixed(6)}`})),
-                  ()=>alert("Não foi possível obter a localização")
-                );
-              }}>📍 Obter</Btn>
-            </div>
-            <Input label="Email" value={form.email||""} onChange={v=>setForm(f=>({...f,email:v}))} type="email" required/>
-            <div/>
-            <Input label="Telefone"  value={form.telefone||""}  onChange={v=>setForm(f=>({...f,telefone:maskPhone(v)}))}  placeholder="XXX XXX XXX"/>
-            <Input label="Telemóvel" value={form.telemovel||""} onChange={v=>setForm(f=>({...f,telemovel:maskPhone(v)}))} placeholder="XXX XXX XXX"/>
-            <div style={{gridColumn:"1/-1",fontSize:12,color:C.amber}}>* Pelo menos telefone ou telemóvel é obrigatório</div>
-            <div style={{gridColumn:"1/-1"}}>
-              <Input label="Observações" value={form.observacoes||""} onChange={v=>setForm(f=>({...f,observacoes:v}))} textarea rows={3}/>
-            </div>
-          </div>
-          <div style={{display:"flex",gap:10,justifyContent:"flex-end",marginTop:20}}>
-            <Btn variant="secondary" onClick={()=>setModal(false)}>Cancelar</Btn>
-            <Btn onClick={save} disabled={saving}>{saving?"A guardar...":"Guardar"}</Btn>
-          </div>
-        </Modal>
-      )}
     </div>
   );
 };
 
   const ClientesPage = () => {
+    const C = useTheme();
     const [detalhe,     setDetalhe]     = React.useState(null);
-    const [editMode,    setEditMode]    = React.useState(false);
     const [reload,      setReload]      = React.useState(0);
     const [tecnicoOpts, setTecnicoOpts] = React.useState([]);
+    const [newModal,    setNewModal]    = React.useState(false);
+    const [newSaving,   setNewSaving]   = React.useState(false);
+    const emptyNew = {nome:"",nif:"",tecnico_id:"",morada:"",cp:"",localidade:"",gps:"",email:"",telefone:"",telemovel:"",observacoes:""};
+    const [newForm, setNewForm] = React.useState(emptyNew);
+
     React.useEffect(()=>{
       sb.from("rbo_profiles").select("id,nome").eq("is_tecnico",true).eq("ativo",true).order("nome")
         .then(({data})=>setTecnicoOpts((data||[]).map(t=>({value:t.id,label:t.nome||t.email}))));
     },[]);
 
-    const onBack = () => { setDetalhe(null); setEditMode(false); setReload(r=>r+1); };
+    const saveNew = async () => {
+      if (!newForm.nome)                           return alert("Nome é obrigatório");
+      if (!newForm.morada)                         return alert("Morada é obrigatória");
+      if (!newForm.cp)                             return alert("Código Postal é obrigatório");
+      if (!newForm.localidade)                     return alert("Localidade é obrigatória");
+      if (!newForm.email)                          return alert("Email é obrigatório");
+      if (!newForm.telefone && !newForm.telemovel) return alert("Pelo menos telefone ou telemóvel é obrigatório");
+      setNewSaving(true);
+      const { error } = await sb.from("rbo_clientes").insert([newForm]);
+      if (error) { alert("Erro: " + error.message); setNewSaving(false); return; }
+      setNewModal(false);
+      setNewForm(emptyNew);
+      setReload(r=>r+1);
+      setNewSaving(false);
+    };
 
-    if (detalhe) return <ClienteDetalhe cliente={detalhe} tecnicoOpts={tecnicoOpts} initialEdit={editMode} onBack={onBack}/>;
+    const onBack = () => { setDetalhe(null); setReload(r=>r+1); };
+
+    if (detalhe) return <ClienteDetalhe cliente={detalhe} tecnicoOpts={tecnicoOpts} onBack={onBack}/>;
 
     return (
-      <CrudPage key={reload} title="Clientes" table="rbo_clientes"
-        cols={[
-          {key:"nome",       label:"Nome"},
-          {key:"tecnico_id", label:"Técnico", render:(v)=>tecnicoOpts.find(t=>t.value===v)?.label||"—"},
-          {key:"localidade", label:"Localidade"},
-          {key:"telefone",   label:"Telefone"},
-          {key:"email",      label:"Email"},
-        ]}
-        emptyForm={{nome:"",tecnico_id:"",morada:"",localidade:"",cp:"",gps:"",telefone:"",email:""}}
-        fieldOptions={{tecnico_id: tecnicoOpts}}
-        formFields={[
-          {k:"nome",      label:"Nome da Empresa",      required:true, full:true},
-          {k:"tecnico_id",label:"Técnico",              type:"select"},
-          {k:"telefone",  label:"Telefone",             type:"tel"},
-          {k:"morada",    label:"Morada",               full:true},
-          {k:"localidade",label:"Localidade"},
-          {k:"cp",        label:"Código Postal",        placeholder:"0000-000"},
-          {k:"gps",       label:"Coordenadas GPS",      placeholder:"lat,lng"},
-          {k:"email",     label:"Email",                type:"email"},
-        ]}
-        onView={r=>{ setEditMode(true); setDetalhe(r); }}
-        viewIcon="edit"
-        noInlineEdit
-      />
+      <>
+        <CrudPage key={reload} title="Clientes" table="rbo_clientes"
+          cols={[
+            {key:"nome",       label:"Nome"},
+            {key:"tecnico_id", label:"Técnico", render:(v)=>tecnicoOpts.find(t=>t.value===v)?.label||"—"},
+            {key:"localidade", label:"Localidade"},
+            {key:"telefone",   label:"Telefone"},
+            {key:"email",      label:"Email"},
+          ]}
+          emptyForm={emptyNew}
+          fieldOptions={{tecnico_id: tecnicoOpts}}
+          formFields={[]}
+          onNew={()=>{ setNewForm(emptyNew); setNewModal(true); }}
+          onView={r=>setDetalhe(r)}
+          viewIcon="edit"
+          noInlineEdit
+        />
+
+        {newModal && (
+          <Modal title="Novo cliente" onClose={()=>setNewModal(false)} wide>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+              <div style={{gridColumn:"1/-1"}}>
+                <Input label="Nome da Empresa" value={newForm.nome} onChange={v=>setNewForm(f=>({...f,nome:v}))} required/>
+              </div>
+              <div style={{gridColumn:"1/-1"}}>
+                <Select label="Técnico" value={newForm.tecnico_id} onChange={v=>setNewForm(f=>({...f,tecnico_id:v}))} options={tecnicoOpts}/>
+              </div>
+              <Input label="NIF" value={newForm.nif} onChange={v=>setNewForm(f=>({...f,nif:maskNif(v)}))} placeholder="XXX XXX XXX"/>
+              <div/>
+              <div style={{gridColumn:"1/-1"}}>
+                <Input label="Morada" value={newForm.morada} onChange={v=>setNewForm(f=>({...f,morada:v}))} required/>
+              </div>
+              <Input label="Código Postal" value={newForm.cp}        onChange={v=>setNewForm(f=>({...f,cp:maskCP(v)}))}       placeholder="0000-000" required/>
+              <Input label="Localidade"    value={newForm.localidade} onChange={v=>setNewForm(f=>({...f,localidade:v}))}       required/>
+              <div style={{gridColumn:"1/-1",display:"flex",gap:8,alignItems:"flex-end"}}>
+                <div style={{flex:1}}>
+                  <Input label="Coordenadas GPS" value={newForm.gps} onChange={v=>setNewForm(f=>({...f,gps:v}))} placeholder="lat,lng"/>
+                </div>
+                <Btn variant="secondary" size="sm" onClick={()=>{
+                  if (!navigator.geolocation) return alert("Geolocalização não suportada");
+                  navigator.geolocation.getCurrentPosition(
+                    p=>setNewForm(f=>({...f,gps:`${p.coords.latitude.toFixed(6)},${p.coords.longitude.toFixed(6)}`})),
+                    ()=>alert("Não foi possível obter a localização")
+                  );
+                }}>📍 Obter</Btn>
+              </div>
+              <Input label="Email"     value={newForm.email}     onChange={v=>setNewForm(f=>({...f,email:v}))}               type="email" required/>
+              <div/>
+              <Input label="Telefone"  value={newForm.telefone}  onChange={v=>setNewForm(f=>({...f,telefone:maskPhone(v)}))}  placeholder="XXX XXX XXX"/>
+              <Input label="Telemóvel" value={newForm.telemovel} onChange={v=>setNewForm(f=>({...f,telemovel:maskPhone(v)}))} placeholder="XXX XXX XXX"/>
+              <div style={{gridColumn:"1/-1",fontSize:12,color:C.amber}}>* Pelo menos telefone ou telemóvel é obrigatório</div>
+              <div style={{gridColumn:"1/-1"}}>
+                <Input label="Observações" value={newForm.observacoes} onChange={v=>setNewForm(f=>({...f,observacoes:v}))} textarea rows={3}/>
+              </div>
+            </div>
+            <div style={{display:"flex",gap:10,justifyContent:"flex-end",marginTop:20}}>
+              <Btn variant="secondary" onClick={()=>setNewModal(false)}>Cancelar</Btn>
+              <Btn onClick={saveNew} disabled={newSaving}>{newSaving?"A guardar...":"Guardar"}</Btn>
+            </div>
+          </Modal>
+        )}
+      </>
     );
   };
 
