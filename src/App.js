@@ -291,7 +291,7 @@ const ErrMsg = ({ msg, onRetry }) => {
   );
 };
 
-const Table = ({ cols, data, onEdit, onDelete, onView, extraActions, emptyMsg="Sem registos" }) => {
+const Table = ({ cols, data, onEdit, onDelete, onView, viewIcon="eye", extraActions, emptyMsg="Sem registos" }) => {
   const C = useTheme();
   return (
     <div style={{overflowX:"auto"}}>
@@ -313,7 +313,7 @@ const Table = ({ cols, data, onEdit, onDelete, onView, extraActions, emptyMsg="S
                 <td style={{padding:"8px 16px"}}>
                   <div style={{display:"flex",gap:4,justifyContent:"flex-end",alignItems:"center"}}>
                     {extraActions&&extraActions(row)}
-                    {onView   &&<Btn variant="ghost" size="sm" icon="eye"   onClick={()=>onView(row)}/>}
+                    {onView   &&<Btn variant="ghost" size="sm" icon={viewIcon} onClick={()=>onView(row)}/>}
                     {onEdit   &&<Btn variant="ghost" size="sm" icon="edit"  onClick={()=>onEdit(row)}/>}
                     {onDelete &&<Btn variant="ghost" size="sm" icon="trash" onClick={()=>onDelete(row.id)}/>}
                   </div>
@@ -778,7 +778,7 @@ const UtilizadoresPanel = ({ currentUserId }) => {
 };
 
 // ─── Generic CRUD ─────────────────────────────────────────────────────────────
-const CrudPage = ({ title, table, cols, formFields, emptyForm, compact, hasAtivo, fieldOptions, onView }) => {
+const CrudPage = ({ title, table, cols, formFields, emptyForm, compact, hasAtivo, fieldOptions, onView, noInlineEdit, viewIcon }) => {
   const C = useTheme();
   const [rows,      setRows]      = useState([]);
   const [loading,   setLoading]   = useState(true);
@@ -872,7 +872,8 @@ const CrudPage = ({ title, table, cols, formFields, emptyForm, compact, hasAtivo
           ]}
           data={visibleRows}
           onView={onView}
-          onEdit={openEdit}
+          viewIcon={viewIcon}
+          onEdit={noInlineEdit ? undefined : openEdit}
           onDelete={del}
           extraActions={hasAtivo ? row=>(
             <button onClick={()=>toggleAtivo(row)} title={row.ativo===false?"Ativar":"Inativar"}
@@ -2239,6 +2240,8 @@ const ClienteDetalhe = ({ cliente: clienteInicial, tecnicoOpts, onBack }) => {
           {k:"email",     label:"Email",                type:"email"},
         ]}
         onView={r=>setDetalhe(r)}
+        viewIcon="edit"
+        noInlineEdit
       />
     );
   };
