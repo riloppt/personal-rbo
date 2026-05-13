@@ -1468,6 +1468,7 @@ const checkMobile = () => {
 export default function App() {
   const [page,        setPage]        = useState("dashboard");
   const [sideOpen,    setSideOpen]    = useState(false);
+  const [navTooltip,  setNavTooltip]  = useState(null); // {label, y}
   const [darkMode,    setDarkMode]    = useState(true); // default até o perfil carregar
   const [isMobile,    setIsMobile]    = useState(checkMobile);
   const [session,     setSession]     = useState(null);
@@ -1994,6 +1995,8 @@ const ClienteDetalhe = ({ cliente: clienteInicial, tecnicoOpts, onBack }) => {
                 const active = page===item.id;
                 return (
                   <button key={item.id} onClick={()=>navigate(item.id)}
+                    onMouseEnter={e=>!sideOpen&&setNavTooltip({label:item.label,y:e.currentTarget.getBoundingClientRect().top+e.currentTarget.getBoundingClientRect().height/2})}
+                    onMouseLeave={()=>setNavTooltip(null)}
                     style={{width:"100%",display:"flex",alignItems:"center",gap:12,padding:sideOpen?"11px 18px":"11px 0",justifyContent:sideOpen?"flex-start":"center",background:active?"rgba(42,155,155,0.2)":"transparent",border:"none",cursor:"pointer",borderLeft:active?"3px solid #ffffff":"3px solid transparent",transition:"all .15s"}}>
                     <Icon name={item.icon} size={19} color={active?"#ffffff":"#4d8e8e"}/>
                     {sideOpen&&<span style={{fontSize:14,fontWeight:active?600:400,color:active?"#ffffff":"#4d8e8e"}}>{item.label}</span>}
@@ -2037,6 +2040,13 @@ const ClienteDetalhe = ({ cliente: clienteInicial, tecnicoOpts, onBack }) => {
               </button>
             </div>
           </aside>
+        )}
+
+        {/* ── Sidebar tooltip ── */}
+        {navTooltip && (
+          <div style={{position:"fixed",left:70,top:navTooltip.y,transform:"translateY(-50%)",background:"#0d5e5e",color:"#ffffff",fontSize:13,fontWeight:500,padding:"6px 12px",borderRadius:7,whiteSpace:"nowrap",zIndex:9999,pointerEvents:"none",boxShadow:"0 4px 14px rgba(0,0,0,0.25)",border:"1px solid rgba(42,155,155,0.4)"}}>
+            {navTooltip.label}
+          </div>
         )}
 
         {/* ── Main content ── */}
