@@ -50,7 +50,8 @@ export default function App() {
       if (session) loadProfile(session.user.id);
       else setAuthLoading(false);
     });
-    const { data: { subscription } } = sb.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = sb.auth.onAuthStateChange((event, session) => {
+      if (event === 'TOKEN_REFRESHED') { setSession(session); return; }
       setSession(session);
       if (session) loadProfile(session.user.id);
       else { setProfile(null); setAuthLoading(false); }
