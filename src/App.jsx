@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { sb } from './lib/supabase';
 import { ThemeCtx, LIGHT, DARK } from './theme';
 import { getGlobalStyle } from './theme/globalStyle';
@@ -32,16 +32,18 @@ export default function App() {
   const [session,     setSession]     = useState(null);
   const [profile,     setProfile]     = useState(null);   // rbo_profiles row
   const [authLoading, setAuthLoading] = useState(true);
+  const initialLoadDone = useRef(false);
 
   const theme = darkMode ? DARK : LIGHT;
 
   // ── Auth ──────────────────────────────────────────────────────────────────
   const loadProfile = useCallback(async (userId) => {
-    setAuthLoading(true);
+    if (!initialLoadDone.current) setAuthLoading(true);
     const { data } = await sb.from("rbo_profiles").select("*").eq("id", userId).single();
     setProfile(data || null);
     if (data) setDarkMode(data.dark_mode ?? true);
     setAuthLoading(false);
+    initialLoadDone.current = true;
   }, []);
 
   useEffect(() => {
