@@ -1,7 +1,21 @@
 {
   "permissions": {
     "allow": [
-      "Bash(node -e ' *)"
+      "Bash(node -e ' *)",
+      "Skill(andrej-karpathy-skills:karpathy-guidelines)",
+      "Skill(superpowers:executing-plans)",
+      "Skill(superpowers:using-git-worktrees)",
+      "Bash(git checkout *)",
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Skill(superpowers:finishing-a-development-branch)",
+      "Bash(git pull *)",
+      "Bash(git merge *)",
+      "Bash(git branch *)",
+      "Bash(git add *)",
+      "Bash(git rm *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)"
     ]
   }
 }
