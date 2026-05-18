@@ -1,1 +1,17 @@
+# dependencies
 node_modules
+
+# build
+dist
+
+# environment variables — NUNCA commitar
+.env
+.env.local
+.env.production
+
+# vite
+*.local
+
+# OS
+.DS_Store
+Thumbs.db
