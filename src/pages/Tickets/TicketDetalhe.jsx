@@ -118,14 +118,15 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
     const [tkR, histR, tecR, cliR, tipEqR, tipR] = await Promise.all([
       sb.from('rbo_tickets').select('*').eq('id', initialTicket.id).single(),
       sb.from('rbo_ticket_historico').select('*').eq('ticket_id', initialTicket.id).order('created_at', { ascending: false }),
-      sb.from('rbo_profiles').select('id,nome').eq('is_tecnico', true).eq('ativo', true).order('nome'),
+      sb.from('rbo_profiles').select('id,nome,is_tecnico').eq('ativo', true).order('nome'),
       sb.from('rbo_clientes').select('id,nome,nif,email,telefone').order('nome'),
       sb.from('rbo_equipment_types').select('id,nome').order('nome'),
       sb.from('rbo_tipologias').select('id,nome').order('nome'),
     ]);
     const tk = tkR.data;
-    const tecs = tecR.data || [];
-    const clis = cliR.data || [];
+    const profs = tecR.data || [];
+    const tecs  = profs.filter(p => p.is_tecnico);
+    const clis  = cliR.data || [];
     if (tk) {
       const [eqR, conR] = await Promise.all([
         tk.equipamento_id ? sb.from('rbo_client_equipment').select('id,descricao,num_serie').eq('id', tk.equipamento_id).single() : Promise.resolve({ data: null }),
@@ -141,7 +142,7 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
     }
     setHistorico((histR.data || []).map(h => ({
       ...h,
-      alterado_por: h.alterado_por_id ? { nome: tecs.find(p => p.id === h.alterado_por_id)?.nome || 'Utilizador' } : null,
+      alterado_por: h.alterado_por_id ? { nome: profs.find(p => p.id === h.alterado_por_id)?.nome || null } : null,
     })));
     setTecnicos(tecs);
     setClientes(clis);
@@ -552,7 +553,7 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
                   setTempoForm({ ...f, duracao_minutos: dur != null ? String(dur) : f.duracao_minutos });
                 }}/>
                 <div style={{ gridColumn: '1/-1' }}>
-                  <Input label="Duração (minutos)" value={tempoForm.duracao_minutos} onChange={v => setTempoForm(f => ({ ...f, duracao_minutos: v }))} type="number"/>
+                  <Input label="Duração (blocos 15 min)" value={tempoForm.duracao_minutos} onChange={v => setTempoForm(f => ({ ...f, duracao_minutos: v }))} type="number"/>
                 </div>
               </div>
             ) : (
@@ -561,7 +562,7 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
                 <FieldView label="Hora Início"   value={ticket.hora_inicio}/>
                 <FieldView label="Data Fim"      value={fmtDate(ticket.data_fim)}/>
                 <FieldView label="Hora Fim"      value={ticket.hora_fim}/>
-                <FieldView label="Duração (min)" value={ticket.duracao_minutos != null ? String(ticket.duracao_minutos) : null}/>
+                <FieldView label="Duração (blocos 15 min)" value={ticket.duracao_minutos != null ? String(ticket.duracao_minutos) : null}/>
               </div>
             )}
           </SectionCard>
