@@ -76,6 +76,7 @@ export const ClientesPage = () => {
         onNew={()=>{ setNewForm(emptyNew); setNewModal(true); }}
         newLabel="Novo Cliente"
         preDeleteCheck={preDeleteCliente}
+        searchPlaceholder="Pesquisar por nome, email, NIF ou localidade..."
         onView={r=>setDetalhe(r)}
         viewIcon="edit"
         noInlineEdit

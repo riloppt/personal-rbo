@@ -13,7 +13,7 @@ import { Input } from '../ui/Input';
 import { Icon } from '../ui/Icon';
 import { Badge } from '../ui/Badge';
 
-export const CrudPage = ({ title, table, cols, formFields, emptyForm, compact, hasAtivo, fieldOptions, onView, onNew, noInlineEdit, viewIcon, newLabel = 'Novo', preDeleteCheck }) => {
+export const CrudPage = ({ title, table, cols, formFields, emptyForm, compact, hasAtivo, fieldOptions, onView, onNew, noInlineEdit, viewIcon, newLabel = 'Novo', preDeleteCheck, searchPlaceholder }) => {
   const C = useTheme();
   const [rows,      setRows]      = useState([]);
   const [loading,   setLoading]   = useState(true);
@@ -24,6 +24,7 @@ export const CrudPage = ({ title, table, cols, formFields, emptyForm, compact, h
   const [editing,   setEditing]   = useState(null);
   const [saving,    setSaving]    = useState(false);
   const [showInativos, setShowInativos] = useState(false);
+  const [search,    setSearch]    = useState('');
 
   const load = useCallback(async()=>{
     setLoading(true); setError(null);
@@ -76,6 +77,10 @@ export const CrudPage = ({ title, table, cols, formFields, emptyForm, compact, h
     ? rows.filter(r => showInativos ? true : r.ativo !== false)
     : rows;
 
+  const filteredRows = !search.trim() ? visibleRows : visibleRows.filter(r =>
+    Object.values(r).some(v => typeof v === 'string' && v.toLowerCase().includes(search.toLowerCase()))
+  );
+
   const inativosCount = hasAtivo ? rows.filter(r => r.ativo === false).length : 0;
 
   return (
@@ -104,12 +109,18 @@ export const CrudPage = ({ title, table, cols, formFields, emptyForm, compact, h
         </div>
       )}
       <Card style={{padding:0,overflow:"hidden"}}>
+        {searchPlaceholder && (
+          <div style={{padding:"12px 20px",borderBottom:`1px solid ${C.grey100}`}}>
+            <input value={search} onChange={e=>setSearch(e.target.value)} placeholder={searchPlaceholder}
+              style={{width:"100%",maxWidth:340,border:`1.5px solid ${C.grey200}`,borderRadius:8,padding:"7px 12px",fontSize:13,outline:"none",background:C.white,color:C.grey800,fontFamily:"inherit"}}/>
+          </div>
+        )}
         {loading?<Loading/>:<Table
           cols={[
             ...cols,
             ...(hasAtivo ? [{key:"ativo",label:"Estado",render:v=><Badge color={v===false?C.grey400:C.green}>{v===false?"Inativo":"Ativo"}</Badge>}] : []),
           ]}
-          data={visibleRows}
+          data={filteredRows}
           onView={onView}
           viewIcon={viewIcon}
           onEdit={noInlineEdit ? undefined : openEdit}
