@@ -181,7 +181,7 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
   const enterEdit = section => {
     setEditSection(section);
     if (section === 'contactos') {
-      setContactForm({ nome_empresa: ticket.nome_empresa || '', nome_pessoa: ticket.nome_pessoa || '', email_cliente: ticket.email_cliente || '', telefone_cliente: ticket.telefone_cliente || '' });
+      setContactForm({ nome_empresa: ticket.nome_empresa || ticket.cliente?.nome || '', nome_pessoa: ticket.nome_pessoa || '', email_cliente: ticket.email_cliente || ticket.cliente?.email || '', telefone_cliente: ticket.telefone_cliente || ticket.cliente?.telefone || '' });
     } else if (section === 'associacoes') {
       const cid = ticket.cliente_id ? String(ticket.cliente_id) : '';
       setAssocForm({ cliente_id: cid, equipamento_id: ticket.equipamento_id ? String(ticket.equipamento_id) : '', contrato_id: ticket.contrato_id ? String(ticket.contrato_id) : '', tecnico_id: ticket.tecnico_id || '' });
@@ -496,72 +496,78 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
         )}
       </SectionCard>
 
-      {/* ── Secção 4 — Descrição e notas ── */}
-      <SectionCard title="Descrição e Notas" sectionKey="descricao" editSection={editSection} saving={saving} onEdit={enterEdit} onCancel={cancelEdit} onSave={saveDesc}>
-        {editSection === 'descricao' ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <Input label="Descrição do Problema" value={descForm.descricao_problema} onChange={v => setDescForm(f => ({ ...f, descricao_problema: v }))} textarea rows={4}/>
-            <div>
-              <Input label="Notas Internas" value={descForm.notas_internas} onChange={v => setDescForm(f => ({ ...f, notas_internas: v }))} textarea rows={3}/>
-              <div style={{ fontSize: 11, color: C.grey400, marginTop: 4 }}>Não visível para o cliente</div>
-            </div>
-          </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div>
-              <div style={{ fontSize: 11, fontWeight: 600, color: C.grey400, textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 6 }}>Problema</div>
-              <div style={{ fontSize: 14, color: C.grey800, lineHeight: 1.6 }}>{ticket.descricao_problema || '—'}</div>
-            </div>
-            {ticket.notas_internas && (
-              <div>
-                <div style={{ fontSize: 11, fontWeight: 600, color: C.amber, textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 6 }}>Notas Internas · interno</div>
-                <div style={{ fontSize: 14, color: C.grey800, lineHeight: 1.6 }}>{ticket.notas_internas}</div>
-              </div>
-            )}
-          </div>
-        )}
-      </SectionCard>
+      {/* ── Secções 4 + 5 — grid desktop ── */}
+      <style>{`@media(max-width:768px){.desc-tempo-grid{grid-template-columns:1fr!important}}`}</style>
+      <div className="desc-tempo-grid" style={{ display: 'grid', gridTemplateColumns: showTempoSection ? '1fr 1fr' : '1fr', gap: 16, alignItems: 'start' }}>
 
-      {/* ── Secção 5 — Tempo de trabalho ── */}
-      {showTempoSection && (
-        <SectionCard title="Tempo de Trabalho" sectionKey="tempo" editSection={editSection} saving={saving} onEdit={enterEdit} onCancel={cancelEdit} onSave={saveTempo} noEdit={!tempoEditavel}>
-          {editSection === 'tempo' ? (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-              <Input label="Data Início" value={tempoForm.data_inicio} type="date" onChange={v => {
-                const f = { ...tempoForm, data_inicio: v };
-                const dur = calcularDuracao(f.data_inicio, f.hora_inicio, f.data_fim, f.hora_fim);
-                setTempoForm({ ...f, duracao_minutos: dur != null ? String(dur) : f.duracao_minutos });
-              }}/>
-              <Input label="Hora Início" value={tempoForm.hora_inicio} type="time" onChange={v => {
-                const f = { ...tempoForm, hora_inicio: v };
-                const dur = calcularDuracao(f.data_inicio, f.hora_inicio, f.data_fim, f.hora_fim);
-                setTempoForm({ ...f, duracao_minutos: dur != null ? String(dur) : f.duracao_minutos });
-              }}/>
-              <Input label="Data Fim" value={tempoForm.data_fim} type="date" onChange={v => {
-                const f = { ...tempoForm, data_fim: v };
-                const dur = calcularDuracao(f.data_inicio, f.hora_inicio, f.data_fim, f.hora_fim);
-                setTempoForm({ ...f, duracao_minutos: dur != null ? String(dur) : f.duracao_minutos });
-              }}/>
-              <Input label="Hora Fim" value={tempoForm.hora_fim} type="time" onChange={v => {
-                const f = { ...tempoForm, hora_fim: v };
-                const dur = calcularDuracao(f.data_inicio, f.hora_inicio, f.data_fim, f.hora_fim);
-                setTempoForm({ ...f, duracao_minutos: dur != null ? String(dur) : f.duracao_minutos });
-              }}/>
-              <div style={{ gridColumn: '1/-1' }}>
-                <Input label="Duração (minutos)" value={tempoForm.duracao_minutos} onChange={v => setTempoForm(f => ({ ...f, duracao_minutos: v }))} type="number"/>
+        {/* ── Secção 4 — Descrição e notas ── */}
+        <SectionCard title="Descrição e Notas" sectionKey="descricao" editSection={editSection} saving={saving} onEdit={enterEdit} onCancel={cancelEdit} onSave={saveDesc}>
+          {editSection === 'descricao' ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <Input label="Descrição do Problema" value={descForm.descricao_problema} onChange={v => setDescForm(f => ({ ...f, descricao_problema: v }))} textarea rows={4}/>
+              <div>
+                <Input label="Notas Internas" value={descForm.notas_internas} onChange={v => setDescForm(f => ({ ...f, notas_internas: v }))} textarea rows={3}/>
+                <div style={{ fontSize: 11, color: C.grey400, marginTop: 4 }}>Não visível para o cliente</div>
               </div>
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 14 }}>
-              <FieldView label="Data Início"   value={fmtDate(ticket.data_inicio)}/>
-              <FieldView label="Hora Início"   value={ticket.hora_inicio}/>
-              <FieldView label="Data Fim"      value={fmtDate(ticket.data_fim)}/>
-              <FieldView label="Hora Fim"      value={ticket.hora_fim}/>
-              <FieldView label="Duração (min)" value={ticket.duracao_minutos != null ? String(ticket.duracao_minutos) : null}/>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 600, color: C.grey400, textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 6 }}>Problema</div>
+                <div style={{ fontSize: 14, color: C.grey800, lineHeight: 1.6 }}>{ticket.descricao_problema || '—'}</div>
+              </div>
+              {ticket.notas_internas && (
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: C.amber, textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 6 }}>Notas Internas · interno</div>
+                  <div style={{ fontSize: 14, color: C.grey800, lineHeight: 1.6 }}>{ticket.notas_internas}</div>
+                </div>
+              )}
             </div>
           )}
         </SectionCard>
-      )}
+
+        {/* ── Secção 5 — Tempo de trabalho ── */}
+        {showTempoSection && (
+          <SectionCard title="Tempo de Trabalho" sectionKey="tempo" editSection={editSection} saving={saving} onEdit={enterEdit} onCancel={cancelEdit} onSave={saveTempo} noEdit={!tempoEditavel}>
+            {editSection === 'tempo' ? (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                <Input label="Data Início" value={tempoForm.data_inicio} type="date" onChange={v => {
+                  const f = { ...tempoForm, data_inicio: v };
+                  const dur = calcularDuracao(f.data_inicio, f.hora_inicio, f.data_fim, f.hora_fim);
+                  setTempoForm({ ...f, duracao_minutos: dur != null ? String(dur) : f.duracao_minutos });
+                }}/>
+                <Input label="Hora Início" value={tempoForm.hora_inicio} type="time" onChange={v => {
+                  const f = { ...tempoForm, hora_inicio: v };
+                  const dur = calcularDuracao(f.data_inicio, f.hora_inicio, f.data_fim, f.hora_fim);
+                  setTempoForm({ ...f, duracao_minutos: dur != null ? String(dur) : f.duracao_minutos });
+                }}/>
+                <Input label="Data Fim" value={tempoForm.data_fim} type="date" onChange={v => {
+                  const f = { ...tempoForm, data_fim: v };
+                  const dur = calcularDuracao(f.data_inicio, f.hora_inicio, f.data_fim, f.hora_fim);
+                  setTempoForm({ ...f, duracao_minutos: dur != null ? String(dur) : f.duracao_minutos });
+                }}/>
+                <Input label="Hora Fim" value={tempoForm.hora_fim} type="time" onChange={v => {
+                  const f = { ...tempoForm, hora_fim: v };
+                  const dur = calcularDuracao(f.data_inicio, f.hora_inicio, f.data_fim, f.hora_fim);
+                  setTempoForm({ ...f, duracao_minutos: dur != null ? String(dur) : f.duracao_minutos });
+                }}/>
+                <div style={{ gridColumn: '1/-1' }}>
+                  <Input label="Duração (minutos)" value={tempoForm.duracao_minutos} onChange={v => setTempoForm(f => ({ ...f, duracao_minutos: v }))} type="number"/>
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 14 }}>
+                <FieldView label="Data Início"   value={fmtDate(ticket.data_inicio)}/>
+                <FieldView label="Hora Início"   value={ticket.hora_inicio}/>
+                <FieldView label="Data Fim"      value={fmtDate(ticket.data_fim)}/>
+                <FieldView label="Hora Fim"      value={ticket.hora_fim}/>
+                <FieldView label="Duração (min)" value={ticket.duracao_minutos != null ? String(ticket.duracao_minutos) : null}/>
+              </div>
+            )}
+          </SectionCard>
+        )}
+
+      </div>
 
       {/* ── Secção 6 — Mudança de estado ── */}
       {transicoes.length > 0 && !editSection && (
