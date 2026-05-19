@@ -95,6 +95,7 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
       sb.from('rbo_tipologias').select('id,nome').order('nome'),
     ]);
     const tk = tkR.data;
+    console.log('[DEBUG] rbo_tickets columns:', tk ? Object.keys(tk) : tkR.error);
     const tecs = tecR.data || [];
     const clis = cliR.data || [];
     if (tk) {
