@@ -13,7 +13,7 @@ import { Input } from '../ui/Input';
 import { Icon } from '../ui/Icon';
 import { Badge } from '../ui/Badge';
 
-export const CrudPage = ({ title, table, cols, formFields, emptyForm, compact, hasAtivo, fieldOptions, onView, onNew, noInlineEdit, viewIcon }) => {
+export const CrudPage = ({ title, table, cols, formFields, emptyForm, compact, hasAtivo, fieldOptions, onView, onNew, noInlineEdit, viewIcon, newLabel = 'Novo' }) => {
   const C = useTheme();
   const [rows,      setRows]      = useState([]);
   const [loading,   setLoading]   = useState(true);
@@ -76,7 +76,7 @@ export const CrudPage = ({ title, table, cols, formFields, emptyForm, compact, h
 
   return (
     <div>
-      {!compact && <PageHeader title={title} subtitle={`${visibleRows.length} registos`} action={<Btn icon="plus" onClick={onNew||openNew}>Novo</Btn>}/>}
+      {!compact && <PageHeader title={title} subtitle={`${visibleRows.length} registos`} action={<Btn icon="plus" onClick={onNew||openNew}>{newLabel}</Btn>}/>}
       {compact && (
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
           <span style={{fontSize:13,color:C.grey400}}>{visibleRows.length} registos</span>
@@ -87,7 +87,7 @@ export const CrudPage = ({ title, table, cols, formFields, emptyForm, compact, h
                 {showInativos ? "Ocultar inativos" : `Mostrar inativos (${inativosCount})`}
               </button>
             )}
-            <Btn icon="plus" size="sm" onClick={onNew||openNew}>Novo</Btn>
+            <Btn icon="plus" size="sm" onClick={onNew||openNew}>{newLabel}</Btn>
           </div>
         </div>
       )}

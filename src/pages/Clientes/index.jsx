@@ -58,6 +58,7 @@ export const ClientesPage = () => {
         fieldOptions={{tecnico_id: tecnicoOpts}}
         formFields={[]}
         onNew={()=>{ setNewForm(emptyNew); setNewModal(true); }}
+        newLabel="Novo Cliente"
         onView={r=>setDetalhe(r)}
         viewIcon="edit"
         noInlineEdit
