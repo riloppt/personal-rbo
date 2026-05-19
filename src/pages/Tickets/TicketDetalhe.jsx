@@ -18,12 +18,25 @@ const calcularDuracao = (dataInicio, horaInicio, dataFim, horaFim) => {
   const inicio = new Date(`${dataInicio}T${horaInicio}`);
   const fim    = new Date(`${dataFim}T${horaFim}`);
   if (isNaN(inicio) || isNaN(fim) || fim <= inicio) return null;
-  return Math.ceil((fim - inicio) / 60000);
+  return Math.ceil((fim - inicio) / (15 * 60000)) * 15;
 };
 
 const calcularCreditos = (minutos) => {
   if (!minutos || Number(minutos) <= 0) return 0;
   return -Math.ceil(Number(minutos) / 15);
+};
+
+const tempoRelativo = (dateStr) => {
+  if (!dateStr) return '';
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1)  return 'agora mesmo';
+  if (mins < 60) return `há ${mins}min`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24)  return `há ${hrs}h`;
+  const days = Math.floor(hrs / 24);
+  if (days < 7)  return `há ${days}d`;
+  return fmtDate(dateStr.split('T')[0]);
 };
 
 // ── Module-level section card (stable component type, avoids remount issues) ──
@@ -556,13 +569,32 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
           <div style={{ padding: '14px 20px', borderBottom: `1px solid ${C.grey100}` }}>
             <span style={{ fontSize: 12, fontWeight: 600, color: C.grey400, textTransform: 'uppercase', letterSpacing: '.5px' }}>Alterar Estado</span>
           </div>
-          <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <Select label="Novo estado" value={novoEstado} onChange={setNovoEstado}
-              options={transicoes.map(id => ({ value: id, label: estadoLabel(id) }))}/>
-            <Input label="Nota (opcional)" value={notaEstado} onChange={setNotaEstado} placeholder="Motivo da mudança de estado..."/>
-            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <Btn onClick={alterarEstado} disabled={saving || !novoEstado}>{saving ? 'A guardar...' : 'Alterar Estado'}</Btn>
-            </div>
+          <div style={{ padding: '16px 20px' }}>
+            {!novoEstado ? (
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                {transicoes.map(id => (
+                  <button key={id} onClick={() => setNovoEstado(id)}
+                    style={{ background: estadoCor(id) + '18', color: estadoCor(id), border: `1.5px solid ${estadoCor(id)}55`, borderRadius: 8, padding: '8px 18px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+                    onMouseEnter={e => e.currentTarget.style.background = estadoCor(id) + '30'}
+                    onMouseLeave={e => e.currentTarget.style.background = estadoCor(id) + '18'}>
+                    → {estadoLabel(id)}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                  <Badge color={estadoCor(ticket.estado)}>{estadoLabel(ticket.estado)}</Badge>
+                  <span style={{ color: C.grey400, fontSize: 14 }}>→</span>
+                  <Badge color={estadoCor(novoEstado)}>{estadoLabel(novoEstado)}</Badge>
+                </div>
+                <Input label="Nota (opcional)" value={notaEstado} onChange={setNotaEstado} placeholder="Motivo da mudança de estado..."/>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <Btn onClick={alterarEstado} disabled={saving}>{saving ? 'A guardar...' : 'Confirmar'}</Btn>
+                  <Btn variant="secondary" onClick={() => { setNovoEstado(''); setNotaEstado(''); }}>Cancelar</Btn>
+                </div>
+              </div>
+            )}
           </div>
         </Card>
       )}
@@ -572,23 +604,36 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
         <div style={{ padding: '14px 20px', borderBottom: `1px solid ${C.grey100}` }}>
           <span style={{ fontSize: 12, fontWeight: 600, color: C.grey400, textTransform: 'uppercase', letterSpacing: '.5px' }}>Histórico de Estados</span>
         </div>
-        <div style={{ padding: '4px 0' }}>
+        <div style={{ padding: '16px 20px' }}>
           {historico.length === 0 ? (
-            <div style={{ padding: '20px', textAlign: 'center', color: C.grey400, fontSize: 13 }}>Sem histórico.</div>
+            <div style={{ textAlign: 'center', color: C.grey400, fontSize: 13 }}>Sem histórico.</div>
           ) : historico.map((h, i) => (
-            <div key={h.id || i} style={{ padding: '12px 20px', borderBottom: i < historico.length - 1 ? `1px solid ${C.grey100}` : 'none' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
-                {h.estado_anterior && <><Badge color={estadoCor(h.estado_anterior)}>{estadoLabel(h.estado_anterior)}</Badge><span style={{ color: C.grey400, fontSize: 12 }}>→</span></>}
-                <Badge color={estadoCor(h.estado_novo)}>{estadoLabel(h.estado_novo)}</Badge>
-                <span style={{ color: C.grey400, fontSize: 12, marginLeft: 'auto' }}>{fmtDateTime(h.created_at)}</span>
+            <div key={h.id || i} style={{ display: 'flex', gap: 14 }}>
+              {/* Timeline indicator */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
+                <div style={{ width: 10, height: 10, borderRadius: '50%', background: estadoCor(h.estado_novo), marginTop: 4, boxShadow: `0 0 0 3px ${estadoCor(h.estado_novo)}25`, flexShrink: 0 }}/>
+                {i < historico.length - 1 && <div style={{ width: 2, flex: 1, background: C.grey100, marginTop: 5, minHeight: 24 }}/>}
               </div>
-              {(h.alterado_por?.nome || h.nota) && (
-                <div style={{ fontSize: 12, color: C.grey400 }}>
-                  {h.alterado_por?.nome && <span>{h.alterado_por.nome}</span>}
-                  {h.alterado_por?.nome && h.nota && <span> · </span>}
-                  {h.nota && <span style={{ fontStyle: 'italic' }}>{h.nota}</span>}
+              {/* Entry content */}
+              <div style={{ paddingBottom: i < historico.length - 1 ? 20 : 0, flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  {h.estado_anterior && (
+                    <><Badge color={estadoCor(h.estado_anterior)}>{estadoLabel(h.estado_anterior)}</Badge>
+                    <span style={{ color: C.grey400, fontSize: 12 }}>→</span></>
+                  )}
+                  <Badge color={estadoCor(h.estado_novo)}>{estadoLabel(h.estado_novo)}</Badge>
+                  <span style={{ color: C.grey400, fontSize: 12, marginLeft: 'auto', whiteSpace: 'nowrap' }} title={fmtDateTime(h.created_at)}>
+                    {tempoRelativo(h.created_at)}
+                  </span>
                 </div>
-              )}
+                {(h.alterado_por?.nome || h.nota) && (
+                  <div style={{ fontSize: 12, color: C.grey400, marginTop: 4 }}>
+                    {h.alterado_por?.nome && <span style={{ fontWeight: 500 }}>{h.alterado_por.nome}</span>}
+                    {h.alterado_por?.nome && h.nota && <span> · </span>}
+                    {h.nota && <span style={{ fontStyle: 'italic' }}>{h.nota}</span>}
+                  </div>
+                )}
+              </div>
             </div>
           ))}
         </div>
