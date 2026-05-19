@@ -221,21 +221,27 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
   };
 
   const doAlterarEstado = async (estado, nota, descontar, creditos) => {
+    console.log('[doAlterarEstado]', { estado, descontar, creditos, contrato_id: ticket.contrato_id, ticket_id: ticket.id });
     await sb.from('rbo_tickets').update({ estado }).eq('id', ticket.id);
     await sb.from('rbo_ticket_historico').insert([{ ticket_id: ticket.id, estado_anterior: ticket.estado, estado_novo: estado, alterado_por_id: currentUserId || null, nota: nota || null }]);
     if (descontar && ticket.contrato_id) {
-      const { data: mov, error: movErr } = await sb.from('rbo_movimentos').insert([{
-        contrato_id:       ticket.contrato_id,
-        data:              ticket.data_fim || new Date().toISOString().split('T')[0],
-        hora_inicio:       ticket.hora_inicio || null,
-        hora_fim:          ticket.hora_fim || null,
-        creditos:          Number(creditos),
-        descritivo:        `Ticket #${String(ticket.id).padStart(3, '0')} — ${(ticket.descricao_problema || '').slice(0, 150)}`,
+      const payload = {
+        contrato_id:        ticket.contrato_id,
+        data:               ticket.data_fim || new Date().toISOString().split('T')[0],
+        hora_inicio:        ticket.hora_inicio || null,
+        hora_fim:           ticket.hora_fim || null,
+        creditos:           Number(creditos),
+        descritivo:         `Ticket #${String(ticket.id).padStart(3, '0')} — ${(ticket.descricao_problema || '').slice(0, 150)}`,
         profile_tecnico_id: ticket.tecnico_id || null,
-        tipo:              'assistencia',
-      }]).select().single();
+        tipo:               'assistencia',
+      };
+      console.log('[doAlterarEstado] inserting movimento:', payload);
+      const { data: mov, error: movErr } = await sb.from('rbo_movimentos').insert([payload]).select().single();
+      console.log('[doAlterarEstado] movimento result:', { mov, movErr });
       if (movErr) { setSaveError('Erro ao registar movimento: ' + movErr.message); return; }
       if (mov) await sb.from('rbo_tickets').update({ movimento_id: mov.id }).eq('id', ticket.id);
+    } else {
+      console.log('[doAlterarEstado] skipped movimento — descontar:', descontar, 'contrato_id:', ticket.contrato_id);
     }
     await load();
     setNovoEstado(''); setNotaEstado('');
