@@ -107,6 +107,7 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
 
   const [novoEstado,        setNovoEstado]        = useState('');
   const [notaEstado,        setNotaEstado]        = useState('');
+  const [erroEstado,        setErroEstado]        = useState('');
   const [showModalConcluir, setShowModalConcluir] = useState(false);
   const [saldoContrato,     setSaldoContrato]     = useState(0);
   const [creditosDesconto,  setCreditosDesconto]  = useState(0);
@@ -291,6 +292,14 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
 
   const alterarEstado = async () => {
     if (!novoEstado) return;
+    if (novoEstado === 'concluido') {
+      const tempoOk = ticket.data_inicio && ticket.hora_inicio && ticket.data_fim && ticket.hora_fim && ticket.duracao_minutos != null;
+      if (!tempoOk) {
+        setErroEstado('Preencha o tempo de trabalho (data/hora início, data/hora fim e duração) antes de concluir o ticket.');
+        return;
+      }
+    }
+    setErroEstado('');
     setSaving(true);
     if (novoEstado === 'concluido' && ticket.contrato_id) {
       const movR = await sb.from('rbo_movimentos').select('creditos').eq('contrato_id', ticket.contrato_id);
@@ -580,7 +589,7 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
             {!novoEstado ? (
               <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                 {transicoes.map(id => (
-                  <button key={id} onClick={() => setNovoEstado(id)}
+                  <button key={id} onClick={() => { setNovoEstado(id); setErroEstado(''); }}
                     style={{ background: estadoCor(id) + '18', color: estadoCor(id), border: `1.5px solid ${estadoCor(id)}55`, borderRadius: 8, padding: '8px 18px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
                     onMouseEnter={e => e.currentTarget.style.background = estadoCor(id) + '30'}
                     onMouseLeave={e => e.currentTarget.style.background = estadoCor(id) + '18'}>
@@ -596,9 +605,14 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
                   <Badge color={estadoCor(novoEstado)}>{estadoLabel(novoEstado)}</Badge>
                 </div>
                 <Input label="Nota (opcional)" value={notaEstado} onChange={setNotaEstado} placeholder="Motivo da mudança de estado..."/>
+                {erroEstado && (
+                  <div style={{ fontSize: 13, color: C.red, padding: '8px 12px', background: C.red + '12', border: `1px solid ${C.red}33`, borderRadius: 8 }}>
+                    {erroEstado}
+                  </div>
+                )}
                 <div style={{ display: 'flex', gap: 8 }}>
                   <Btn onClick={alterarEstado} disabled={saving}>{saving ? 'A guardar...' : 'Confirmar'}</Btn>
-                  <Btn variant="secondary" onClick={() => { setNovoEstado(''); setNotaEstado(''); }}>Cancelar</Btn>
+                  <Btn variant="secondary" onClick={() => { setNovoEstado(''); setNotaEstado(''); setErroEstado(''); }}>Cancelar</Btn>
                 </div>
               </div>
             )}
