@@ -1,6 +1,6 @@
 export const ESTADOS = [
   { id: 'submetido',       label: 'Submetido',       cor: '#e8a83a' },
-  { id: 'pendente',        label: 'Pendente',         cor: '#8fa6ab' },
+  { id: 'pendente',        label: 'Pendente',         cor: '#7b68ee' },
   { id: 'atribuido',       label: 'Atribuído',        cor: '#2a9d9d' },
   { id: 'em_curso',        label: 'Em Curso',         cor: '#2db87d' },
   { id: 'aguarda_cliente', label: 'Aguarda Cliente',  cor: '#e07878' },
