@@ -15,7 +15,7 @@ import { qrUrl } from '../../utils/helpers';
 import { buildReportHtml } from '../../features/email/reportHtml';
 import { EmailReportBtn } from '../../features/email/EmailReportBtn';
 
-export const ContratoDetalhe = ({ contrato, onBack }) => {
+export const ContratoDetalhe = ({ contrato, onBack, onDelete }) => {
   const C = useTheme();
   const [movimentos, setMovimentos] = useState([]);
   const [tecnicos,   setTecnicos]   = useState([]);
@@ -113,9 +113,10 @@ export const ContratoDetalhe = ({ contrato, onBack }) => {
             <Badge color={saldo>10?C.green:saldo>0?C.amber:C.red}>{saldo} créditos</Badge>
           </div>
         </div>
-        <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+        <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
           <Btn variant="secondary" size="sm" icon="credit" onClick={()=>openNew("credito")}>Adicionar Créditos</Btn>
           <Btn size="sm" icon="plus" onClick={()=>openNew("assistencia")}>Nova Assistência</Btn>
+          {onDelete && <Btn variant="danger" size="sm" icon="trash" onClick={onDelete}>Eliminar contrato</Btn>}
         </div>
       </div>
 

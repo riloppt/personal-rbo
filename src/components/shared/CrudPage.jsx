@@ -13,7 +13,7 @@ import { Input } from '../ui/Input';
 import { Icon } from '../ui/Icon';
 import { Badge } from '../ui/Badge';
 
-export const CrudPage = ({ title, table, cols, formFields, emptyForm, compact, hasAtivo, fieldOptions, onView, onNew, noInlineEdit, viewIcon, newLabel = 'Novo', preDeleteCheck, searchPlaceholder }) => {
+export const CrudPage = ({ title, table, cols, formFields, emptyForm, compact, hasAtivo, fieldOptions, onView, onNew, noInlineEdit, viewIcon, newLabel = 'Novo', preDeleteCheck, searchPlaceholder, noListDelete }) => {
   const C = useTheme();
   const [rows,      setRows]      = useState([]);
   const [loading,   setLoading]   = useState(true);
@@ -124,7 +124,7 @@ export const CrudPage = ({ title, table, cols, formFields, emptyForm, compact, h
           onView={onView}
           viewIcon={viewIcon}
           onEdit={noInlineEdit ? undefined : openEdit}
-          onDelete={del}
+          onDelete={noListDelete ? undefined : del}
           extraActions={hasAtivo ? row=>(
             <button onClick={()=>toggleAtivo(row)} title={row.ativo===false?"Ativar":"Inativar"}
               style={{background:"none",border:"none",cursor:"pointer",padding:"4px 6px",borderRadius:6,display:"flex",alignItems:"center",transition:"background .15s"}}

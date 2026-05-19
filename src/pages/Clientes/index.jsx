@@ -42,6 +42,15 @@ export const ClientesPage = () => {
 
   const onBack = () => { setDetalhe(null); setReload(r=>r+1); };
 
+  const handleDeleteCliente = async () => {
+    const err = await preDeleteCliente(detalhe.id);
+    if (err) { alert(err); return; }
+    if (!window.confirm("Eliminar cliente permanentemente? Esta ação não pode ser revertida.")) return;
+    const { error } = await sb.from("rbo_clientes").delete().eq("id", detalhe.id);
+    if (error) { alert("Erro: " + error.message); return; }
+    onBack();
+  };
+
   const preDeleteCliente = async (id) => {
     const [tkR, conR] = await Promise.all([
       sb.from('rbo_tickets').select('id', { count: 'exact', head: true }).eq('cliente_id', id),
@@ -58,7 +67,7 @@ export const ClientesPage = () => {
     return null;
   };
 
-  if (detalhe) return <ClienteDetalhe cliente={detalhe} tecnicoOpts={tecnicoOpts} onBack={onBack}/>;
+  if (detalhe) return <ClienteDetalhe cliente={detalhe} tecnicoOpts={tecnicoOpts} onBack={onBack} onDelete={handleDeleteCliente}/>;
 
   return (
     <>
@@ -78,8 +87,8 @@ export const ClientesPage = () => {
         preDeleteCheck={preDeleteCliente}
         searchPlaceholder="Pesquisar por nome, email, NIF ou localidade..."
         onView={r=>setDetalhe(r)}
-        viewIcon="edit"
         noInlineEdit
+        noListDelete
       />
 
       {newModal && (

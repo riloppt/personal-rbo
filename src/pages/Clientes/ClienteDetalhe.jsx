@@ -11,7 +11,7 @@ import { ContactosPanel } from './ContactosPanel';
 import { EquipamentosPanel } from './EquipamentosPanel';
 import { CredenciaisPanel } from './CredenciaisPanel';
 
-export const ClienteDetalhe = ({ cliente: clienteInicial, tecnicoOpts, onBack }) => {
+export const ClienteDetalhe = ({ cliente: clienteInicial, tecnicoOpts, onBack, onDelete }) => {
   const C = useTheme();
   const [cliente,       setCliente]       = useState(clienteInicial);
   const [form,          setForm]          = useState({...clienteInicial});
@@ -62,9 +62,12 @@ export const ClienteDetalhe = ({ cliente: clienteInicial, tecnicoOpts, onBack })
       </button>
 
       {/* Header */}
-      <div style={{marginBottom:20}}>
-        <h1 style={{fontSize:22,fontWeight:700,color:C.grey800}}>{cliente.nome}</h1>
-        {tecNome !== "—" && <div style={{fontSize:13,color:C.grey400,marginTop:4}}>Técnico: {tecNome}</div>}
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:12,marginBottom:20}}>
+        <div>
+          <h1 style={{fontSize:22,fontWeight:700,color:C.grey800}}>{cliente.nome}</h1>
+          {tecNome !== "—" && <div style={{fontSize:13,color:C.grey400,marginTop:4}}>Técnico: {tecNome}</div>}
+        </div>
+        {onDelete && <Btn variant="danger" size="sm" icon="trash" onClick={onDelete}>Eliminar cliente</Btn>}
       </div>
 
       {/* Tab bar */}

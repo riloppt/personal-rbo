@@ -59,12 +59,6 @@ export const Contratos = () => {
     setForm({cliente_id:"",tipologia_id:"",data_contrato:new Date().toISOString().split("T")[0],ativo:true});
   };
 
-  const del = async id => {
-    if (!confirm("Eliminar contrato e todos os seus movimentos?")) return;
-    await sb.from("rbo_contratos").delete().eq("id",id);
-    await load();
-  };
-
   const filtered = rows.filter(c=>{
     const cli = clientes.find(x=>x.id===c.cliente_id);
     const tip = tipologias.find(x=>x.id===c.tipologia_id);
@@ -72,7 +66,15 @@ export const Contratos = () => {
     return !q||cli?.nome.toLowerCase().includes(q)||tip?.nome.toLowerCase().includes(q);
   });
 
-  if (detalhe) return <ContratoDetalhe contrato={detalhe} onBack={()=>{ setDetalhe(null); load(); }}/>;
+  const handleDeleteContrato = async () => {
+    if (!confirm("Eliminar contrato e todos os seus movimentos?")) return;
+    const { error } = await sb.from("rbo_contratos").delete().eq("id", detalhe.id);
+    if (error) { alert("Erro: " + error.message); return; }
+    setDetalhe(null);
+    await load();
+  };
+
+  if (detalhe) return <ContratoDetalhe contrato={detalhe} onBack={()=>{ setDetalhe(null); load(); }} onDelete={handleDeleteContrato}/>;
 
   return (
     <div>
@@ -93,7 +95,6 @@ export const Contratos = () => {
           ]}
           data={filtered}
           onView={r=>setDetalhe(r)}
-          onDelete={del}
           emptyMsg="Sem contratos. Crie o primeiro contrato."
         />}
       </Card>
