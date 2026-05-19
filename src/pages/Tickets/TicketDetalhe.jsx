@@ -177,10 +177,9 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
     setSaving(true);
     setSaveError('');
     const { error } = await sb.from('rbo_tickets').update({
-      cliente_id:          assocForm.cliente_id          ? Number(assocForm.cliente_id)          : null,
-      equipamento_id:      assocForm.equipamento_id      ? Number(assocForm.equipamento_id)      : null,
-      contrato_id:         assocForm.contrato_id         ? Number(assocForm.contrato_id)         : null,
-      profile_tecnico_id:  assocForm.profile_tecnico_id  || null,
+      cliente_id:     assocForm.cliente_id     ? Number(assocForm.cliente_id)     : null,
+      equipamento_id: assocForm.equipamento_id ? Number(assocForm.equipamento_id) : null,
+      contrato_id:    assocForm.contrato_id    ? Number(assocForm.contrato_id)    : null,
     }).eq('id', ticket.id);
     if (error) { setSaveError('Erro ao guardar: ' + error.message); setSaving(false); return; }
     await load();
