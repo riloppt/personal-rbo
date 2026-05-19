@@ -498,7 +498,7 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
 
       {/* ── Secções 4 + 5 — grid desktop ── */}
       <style>{`@media(max-width:768px){.desc-tempo-grid{grid-template-columns:1fr!important}}`}</style>
-      <div className="desc-tempo-grid" style={{ display: 'grid', gridTemplateColumns: showTempoSection ? '1fr 1fr' : '1fr', gap: 16, alignItems: 'start' }}>
+      <div className="desc-tempo-grid" style={{ display: 'grid', gridTemplateColumns: showTempoSection ? '1fr 1fr' : '1fr', gap: 16, alignItems: 'stretch', marginBottom: 16 }}>
 
         {/* ── Secção 4 — Descrição e notas ── */}
         <SectionCard title="Descrição e Notas" sectionKey="descricao" editSection={editSection} saving={saving} onEdit={enterEdit} onCancel={cancelEdit} onSave={saveDesc}>
@@ -570,7 +570,7 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
       </div>
 
       {/* ── Secção 6 — Mudança de estado ── */}
-      {transicoes.length > 0 && !editSection && (
+      {transicoes.length > 0 && (
         <Card style={{ marginBottom: 16 }}>
           <div style={{ padding: '14px 20px', borderBottom: `1px solid ${C.grey100}` }}>
             <span style={{ fontSize: 12, fontWeight: 600, color: C.grey400, textTransform: 'uppercase', letterSpacing: '.5px' }}>Alterar Estado</span>
