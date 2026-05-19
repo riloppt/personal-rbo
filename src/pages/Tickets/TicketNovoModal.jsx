@@ -154,7 +154,7 @@ export const TicketNovoModal = ({ onClose, onCreated, currentUserId }) => {
       cliente_id:          clienteSeleccionado?.id || null,
       equipamento_id:      equipId,
       contrato_id:         form3.contrato_id ? Number(form3.contrato_id) : null,
-      profile_tecnico_id:  form3.profile_tecnico_id || null,
+      tecnico_id:          form3.profile_tecnico_id || null,
       descricao_problema:  form3.descricao_problema.trim(),
       notas_internas:      form3.notas_internas.trim() || null,
     }]).select().single();

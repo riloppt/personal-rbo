@@ -95,7 +95,6 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
       sb.from('rbo_tipologias').select('id,nome').order('nome'),
     ]);
     const tk = tkR.data;
-    console.log('[DEBUG] rbo_tickets columns:', tk ? Object.keys(tk) : tkR.error);
     const tecs = tecR.data || [];
     const clis = cliR.data || [];
     if (tk) {
@@ -106,7 +105,7 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
       setTicket({
         ...tk,
         cliente:     clis.find(c => c.id === tk.cliente_id)           || null,
-        tecnico:     tecs.find(t => t.id === tk.profile_tecnico_id)   || null,
+        tecnico:     tecs.find(t => t.id === tk.tecnico_id)   || null,
         equipamento: eqR.data  || null,
         contrato:    conR.data || null,
       });
@@ -156,7 +155,7 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
       setContactForm({ nome_empresa: ticket.nome_empresa || '', nome_pessoa: ticket.nome_pessoa || '', email_cliente: ticket.email_cliente || '', telefone_cliente: ticket.telefone_cliente || '' });
     } else if (section === 'associacoes') {
       const cid = ticket.cliente_id ? String(ticket.cliente_id) : '';
-      setAssocForm({ cliente_id: cid, equipamento_id: ticket.equipamento_id ? String(ticket.equipamento_id) : '', contrato_id: ticket.contrato_id ? String(ticket.contrato_id) : '', profile_tecnico_id: ticket.profile_tecnico_id || '' });
+      setAssocForm({ cliente_id: cid, equipamento_id: ticket.equipamento_id ? String(ticket.equipamento_id) : '', contrato_id: ticket.contrato_id ? String(ticket.contrato_id) : '', tecnico_id: ticket.tecnico_id || '' });
       setClienteSearch(ticket.cliente?.nome || '');
     } else if (section === 'descricao') {
       setDescForm({ descricao_problema: ticket.descricao_problema || '', notas_internas: ticket.notas_internas || '' });
@@ -180,6 +179,7 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
       cliente_id:     assocForm.cliente_id     ? Number(assocForm.cliente_id)     : null,
       equipamento_id: assocForm.equipamento_id ? Number(assocForm.equipamento_id) : null,
       contrato_id:    assocForm.contrato_id    ? Number(assocForm.contrato_id)    : null,
+      tecnico_id:     assocForm.tecnico_id     || null,
     }).eq('id', ticket.id);
     if (error) { setSaveError('Erro ao guardar: ' + error.message); setSaving(false); return; }
     await load();
@@ -230,7 +230,7 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
         hora_inicio: ticket.hora_inicio || null, hora_fim: ticket.hora_fim || null,
         creditos: Number(creditos),
         descritivo: `Ticket #${String(ticket.id).padStart(3, '0')} — ${(ticket.descricao_problema || '').slice(0, 150)}`,
-        profile_tecnico_id: ticket.profile_tecnico_id || null,
+        tecnico_id: ticket.tecnico_id || null,
         tipo: 'assistencia',
       }]).select().single();
       if (mov) await sb.from('rbo_tickets').update({ movimento_id: mov.id }).eq('id', ticket.id);
@@ -387,7 +387,7 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
               </>
             )}
 
-            <Select label="Técnico (opcional)" value={assocForm.profile_tecnico_id} onChange={v => setAssocForm(f => ({ ...f, profile_tecnico_id: v }))}
+            <Select label="Técnico (opcional)" value={assocForm.tecnico_id} onChange={v => setAssocForm(f => ({ ...f, tecnico_id: v }))}
               options={tecnicos.map(t => ({ value: t.id, label: t.nome }))}/>
           </div>
         ) : (

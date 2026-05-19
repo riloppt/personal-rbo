@@ -40,7 +40,7 @@ export const Tickets = ({ currentUserId }) => {
 
   const filtered = tickets.filter(t => {
     if (filterEstado && t.estado !== filterEstado) return false;
-    if (filterTecnico && t.profile_tecnico_id !== filterTecnico) return false;
+    if (filterTecnico && t.tecnico_id !== filterTecnico) return false;
     if (search) {
       const q = search.toLowerCase();
       const haystack = [t.nome_empresa, t.nome_pessoa, t.descricao_problema, t.cliente?.nome].filter(Boolean).join(' ').toLowerCase();
