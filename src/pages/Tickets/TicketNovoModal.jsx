@@ -6,6 +6,7 @@ import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
 import { Btn } from '../../components/ui/Btn';
 import { Badge } from '../../components/ui/Badge';
+import { maskNif, maskPhone, maskCP } from '../../utils/formatters';
 
 export const TicketNovoModal = ({ onClose, onCreated, currentUserId }) => {
   const C = useTheme();
@@ -21,7 +22,8 @@ export const TicketNovoModal = ({ onClose, onCreated, currentUserId }) => {
   const [clienteSearch,      setClienteSearch]      = useState('');
   const [clienteSeleccionado, setClienteSeleccionado] = useState(null);
   const [showNovoCliente,    setShowNovoCliente]    = useState(false);
-  const [novoClienteForm,    setNovoClienteForm]    = useState({ nome: '', nif: '', email: '', telefone: '' });
+  const emptyNovoCliente = { nome: '', nif: '', morada: '', cp: '', localidade: '', email: '', telefone: '', telemovel: '', observacoes: '' };
+  const [novoClienteForm,    setNovoClienteForm]    = useState(emptyNovoCliente);
   const [savingCliente,      setSavingCliente]      = useState(false);
   const [erroCliente,        setErroCliente]        = useState('');
 
@@ -85,17 +87,24 @@ export const TicketNovoModal = ({ onClose, onCreated, currentUserId }) => {
   }).slice(0, 8);
 
   const criarCliente = async () => {
-    if (!novoClienteForm.nome.trim()) return;
+    if (!novoClienteForm.nome.trim())       return setErroCliente('Nome é obrigatório.');
+    if (!novoClienteForm.morada.trim())     return setErroCliente('Morada é obrigatória.');
+    if (!novoClienteForm.cp.trim())         return setErroCliente('Código Postal é obrigatório.');
+    if (!novoClienteForm.localidade.trim()) return setErroCliente('Localidade é obrigatória.');
+    if (!novoClienteForm.email.trim())      return setErroCliente('Email é obrigatório.');
+    if (!novoClienteForm.telefone.trim() && !novoClienteForm.telemovel.trim()) return setErroCliente('Telefone ou telemóvel é obrigatório.');
     setErroCliente('');
     setSavingCliente(true);
     const { data: cli, error } = await sb.from('rbo_clientes').insert([{
-      nome:     novoClienteForm.nome.trim(),
-      nif:      novoClienteForm.nif || null,
-      email:    novoClienteForm.email || null,
-      telefone: novoClienteForm.telefone || null,
-      morada:   '',
-      cp:       '',
-      localidade: '',
+      nome:        novoClienteForm.nome.trim(),
+      nif:         novoClienteForm.nif        || null,
+      morada:      novoClienteForm.morada.trim(),
+      cp:          novoClienteForm.cp.trim(),
+      localidade:  novoClienteForm.localidade.trim(),
+      email:       novoClienteForm.email.trim() || null,
+      telefone:    novoClienteForm.telefone     || null,
+      telemovel:   novoClienteForm.telemovel    || null,
+      observacoes: novoClienteForm.observacoes  || null,
     }]).select().single();
     if (error) {
       setErroCliente('Erro ao criar cliente: ' + error.message);
@@ -107,7 +116,7 @@ export const TicketNovoModal = ({ onClose, onCreated, currentUserId }) => {
       setClienteSeleccionado(cli);
       setClienteSearch(cli.nome);
       setShowNovoCliente(false);
-      setNovoClienteForm({ nome: '', nif: '', email: '', telefone: '' });
+      setNovoClienteForm(emptyNovoCliente);
     }
     setSavingCliente(false);
   };
@@ -188,67 +197,78 @@ export const TicketNovoModal = ({ onClose, onCreated, currentUserId }) => {
       {/* ── Step 1 — Cliente ── */}
       {step === 1 && (
         <div>
-          <div style={lb}>Pesquisar cliente por nome ou NIF</div>
-          <input
-            value={clienteSearch}
-            onChange={e => { setClienteSearch(e.target.value); setClienteSeleccionado(null); }}
-            placeholder="Nome ou NIF..."
-            style={{ border: `1.5px solid ${C.grey200}`, borderRadius: 8, padding: '8px 12px', fontSize: 14, outline: 'none', background: C.white, color: C.grey800, width: '100%', height: 38, fontFamily: 'inherit' }}
-          />
-
-          {/* Results */}
-          {clienteSearch && !clienteSeleccionado && clientesFiltrados.length > 0 && (
-            <div style={{ border: `1px solid ${C.grey100}`, borderRadius: 8, marginTop: 4, overflow: 'hidden', boxShadow: '0 4px 16px #00000010' }}>
-              {clientesFiltrados.map(c => (
-                <div key={c.id}
-                  onClick={() => { setClienteSeleccionado(c); setClienteSearch(c.nome); }}
-                  style={{ padding: '10px 14px', cursor: 'pointer', borderBottom: `1px solid ${C.grey100}`, background: C.white, fontSize: 14, color: C.grey800 }}
-                  onMouseEnter={e => e.currentTarget.style.background = C.grey50}
-                  onMouseLeave={e => e.currentTarget.style.background = C.white}>
-                  <span style={{ fontWeight: 500 }}>{c.nome}</span>
-                  {c.nif && <span style={{ color: C.grey400, marginLeft: 8, fontSize: 12 }}>NIF {c.nif}</span>}
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Selected */}
-          {clienteSeleccionado && (
-            <div style={{ marginTop: 10, padding: '10px 14px', background: C.tealXL, borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: `1px solid ${C.teal}33` }}>
-              <div>
-                <span style={{ fontSize: 14, fontWeight: 600, color: C.teal }}>{clienteSeleccionado.nome}</span>
-                {clienteSeleccionado.nif && <span style={{ color: C.grey400, marginLeft: 8, fontSize: 12 }}>NIF {clienteSeleccionado.nif}</span>}
-              </div>
-              <button onClick={() => { setClienteSeleccionado(null); setClienteSearch(''); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.grey400, fontSize: 18, lineHeight: 1 }}>×</button>
-            </div>
-          )}
-
-          {/* Novo cliente */}
+          {/* Search — hidden while creating new client */}
           {!showNovoCliente && (
-            <button onClick={() => setShowNovoCliente(true)} style={{ marginTop: 12, background: 'none', border: `1.5px dashed ${C.grey200}`, borderRadius: 8, padding: '8px 14px', cursor: 'pointer', color: C.grey600, fontSize: 13, width: '100%', fontFamily: 'inherit' }}>
-              + Criar novo cliente
-            </button>
+            <>
+              <div style={lb}>Pesquisar cliente por nome ou NIF</div>
+              <input
+                value={clienteSearch}
+                onChange={e => { setClienteSearch(e.target.value); setClienteSeleccionado(null); }}
+                placeholder="Nome ou NIF..."
+                style={{ border: `1.5px solid ${C.grey200}`, borderRadius: 8, padding: '8px 12px', fontSize: 14, outline: 'none', background: C.white, color: C.grey800, width: '100%', height: 38, fontFamily: 'inherit' }}
+              />
+
+              {/* Results */}
+              {clienteSearch && !clienteSeleccionado && clientesFiltrados.length > 0 && (
+                <div style={{ border: `1px solid ${C.grey100}`, borderRadius: 8, marginTop: 4, overflow: 'hidden', boxShadow: '0 4px 16px #00000010' }}>
+                  {clientesFiltrados.map(c => (
+                    <div key={c.id}
+                      onClick={() => { setClienteSeleccionado(c); setClienteSearch(c.nome); }}
+                      style={{ padding: '10px 14px', cursor: 'pointer', borderBottom: `1px solid ${C.grey100}`, background: C.white, fontSize: 14, color: C.grey800 }}
+                      onMouseEnter={e => e.currentTarget.style.background = C.grey50}
+                      onMouseLeave={e => e.currentTarget.style.background = C.white}>
+                      <span style={{ fontWeight: 500 }}>{c.nome}</span>
+                      {c.nif && <span style={{ color: C.grey400, marginLeft: 8, fontSize: 12 }}>NIF {c.nif}</span>}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Selected */}
+              {clienteSeleccionado && (
+                <div style={{ marginTop: 10, padding: '10px 14px', background: C.tealXL, borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: `1px solid ${C.teal}33` }}>
+                  <div>
+                    <span style={{ fontSize: 14, fontWeight: 600, color: C.teal }}>{clienteSeleccionado.nome}</span>
+                    {clienteSeleccionado.nif && <span style={{ color: C.grey400, marginLeft: 8, fontSize: 12 }}>NIF {clienteSeleccionado.nif}</span>}
+                  </div>
+                  <button onClick={() => { setClienteSeleccionado(null); setClienteSearch(''); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.grey400, fontSize: 18, lineHeight: 1 }}>×</button>
+                </div>
+              )}
+
+              <button onClick={() => { setShowNovoCliente(true); setErroCliente(''); }} style={{ marginTop: 12, background: 'none', border: `1.5px dashed ${C.grey200}`, borderRadius: 8, padding: '8px 14px', cursor: 'pointer', color: C.grey600, fontSize: 13, width: '100%', fontFamily: 'inherit' }}>
+                + Criar novo cliente
+              </button>
+            </>
           )}
 
+          {/* New client form */}
           {showNovoCliente && (
-            <div style={{ marginTop: 12, padding: 16, border: `1px solid ${C.grey100}`, borderRadius: 8, background: C.grey50, display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: C.grey800, marginBottom: 4 }}>Novo cliente</div>
-              <Input label="Nome" value={novoClienteForm.nome} onChange={v => setNovoClienteForm(f => ({ ...f, nome: v }))} required/>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                <Input label="NIF (opcional)"      value={novoClienteForm.nif}      onChange={v => setNovoClienteForm(f => ({ ...f, nif: v }))}/>
-                <Input label="Telefone (opcional)" value={novoClienteForm.telefone} onChange={v => setNovoClienteForm(f => ({ ...f, telefone: v }))}/>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: C.grey800, marginBottom: 2 }}>Novo Cliente</div>
+              <Input label="Nome da Empresa" value={novoClienteForm.nome} onChange={v => setNovoClienteForm(f => ({ ...f, nome: v }))} required/>
+              <Input label="NIF (opcional)" value={novoClienteForm.nif} onChange={v => setNovoClienteForm(f => ({ ...f, nif: maskNif(v) }))} placeholder="XXX XXX XXX"/>
+              <Input label="Morada" value={novoClienteForm.morada} onChange={v => setNovoClienteForm(f => ({ ...f, morada: v }))} required/>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <Input label="Código Postal" value={novoClienteForm.cp} onChange={v => setNovoClienteForm(f => ({ ...f, cp: maskCP(v) }))} placeholder="XXXX-XXX" required/>
+                <Input label="Localidade" value={novoClienteForm.localidade} onChange={v => setNovoClienteForm(f => ({ ...f, localidade: v }))} required/>
               </div>
-              <Input label="Email (opcional)" value={novoClienteForm.email} onChange={v => setNovoClienteForm(f => ({ ...f, email: v }))} type="email"/>
+              <Input label="Email" value={novoClienteForm.email} onChange={v => setNovoClienteForm(f => ({ ...f, email: v }))} type="email" required/>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <Input label="Telefone" value={novoClienteForm.telefone} onChange={v => setNovoClienteForm(f => ({ ...f, telefone: maskPhone(v) }))}/>
+                <Input label="Telemóvel" value={novoClienteForm.telemovel} onChange={v => setNovoClienteForm(f => ({ ...f, telemovel: maskPhone(v) }))}/>
+              </div>
+              <div style={{ fontSize: 11, color: C.grey400, marginTop: -6 }}>Pelo menos telefone ou telemóvel é obrigatório.</div>
+              <Input label="Observações (opcional)" value={novoClienteForm.observacoes} onChange={v => setNovoClienteForm(f => ({ ...f, observacoes: v }))} textarea rows={2}/>
               {erroCliente && <div style={{ fontSize: 12, color: '#e05a5a', padding: '6px 10px', background: '#e05a5a15', borderRadius: 6 }}>{erroCliente}</div>}
               <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 4 }}>
-                <Btn variant="secondary" size="sm" onClick={() => { setShowNovoCliente(false); setErroCliente(''); }}>Cancelar</Btn>
-                <Btn size="sm" onClick={criarCliente} disabled={savingCliente || !novoClienteForm.nome.trim()}>{savingCliente ? 'A criar...' : 'Criar Cliente'}</Btn>
+                <Btn variant="secondary" size="sm" onClick={() => { setShowNovoCliente(false); setNovoClienteForm(emptyNovoCliente); setErroCliente(''); }}>Cancelar</Btn>
+                <Btn size="sm" onClick={criarCliente} disabled={savingCliente}>{savingCliente ? 'A criar...' : 'Criar Cliente'}</Btn>
               </div>
             </div>
           )}
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 24 }}>
-            <Btn onClick={() => setStep(2)} disabled={!clienteSeleccionado}>Próximo →</Btn>
+            <Btn onClick={() => setStep(2)} disabled={!clienteSeleccionado || showNovoCliente}>Próximo →</Btn>
           </div>
         </div>
       )}
