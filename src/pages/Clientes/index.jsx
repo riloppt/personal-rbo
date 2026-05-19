@@ -32,7 +32,7 @@ export const ClientesPage = () => {
     if (!newForm.email)                          return alert("Email é obrigatório");
     if (!newForm.telefone && !newForm.telemovel) return alert("Pelo menos telefone ou telemóvel é obrigatório");
     setNewSaving(true);
-    const { error } = await sb.from("rbo_clientes").insert([newForm]);
+    const { error } = await sb.from("rbo_clientes").insert([{ ...newForm, tecnico_id: newForm.tecnico_id || null }]);
     if (error) { alert("Erro: " + error.message); setNewSaving(false); return; }
     setNewModal(false);
     setNewForm(emptyNew);
