@@ -86,21 +86,35 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
   const load = useCallback(async () => {
     setLoading(true);
     const [tkR, histR, tecR, cliR, tipEqR, tipR] = await Promise.all([
-      sb.from('rbo_tickets')
-        .select('*,cliente:rbo_clientes(id,nome,email,telefone),tecnico:rbo_profiles(id,nome),equipamento:rbo_client_equipment(id,descricao,num_serie),contrato:rbo_contratos(id,tipologia_id)')
-        .eq('id', initialTicket.id).single(),
-      sb.from('rbo_ticket_historico')
-        .select('*,alterado_por:rbo_profiles(nome)')
-        .eq('ticket_id', initialTicket.id).order('created_at', { ascending: false }),
+      sb.from('rbo_tickets').select('*').eq('id', initialTicket.id).single(),
+      sb.from('rbo_ticket_historico').select('*').eq('ticket_id', initialTicket.id).order('created_at', { ascending: false }),
       sb.from('rbo_profiles').select('id,nome').eq('is_tecnico', true).eq('ativo', true).order('nome'),
-      sb.from('rbo_clientes').select('id,nome,nif').order('nome'),
+      sb.from('rbo_clientes').select('id,nome,nif,email,telefone').order('nome'),
       sb.from('rbo_equipment_types').select('id,nome').order('nome'),
       sb.from('rbo_tipologias').select('id,nome').order('nome'),
     ]);
-    if (tkR.data) setTicket(tkR.data);
-    setHistorico(histR.data || []);
-    setTecnicos(tecR.data || []);
-    setClientes(cliR.data || []);
+    const tk = tkR.data;
+    const tecs = tecR.data || [];
+    const clis = cliR.data || [];
+    if (tk) {
+      const [eqR, conR] = await Promise.all([
+        tk.equipamento_id ? sb.from('rbo_client_equipment').select('id,descricao,num_serie').eq('id', tk.equipamento_id).single() : Promise.resolve({ data: null }),
+        tk.contrato_id    ? sb.from('rbo_contratos').select('id,tipologia_id').eq('id', tk.contrato_id).single()                   : Promise.resolve({ data: null }),
+      ]);
+      setTicket({
+        ...tk,
+        cliente:     clis.find(c => c.id === tk.cliente_id)           || null,
+        tecnico:     tecs.find(t => t.id === tk.profile_tecnico_id)   || null,
+        equipamento: eqR.data  || null,
+        contrato:    conR.data || null,
+      });
+    }
+    setHistorico((histR.data || []).map(h => ({
+      ...h,
+      alterado_por: h.alterado_por_id ? { nome: tecs.find(p => p.id === h.alterado_por_id)?.nome || 'Utilizador' } : null,
+    })));
+    setTecnicos(tecs);
+    setClientes(clis);
     setTiposEquip(tipEqR.data || []);
     setTipologias(tipR.data || []);
     setLoading(false);
