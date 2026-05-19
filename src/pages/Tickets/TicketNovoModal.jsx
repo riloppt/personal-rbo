@@ -235,8 +235,14 @@ export const TicketNovoModal = ({ onClose, onCreated, currentUserId }) => {
                 </div>
               )}
 
-              <button onClick={() => { setShowNovoCliente(true); setErroCliente(''); }} style={{ marginTop: 12, background: 'none', border: `1.5px dashed ${C.grey200}`, borderRadius: 8, padding: '8px 14px', cursor: 'pointer', color: C.grey600, fontSize: 13, width: '100%', fontFamily: 'inherit' }}>
-                + Criar novo cliente
+              <button
+                onClick={() => { setShowNovoCliente(true); setErroCliente(''); }}
+                style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '11px 16px', background: C.tealXL, border: `1.5px solid ${C.teal}22`, borderRadius: 10, cursor: 'pointer', fontFamily: 'inherit', transition: 'background 150ms ease, border-color 150ms ease' }}
+                onMouseEnter={e => { e.currentTarget.style.background = C.teal + '18'; e.currentTarget.style.borderColor = C.teal + '55'; e.currentTarget.querySelector('span').style.transform = 'scale(1.12)'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = C.tealXL; e.currentTarget.style.borderColor = C.teal + '22'; e.currentTarget.querySelector('span').style.transform = 'scale(1)'; }}
+              >
+                <span style={{ width: 20, height: 20, borderRadius: '50%', background: C.teal, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 300, lineHeight: 1, flexShrink: 0, transition: 'transform 150ms ease' }}>+</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: C.teal }}>Criar novo cliente</span>
               </button>
             </>
           )}
@@ -302,8 +308,14 @@ export const TicketNovoModal = ({ onClose, onCreated, currentUserId }) => {
 
           {/* Novo equipamento */}
           {!showNovoEquip && (
-            <button onClick={() => setShowNovoEquip(true)} style={{ marginTop: 12, background: 'none', border: `1.5px dashed ${C.grey200}`, borderRadius: 8, padding: '8px 14px', cursor: 'pointer', color: C.grey600, fontSize: 13, width: '100%', fontFamily: 'inherit' }}>
-              + Novo equipamento
+            <button
+              onClick={() => setShowNovoEquip(true)}
+              style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '11px 16px', background: C.tealXL, border: `1.5px solid ${C.teal}22`, borderRadius: 10, cursor: 'pointer', fontFamily: 'inherit', transition: 'background 150ms ease, border-color 150ms ease' }}
+              onMouseEnter={e => { e.currentTarget.style.background = C.teal + '18'; e.currentTarget.style.borderColor = C.teal + '55'; e.currentTarget.querySelector('span').style.transform = 'scale(1.12)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = C.tealXL; e.currentTarget.style.borderColor = C.teal + '22'; e.currentTarget.querySelector('span').style.transform = 'scale(1)'; }}
+            >
+              <span style={{ width: 20, height: 20, borderRadius: '50%', background: C.teal, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 300, lineHeight: 1, flexShrink: 0, transition: 'transform 150ms ease' }}>+</span>
+              <span style={{ fontSize: 13, fontWeight: 600, color: C.teal }}>Novo equipamento</span>
             </button>
           )}
 
