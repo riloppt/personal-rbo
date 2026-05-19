@@ -71,7 +71,7 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
 
   const [showCriarCliente,  setShowCriarCliente]  = useState(false);
   const [showCriarEquip,    setShowCriarEquip]    = useState(false);
-  const [novoClienteForm,   setNovoClienteForm]   = useState({ nome: '', nif: '', email: '', telefone: '', consumidor_final: false });
+  const [novoClienteForm,   setNovoClienteForm]   = useState({ nome: '', nif: '', email: '', telefone: '' });
   const [novoEquipForm,     setNovoEquipForm]     = useState({ descricao: '', tipo_id: '', num_serie: '', localizacao: '' });
   const [numSerieError,     setNumSerieError]     = useState('');
 
@@ -87,10 +87,10 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
     setLoading(true);
     const [tkR, histR, tecR, cliR, tipEqR, tipR] = await Promise.all([
       sb.from('rbo_tickets')
-        .select('*,cliente:cliente_id(id,nome,email,telefone),tecnico:profile_tecnico_id(id,nome),equipamento:equipamento_id(id,descricao,num_serie),contrato:contrato_id(id,tipologia_id)')
+        .select('*,cliente:rbo_clientes(id,nome,email,telefone),tecnico:rbo_profiles(id,nome),equipamento:rbo_client_equipment(id,descricao,num_serie),contrato:rbo_contratos(id,tipologia_id)')
         .eq('id', initialTicket.id).single(),
       sb.from('rbo_ticket_historico')
-        .select('*,alterado_por:alterado_por_id(nome)')
+        .select('*,alterado_por:rbo_profiles(nome)')
         .eq('ticket_id', initialTicket.id).order('created_at', { ascending: false }),
       sb.from('rbo_profiles').select('id,nome').eq('is_tecnico', true).order('nome'),
       sb.from('rbo_clientes').select('id,nome,nif').order('nome'),
@@ -220,13 +220,14 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
   const criarClienteAssoc = async () => {
     if (!novoClienteForm.nome.trim()) return;
     setSaving(true);
-    const { data: cli } = await sb.from('rbo_clientes').insert([{ nome: novoClienteForm.nome.trim(), nif: novoClienteForm.nif || null, email: novoClienteForm.email || null, telefone: novoClienteForm.telefone || null, consumidor_final: novoClienteForm.consumidor_final }]).select().single();
+    const { data: cli, error: cliErr } = await sb.from('rbo_clientes').insert([{ nome: novoClienteForm.nome.trim(), nif: novoClienteForm.nif || null, email: novoClienteForm.email || null, telefone: novoClienteForm.telefone || null, morada: '', cp: '', localidade: '' }]).select().single();
+    if (cliErr) { alert('Erro ao criar cliente: ' + cliErr.message); setSaving(false); return; }
     if (cli) {
       setClientes(prev => [...prev, cli].sort((a, b) => a.nome.localeCompare(b.nome)));
       setAssocForm(f => ({ ...f, cliente_id: String(cli.id), equipamento_id: '', contrato_id: '' }));
       setClienteSearch(cli.nome);
     }
-    setNovoClienteForm({ nome: '', nif: '', email: '', telefone: '', consumidor_final: false });
+    setNovoClienteForm({ nome: '', nif: '', email: '', telefone: '' });
     setShowCriarCliente(false); setSaving(false);
   };
 
@@ -479,10 +480,6 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
               <Input label="Telefone (opcional)" value={novoClienteForm.telefone} onChange={v => setNovoClienteForm(f => ({ ...f, telefone: v }))}/>
             </div>
             <Input label="Email (opcional)" value={novoClienteForm.email} onChange={v => setNovoClienteForm(f => ({ ...f, email: v }))} type="email"/>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: C.grey600, cursor: 'pointer' }}>
-              <input type="checkbox" checked={novoClienteForm.consumidor_final} onChange={e => setNovoClienteForm(f => ({ ...f, consumidor_final: e.target.checked }))}/>
-              Consumidor final (particular)
-            </label>
           </div>
           <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 20 }}>
             <Btn variant="secondary" onClick={() => setShowCriarCliente(false)}>Cancelar</Btn>

@@ -21,8 +21,9 @@ export const TicketNovoModal = ({ onClose, onCreated, currentUserId }) => {
   const [clienteSearch,      setClienteSearch]      = useState('');
   const [clienteSeleccionado, setClienteSeleccionado] = useState(null);
   const [showNovoCliente,    setShowNovoCliente]    = useState(false);
-  const [novoClienteForm,    setNovoClienteForm]    = useState({ nome: '', nif: '', email: '', telefone: '', consumidor_final: false });
+  const [novoClienteForm,    setNovoClienteForm]    = useState({ nome: '', nif: '', email: '', telefone: '' });
   const [savingCliente,      setSavingCliente]      = useState(false);
+  const [erroCliente,        setErroCliente]        = useState('');
 
   // Step 2 — Equipamento
   const [equipamentos,       setEquipamentos]       = useState([]);
@@ -85,20 +86,28 @@ export const TicketNovoModal = ({ onClose, onCreated, currentUserId }) => {
 
   const criarCliente = async () => {
     if (!novoClienteForm.nome.trim()) return;
+    setErroCliente('');
     setSavingCliente(true);
-    const { data: cli } = await sb.from('rbo_clientes').insert([{
-      nome: novoClienteForm.nome.trim(),
-      nif: novoClienteForm.nif || null,
-      email: novoClienteForm.email || null,
+    const { data: cli, error } = await sb.from('rbo_clientes').insert([{
+      nome:     novoClienteForm.nome.trim(),
+      nif:      novoClienteForm.nif || null,
+      email:    novoClienteForm.email || null,
       telefone: novoClienteForm.telefone || null,
-      consumidor_final: novoClienteForm.consumidor_final,
+      morada:   '',
+      cp:       '',
+      localidade: '',
     }]).select().single();
+    if (error) {
+      setErroCliente('Erro ao criar cliente: ' + error.message);
+      setSavingCliente(false);
+      return;
+    }
     if (cli) {
       setClientes(prev => [...prev, cli].sort((a, b) => a.nome.localeCompare(b.nome)));
       setClienteSeleccionado(cli);
       setClienteSearch(cli.nome);
       setShowNovoCliente(false);
-      setNovoClienteForm({ nome: '', nif: '', email: '', telefone: '', consumidor_final: false });
+      setNovoClienteForm({ nome: '', nif: '', email: '', telefone: '' });
     }
     setSavingCliente(false);
   };
@@ -230,12 +239,9 @@ export const TicketNovoModal = ({ onClose, onCreated, currentUserId }) => {
                 <Input label="Telefone (opcional)" value={novoClienteForm.telefone} onChange={v => setNovoClienteForm(f => ({ ...f, telefone: v }))}/>
               </div>
               <Input label="Email (opcional)" value={novoClienteForm.email} onChange={v => setNovoClienteForm(f => ({ ...f, email: v }))} type="email"/>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: C.grey600, cursor: 'pointer' }}>
-                <input type="checkbox" checked={novoClienteForm.consumidor_final} onChange={e => setNovoClienteForm(f => ({ ...f, consumidor_final: e.target.checked }))}/>
-                Consumidor final (particular)
-              </label>
+              {erroCliente && <div style={{ fontSize: 12, color: '#e05a5a', padding: '6px 10px', background: '#e05a5a15', borderRadius: 6 }}>{erroCliente}</div>}
               <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 4 }}>
-                <Btn variant="secondary" size="sm" onClick={() => setShowNovoCliente(false)}>Cancelar</Btn>
+                <Btn variant="secondary" size="sm" onClick={() => { setShowNovoCliente(false); setErroCliente(''); }}>Cancelar</Btn>
                 <Btn size="sm" onClick={criarCliente} disabled={savingCliente || !novoClienteForm.nome.trim()}>{savingCliente ? 'A criar...' : 'Criar Cliente'}</Btn>
               </div>
             </div>

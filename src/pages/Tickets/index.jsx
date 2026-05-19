@@ -27,7 +27,7 @@ export const Tickets = ({ currentUserId }) => {
     setLoading(true);
     const [tkR, tecR] = await Promise.all([
       sb.from('rbo_tickets')
-        .select('*,cliente:cliente_id(id,nome),tecnico:profile_tecnico_id(id,nome),equipamento:equipamento_id(id,descricao,num_serie)')
+        .select('*,cliente:rbo_clientes(id,nome),tecnico:rbo_profiles(id,nome),equipamento:rbo_client_equipment(id,descricao,num_serie)')
         .order('created_at', { ascending: false }),
       sb.from('rbo_profiles').select('id,nome').eq('is_tecnico', true).order('nome'),
     ]);
