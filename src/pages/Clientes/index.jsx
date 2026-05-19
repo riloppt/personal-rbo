@@ -42,6 +42,22 @@ export const ClientesPage = () => {
 
   const onBack = () => { setDetalhe(null); setReload(r=>r+1); };
 
+  const preDeleteCliente = async (id) => {
+    const [tkR, conR] = await Promise.all([
+      sb.from('rbo_tickets').select('id', { count: 'exact', head: true }).eq('cliente_id', id),
+      sb.from('rbo_contratos').select('id', { count: 'exact', head: true }).eq('cliente_id', id),
+    ]);
+    const nT = tkR.count || 0;
+    const nC = conR.count || 0;
+    if (nT > 0 || nC > 0) {
+      const parts = [];
+      if (nT > 0) parts.push(`${nT} ticket${nT !== 1 ? 's' : ''}`);
+      if (nC > 0) parts.push(`${nC} contrato${nC !== 1 ? 's' : ''}`);
+      return `Não é possível eliminar este cliente porque tem ${parts.join(' e ')} associado${parts.length > 1 || (nT + nC) > 1 ? 's' : ''}. Elimine primeiro os tickets e contratos.`;
+    }
+    return null;
+  };
+
   if (detalhe) return <ClienteDetalhe cliente={detalhe} tecnicoOpts={tecnicoOpts} onBack={onBack}/>;
 
   return (
@@ -59,6 +75,7 @@ export const ClientesPage = () => {
         formFields={[]}
         onNew={()=>{ setNewForm(emptyNew); setNewModal(true); }}
         newLabel="Novo Cliente"
+        preDeleteCheck={preDeleteCliente}
         onView={r=>setDetalhe(r)}
         viewIcon="edit"
         noInlineEdit

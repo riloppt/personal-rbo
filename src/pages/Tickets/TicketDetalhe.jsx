@@ -290,6 +290,15 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
     }
   };
 
+  const eliminarTicket = async () => {
+    if (!window.confirm(`Eliminar o ticket ${tid} permanentemente? Esta ação não pode ser revertida.`)) return;
+    setSaving(true);
+    await sb.from('rbo_ticket_historico').delete().eq('ticket_id', ticket.id);
+    await sb.from('rbo_tickets').delete().eq('id', ticket.id);
+    setSaving(false);
+    onBack();
+  };
+
   const alterarEstado = async () => {
     if (!novoEstado) return;
     if (novoEstado === 'concluido') {
@@ -415,7 +424,10 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
             {ticket.nome_pessoa && <span>{ticket.nome_pessoa}</span>}
           </div>
         </div>
-        <div style={{ fontSize: 12, color: C.grey400 }}>Criado: {fmtDateTime(ticket.created_at)}</div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
+          <div style={{ fontSize: 12, color: C.grey400 }}>Criado: {fmtDateTime(ticket.created_at)}</div>
+          <Btn variant="danger" size="sm" icon="trash" onClick={eliminarTicket} disabled={saving}>Eliminar ticket</Btn>
+        </div>
       </div>
 
       {/* ── Secção 2 — Dados de contacto ── */}

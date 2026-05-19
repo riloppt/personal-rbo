@@ -13,7 +13,7 @@ import { Input } from '../ui/Input';
 import { Icon } from '../ui/Icon';
 import { Badge } from '../ui/Badge';
 
-export const CrudPage = ({ title, table, cols, formFields, emptyForm, compact, hasAtivo, fieldOptions, onView, onNew, noInlineEdit, viewIcon, newLabel = 'Novo' }) => {
+export const CrudPage = ({ title, table, cols, formFields, emptyForm, compact, hasAtivo, fieldOptions, onView, onNew, noInlineEdit, viewIcon, newLabel = 'Novo', preDeleteCheck }) => {
   const C = useTheme();
   const [rows,      setRows]      = useState([]);
   const [loading,   setLoading]   = useState(true);
@@ -49,6 +49,10 @@ export const CrudPage = ({ title, table, cols, formFields, emptyForm, compact, h
 
   const del = async id => {
     setDelErr(null);
+    if (preDeleteCheck) {
+      const err = await preDeleteCheck(id);
+      if (err) { setDelErr(err); return; }
+    }
     if (!confirm("Eliminar registo permanentemente?")) return;
     const { error } = await sb.from(table).delete().eq("id", id);
     if (error) {
