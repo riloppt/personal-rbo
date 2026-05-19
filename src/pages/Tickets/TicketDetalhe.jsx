@@ -92,7 +92,7 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
       sb.from('rbo_ticket_historico')
         .select('*,alterado_por:rbo_profiles(nome)')
         .eq('ticket_id', initialTicket.id).order('created_at', { ascending: false }),
-      sb.from('rbo_profiles').select('id,nome').eq('is_tecnico', true).order('nome'),
+      sb.from('rbo_profiles').select('id,nome').eq('is_tecnico', true).eq('ativo', true).order('nome'),
       sb.from('rbo_clientes').select('id,nome,nif').order('nome'),
       sb.from('rbo_equipment_types').select('id,nome').order('nome'),
       sb.from('rbo_tipologias').select('id,nome').order('nome'),

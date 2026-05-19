@@ -46,7 +46,7 @@ export const TicketNovoModal = ({ onClose, onCreated, currentUserId }) => {
       sb.from('rbo_clientes').select('id,nome,nif').order('nome'),
       sb.from('rbo_equipment_types').select('id,nome').order('nome'),
       sb.from('rbo_tipologias').select('id,nome').order('nome'),
-      sb.from('rbo_profiles').select('id,nome').eq('is_tecnico', true).order('nome'),
+      sb.from('rbo_profiles').select('id,nome').eq('is_tecnico', true).eq('ativo', true).order('nome'),
     ]).then(([cliR, tipEqR, tipR, tecR]) => {
       setClientes(cliR.data || []);
       setTiposEquip(tipEqR.data || []);
