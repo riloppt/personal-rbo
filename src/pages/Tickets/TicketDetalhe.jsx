@@ -320,7 +320,7 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
         hora_inicio:        ticket.hora_inicio        || null,
         hora_fim:           ticket.hora_fim            || null,
         creditos:           Number(creditos),
-        descritivo:         `Ticket #${String(ticket.id).padStart(3, '0')} — ${(ticket.descricao_problema || '').slice(0, 150)}`,
+        descritivo:         `Ticket #${String(ticket.id).padStart(4, '0')} — ${(ticket.descricao_problema || '').slice(0, 150)}`,
         profile_tecnico_id: ticket.tecnico_id          || null,
         tipo:               'assistencia',
         equipment_id:       ticket.equipamento_id      || null,
@@ -371,7 +371,7 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
     </div>
   );
 
-  const tid = `#${String(ticket.id).padStart(3, '0')}`;
+  const tid = `#${String(ticket.id).padStart(4, '0')}`;
   const transicoes = TRANSICOES[ticket.estado] || [];
   const tempoEditavel = ['em_curso', 'aguarda_cliente', 'concluido'].includes(ticket.estado);
   const showTempoSection = tempoEditavel || ticket.data_inicio || ticket.data_fim;

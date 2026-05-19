@@ -108,7 +108,7 @@ export default function TicketPublico() {
               <div style={{ background: T.tealXL, borderRadius: 10, padding: '14px 28px', display: 'inline-block', border: `1px solid ${T.teal}22` }}>
                 <div style={{ fontSize: 11, color: T.teal, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 4 }}>Referência do pedido</div>
                 <div style={{ fontSize: 28, fontWeight: 700, color: T.tealD, fontFamily: "'DM Mono', monospace" }}>
-                  #{String(ticketId).padStart(3, '0')}
+                  #{String(ticketId).padStart(4, '0')}
                 </div>
               </div>
             </div>

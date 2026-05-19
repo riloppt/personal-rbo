@@ -132,7 +132,7 @@ export const Tickets = ({ currentUserId }) => {
                       </td>
                       {/* ID */}
                       <td style={{ padding: '13px 16px', color: C.grey400, fontFamily: "'DM Mono', monospace", fontSize: 13, whiteSpace: 'nowrap' }}>
-                        #{String(t.id).padStart(3, '0')}
+                        #{String(t.id).padStart(4, '0')}
                       </td>
                       {/* Empresa / Pessoa */}
                       <td style={{ padding: '13px 16px', color: C.grey800 }}>
