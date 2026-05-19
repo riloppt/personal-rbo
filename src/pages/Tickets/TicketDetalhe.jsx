@@ -57,6 +57,7 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
   const [tipologias, setTipologias] = useState([]);
   const [loading,    setLoading]    = useState(true);
   const [saving,     setSaving]     = useState(false);
+  const [saveError,  setSaveError]  = useState('');
 
   const [editSection,   setEditSection]   = useState(null);
   const [contactForm,   setContactForm]   = useState({});
@@ -163,7 +164,7 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
     }
   };
 
-  const cancelEdit = () => { setEditSection(null); setNumSerieError(''); };
+  const cancelEdit = () => { setEditSection(null); setNumSerieError(''); setSaveError(''); };
 
   const saveContact = async () => {
     setSaving(true);
@@ -173,8 +174,17 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
 
   const saveAssoc = async () => {
     setSaving(true);
-    await sb.from('rbo_tickets').update({ cliente_id: assocForm.cliente_id ? Number(assocForm.cliente_id) : null, equipamento_id: assocForm.equipamento_id ? Number(assocForm.equipamento_id) : null, contrato_id: assocForm.contrato_id ? Number(assocForm.contrato_id) : null, profile_tecnico_id: assocForm.profile_tecnico_id || null }).eq('id', ticket.id);
-    await load(); setEditSection(null); setSaving(false);
+    setSaveError('');
+    const { error } = await sb.from('rbo_tickets').update({
+      cliente_id:          assocForm.cliente_id          ? Number(assocForm.cliente_id)          : null,
+      equipamento_id:      assocForm.equipamento_id      ? Number(assocForm.equipamento_id)      : null,
+      contrato_id:         assocForm.contrato_id         ? Number(assocForm.contrato_id)         : null,
+      profile_tecnico_id:  assocForm.profile_tecnico_id  || null,
+    }).eq('id', ticket.id);
+    if (error) { setSaveError('Erro ao guardar: ' + error.message); setSaving(false); return; }
+    await load();
+    setEditSection(null);
+    setSaving(false);
     onUpdated?.();
   };
 
@@ -322,6 +332,7 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
       </SectionCard>
 
       {/* ── Secção 3 — Associações ── */}
+      {saveError && <div style={{ background: '#fee', border: '1px solid #fcc', borderRadius: 8, padding: '10px 14px', marginBottom: 12, fontSize: 13, color: '#c00' }}>{saveError}</div>}
       <SectionCard title="Associações" sectionKey="associacoes" editSection={editSection} saving={saving} onEdit={enterEdit} onCancel={cancelEdit} onSave={saveAssoc}>
         {editSection === 'associacoes' ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
