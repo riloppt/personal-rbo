@@ -11,7 +11,23 @@ import { Loading } from '../../components/ui/Loading';
 import { fmtDate, fmtDateTime } from '../../utils/formatters';
 import { estadoLabel, estadoCor, TRANSICOES } from './helpers';
 
+// ── Pure helpers ──────────────────────────────────────────────────────────────
+
+const calcularDuracao = (dataInicio, horaInicio, dataFim, horaFim) => {
+  if (!dataInicio || !horaInicio || !dataFim || !horaFim) return null;
+  const inicio = new Date(`${dataInicio}T${horaInicio}`);
+  const fim    = new Date(`${dataFim}T${horaFim}`);
+  if (isNaN(inicio) || isNaN(fim) || fim <= inicio) return null;
+  return Math.ceil((fim - inicio) / 60000);
+};
+
+const calcularCreditos = (minutos) => {
+  if (!minutos || Number(minutos) <= 0) return 0;
+  return -Math.ceil(Number(minutos) / 15);
+};
+
 // ── Module-level section card (stable component type, avoids remount issues) ──
+
 const SectionCard = ({ title, sectionKey, editSection, saving, onEdit, onCancel, onSave, noEdit, children }) => {
   const C = useTheme();
   const isEditing = editSection === sectionKey;
@@ -80,7 +96,7 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
   const [notaEstado,        setNotaEstado]        = useState('');
   const [showModalConcluir, setShowModalConcluir] = useState(false);
   const [saldoContrato,     setSaldoContrato]     = useState(0);
-  const [creditosDesconto,  setCreditosDesconto]  = useState(-1);
+  const [creditosDesconto,  setCreditosDesconto]  = useState(0);
   const [pendingEstado,     setPendingEstado]     = useState('');
   const [pendingNota,       setPendingNota]       = useState('');
 
@@ -104,8 +120,8 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
       ]);
       setTicket({
         ...tk,
-        cliente:     clis.find(c => c.id === tk.cliente_id)           || null,
-        tecnico:     tecs.find(t => t.id === tk.tecnico_id)   || null,
+        cliente:     clis.find(c => c.id === tk.cliente_id)         || null,
+        tecnico:     tecs.find(t => t.id === tk.tecnico_id)         || null,
         equipamento: eqR.data  || null,
         contrato:    conR.data || null,
       });
@@ -166,22 +182,44 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
 
   const cancelEdit = () => { setEditSection(null); setNumSerieError(''); setSaveError(''); };
 
+  // ── Triage helper: insert historico entry when submetido → pendente ──
+  const registarTriagem = async () => {
+    await sb.from('rbo_ticket_historico').insert([{
+      ticket_id:       ticket.id,
+      estado_anterior: 'submetido',
+      estado_novo:     'pendente',
+      alterado_por_id: currentUserId || null,
+      nota:            'Ticket triado',
+    }]);
+  };
+
   const saveContact = async () => {
     setSaving(true);
-    await sb.from('rbo_tickets').update({ nome_empresa: contactForm.nome_empresa || null, nome_pessoa: contactForm.nome_pessoa || null, email_cliente: contactForm.email_cliente || null, telefone_cliente: contactForm.telefone_cliente || null }).eq('id', ticket.id);
+    const estadoFinal = ticket.estado === 'submetido' ? 'pendente' : ticket.estado;
+    await sb.from('rbo_tickets').update({
+      nome_empresa:     contactForm.nome_empresa     || null,
+      nome_pessoa:      contactForm.nome_pessoa      || null,
+      email_cliente:    contactForm.email_cliente    || null,
+      telefone_cliente: contactForm.telefone_cliente || null,
+      estado:           estadoFinal,
+    }).eq('id', ticket.id);
+    if (estadoFinal !== ticket.estado) await registarTriagem();
     await load(); setEditSection(null); setSaving(false);
   };
 
   const saveAssoc = async () => {
     setSaving(true);
     setSaveError('');
+    const estadoFinal = ticket.estado === 'submetido' ? 'pendente' : ticket.estado;
     const { error } = await sb.from('rbo_tickets').update({
       cliente_id:     assocForm.cliente_id     ? Number(assocForm.cliente_id)     : null,
       equipamento_id: assocForm.equipamento_id ? Number(assocForm.equipamento_id) : null,
       contrato_id:    assocForm.contrato_id    ? Number(assocForm.contrato_id)    : null,
       tecnico_id:     assocForm.tecnico_id     || null,
+      estado:         estadoFinal,
     }).eq('id', ticket.id);
     if (error) { setSaveError('Erro ao guardar: ' + error.message); setSaving(false); return; }
+    if (estadoFinal !== ticket.estado) await registarTriagem();
     await load();
     setEditSection(null);
     setSaving(false);
@@ -190,14 +228,51 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
 
   const saveDesc = async () => {
     setSaving(true);
-    await sb.from('rbo_tickets').update({ descricao_problema: descForm.descricao_problema || null, notas_internas: descForm.notas_internas || null }).eq('id', ticket.id);
+    const estadoFinal = ticket.estado === 'submetido' ? 'pendente' : ticket.estado;
+    await sb.from('rbo_tickets').update({
+      descricao_problema: descForm.descricao_problema || null,
+      notas_internas:     descForm.notas_internas     || null,
+      estado:             estadoFinal,
+    }).eq('id', ticket.id);
+    if (estadoFinal !== ticket.estado) await registarTriagem();
     await load(); setEditSection(null); setSaving(false);
   };
 
   const saveTempo = async () => {
     setSaving(true);
-    await sb.from('rbo_tickets').update({ data_inicio: tempoForm.data_inicio || null, hora_inicio: tempoForm.hora_inicio || null, data_fim: tempoForm.data_fim || null, hora_fim: tempoForm.hora_fim || null, duracao_minutos: tempoForm.duracao_minutos ? Number(tempoForm.duracao_minutos) : null }).eq('id', ticket.id);
+    const estadoFinal = ticket.estado === 'submetido' ? 'pendente' : ticket.estado;
+    await sb.from('rbo_tickets').update({
+      data_inicio:       tempoForm.data_inicio       || null,
+      hora_inicio:       tempoForm.hora_inicio       || null,
+      data_fim:          tempoForm.data_fim           || null,
+      hora_fim:          tempoForm.hora_fim           || null,
+      duracao_minutos:   tempoForm.duracao_minutos ? Number(tempoForm.duracao_minutos) : null,
+      estado:            estadoFinal,
+    }).eq('id', ticket.id);
+    if (estadoFinal !== ticket.estado) await registarTriagem();
     await load(); setEditSection(null); setSaving(false);
+  };
+
+  // ── Técnico: immediate persist + auto state transition ──────────────────────
+  const onTecnicoChange = async (novoTecnicoId) => {
+    setAssocForm(f => ({ ...f, tecnico_id: novoTecnicoId }));
+    setTicket(t => ({ ...t, tecnico_id: novoTecnicoId }));
+    if (!novoTecnicoId) return;
+    const estadoAnterior = ticket.estado;
+    const estadosAvancados = ['em_curso', 'aguarda_cliente', 'concluido', 'cancelado'];
+    if (!estadosAvancados.includes(estadoAnterior)) {
+      setTicket(t => ({ ...t, estado: 'atribuido' }));
+      await sb.from('rbo_ticket_historico').insert([{
+        ticket_id:       ticket.id,
+        estado_anterior: estadoAnterior,
+        estado_novo:     'atribuido',
+        alterado_por_id: currentUserId || null,
+        nota:            'Técnico atribuído',
+      }]);
+      await sb.from('rbo_tickets').update({ tecnico_id: novoTecnicoId, estado: 'atribuido' }).eq('id', ticket.id);
+    } else {
+      await sb.from('rbo_tickets').update({ tecnico_id: novoTecnicoId }).eq('id', ticket.id);
+    }
   };
 
   const alterarEstado = async () => {
@@ -208,7 +283,7 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
       const saldo = (movR.data || []).reduce((s, m) => s + m.creditos, 0);
       if (saldo > 0) {
         setSaldoContrato(saldo);
-        setCreditosDesconto(-1);
+        setCreditosDesconto(calcularCreditos(ticket.duracao_minutos));
         setPendingEstado(novoEstado);
         setPendingNota(notaEstado);
         setSaving(false);
@@ -221,27 +296,25 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
   };
 
   const doAlterarEstado = async (estado, nota, descontar, creditos) => {
-    console.log('[doAlterarEstado]', { estado, descontar, creditos, contrato_id: ticket.contrato_id, ticket_id: ticket.id });
     await sb.from('rbo_tickets').update({ estado }).eq('id', ticket.id);
     await sb.from('rbo_ticket_historico').insert([{ ticket_id: ticket.id, estado_anterior: ticket.estado, estado_novo: estado, alterado_por_id: currentUserId || null, nota: nota || null }]);
     if (descontar && ticket.contrato_id) {
+      const { data: localRilop } = await sb.from('rbo_locais').select('id').ilike('nome', '%rilop%').single();
       const payload = {
         contrato_id:        ticket.contrato_id,
         data:               ticket.data_fim || new Date().toISOString().split('T')[0],
-        hora_inicio:        ticket.hora_inicio || null,
-        hora_fim:           ticket.hora_fim || null,
+        hora_inicio:        ticket.hora_inicio        || null,
+        hora_fim:           ticket.hora_fim            || null,
         creditos:           Number(creditos),
         descritivo:         `Ticket #${String(ticket.id).padStart(3, '0')} — ${(ticket.descricao_problema || '').slice(0, 150)}`,
-        profile_tecnico_id: ticket.tecnico_id || null,
+        profile_tecnico_id: ticket.tecnico_id          || null,
         tipo:               'assistencia',
+        equipment_id:       ticket.equipamento_id      || null,
+        local_id:           localRilop?.id             || null,
       };
-      console.log('[doAlterarEstado] inserting movimento:', payload);
       const { data: mov, error: movErr } = await sb.from('rbo_movimentos').insert([payload]).select().single();
-      console.log('[doAlterarEstado] movimento result:', { mov, movErr });
       if (movErr) { setSaveError('Erro ao registar movimento: ' + movErr.message); return; }
       if (mov) await sb.from('rbo_tickets').update({ movimento_id: mov.id }).eq('id', ticket.id);
-    } else {
-      console.log('[doAlterarEstado] skipped movimento — descontar:', descontar, 'contrato_id:', ticket.contrato_id);
     }
     await load();
     setNovoEstado(''); setNotaEstado('');
@@ -295,6 +368,8 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
   }).slice(0, 8);
 
   const tipNome = id => tipologias.find(t => t.id === id)?.nome;
+
+  const saldoAposDesconto = saldoContrato + Number(creditosDesconto || 0);
 
   return (
     <div>
@@ -395,7 +470,7 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
               </>
             )}
 
-            <Select label="Técnico (opcional)" value={assocForm.tecnico_id} onChange={v => setAssocForm(f => ({ ...f, tecnico_id: v }))}
+            <Select label="Técnico (opcional)" value={assocForm.tecnico_id} onChange={onTecnicoChange}
               options={tecnicos.map(t => ({ value: t.id, label: t.nome }))}/>
           </div>
         ) : (
@@ -439,10 +514,26 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
         <SectionCard title="Tempo de Trabalho" sectionKey="tempo" editSection={editSection} saving={saving} onEdit={enterEdit} onCancel={cancelEdit} onSave={saveTempo} noEdit={!tempoEditavel}>
           {editSection === 'tempo' ? (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-              <Input label="Data Início"       value={tempoForm.data_inicio}      onChange={v => setTempoForm(f => ({ ...f, data_inicio: v }))}      type="date"/>
-              <Input label="Hora Início"       value={tempoForm.hora_inicio}      onChange={v => setTempoForm(f => ({ ...f, hora_inicio: v }))}      type="time"/>
-              <Input label="Data Fim"          value={tempoForm.data_fim}         onChange={v => setTempoForm(f => ({ ...f, data_fim: v }))}         type="date"/>
-              <Input label="Hora Fim"          value={tempoForm.hora_fim}         onChange={v => setTempoForm(f => ({ ...f, hora_fim: v }))}         type="time"/>
+              <Input label="Data Início" value={tempoForm.data_inicio} type="date" onChange={v => {
+                const f = { ...tempoForm, data_inicio: v };
+                const dur = calcularDuracao(f.data_inicio, f.hora_inicio, f.data_fim, f.hora_fim);
+                setTempoForm({ ...f, duracao_minutos: dur != null ? String(dur) : f.duracao_minutos });
+              }}/>
+              <Input label="Hora Início" value={tempoForm.hora_inicio} type="time" onChange={v => {
+                const f = { ...tempoForm, hora_inicio: v };
+                const dur = calcularDuracao(f.data_inicio, f.hora_inicio, f.data_fim, f.hora_fim);
+                setTempoForm({ ...f, duracao_minutos: dur != null ? String(dur) : f.duracao_minutos });
+              }}/>
+              <Input label="Data Fim" value={tempoForm.data_fim} type="date" onChange={v => {
+                const f = { ...tempoForm, data_fim: v };
+                const dur = calcularDuracao(f.data_inicio, f.hora_inicio, f.data_fim, f.hora_fim);
+                setTempoForm({ ...f, duracao_minutos: dur != null ? String(dur) : f.duracao_minutos });
+              }}/>
+              <Input label="Hora Fim" value={tempoForm.hora_fim} type="time" onChange={v => {
+                const f = { ...tempoForm, hora_fim: v };
+                const dur = calcularDuracao(f.data_inicio, f.hora_inicio, f.data_fim, f.hora_fim);
+                setTempoForm({ ...f, duracao_minutos: dur != null ? String(dur) : f.duracao_minutos });
+              }}/>
               <div style={{ gridColumn: '1/-1' }}>
                 <Input label="Duração (minutos)" value={tempoForm.duracao_minutos} onChange={v => setTempoForm(f => ({ ...f, duracao_minutos: v }))} type="number"/>
               </div>
@@ -547,9 +638,15 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
         <Modal title="Descontar créditos do contrato?" onClose={() => setShowModalConcluir(false)}>
           <p style={{ fontSize: 14, color: C.grey600, lineHeight: 1.6, marginBottom: 16 }}>
             Este contrato tem <strong style={{ color: C.green }}>{saldoContrato} créditos</strong> disponíveis.
-            Deseja descontar esta assistência no contrato?
+            Quantos créditos pretende descontar?
           </p>
-          <Input label="Créditos a registar (valor negativo)" value={String(creditosDesconto)} onChange={v => setCreditosDesconto(v)} type="number"/>
+          <Input label="Créditos a descontar (valor negativo)" value={String(creditosDesconto)} onChange={v => setCreditosDesconto(v)} type="number"/>
+          <div style={{ fontSize: 13, color: C.grey600, marginTop: 10, padding: '8px 12px', background: C.grey50, borderRadius: 8 }}>
+            Saldo após desconto:{' '}
+            <strong style={{ color: saldoAposDesconto <= 0 ? C.red : saldoAposDesconto <= 5 ? C.amber : C.green }}>
+              {saldoAposDesconto} créditos
+            </strong>
+          </div>
           <div style={{ display: 'flex', gap: 10, marginTop: 20, flexWrap: 'wrap' }}>
             <Btn onClick={async () => { setSaving(true); await doAlterarEstado(pendingEstado, pendingNota, true, creditosDesconto); setSaving(false); }} disabled={saving}>
               {saving ? 'A guardar...' : 'Sim, descontar'}
