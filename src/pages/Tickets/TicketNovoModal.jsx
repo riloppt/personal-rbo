@@ -22,7 +22,7 @@ export const TicketNovoModal = ({ onClose, onCreated, currentUserId }) => {
   const [clienteSearch,      setClienteSearch]      = useState('');
   const [clienteSeleccionado, setClienteSeleccionado] = useState(null);
   const [showNovoCliente,    setShowNovoCliente]    = useState(false);
-  const emptyNovoCliente = { nome: '', nif: '', morada: '', cp: '', localidade: '', email: '', telefone: '', telemovel: '', observacoes: '' };
+  const emptyNovoCliente = { nome: '', nif: '', consumidor_final: false, morada: '', cp: '', localidade: '', email: '', telefone: '', telemovel: '', observacoes: '' };
   const [novoClienteForm,    setNovoClienteForm]    = useState(emptyNovoCliente);
   const [savingCliente,      setSavingCliente]      = useState(false);
   const [erroCliente,        setErroCliente]        = useState('');
@@ -93,18 +93,20 @@ export const TicketNovoModal = ({ onClose, onCreated, currentUserId }) => {
     if (!novoClienteForm.localidade.trim()) return setErroCliente('Localidade é obrigatória.');
     if (!novoClienteForm.email.trim())      return setErroCliente('Email é obrigatório.');
     if (!novoClienteForm.telefone.trim() && !novoClienteForm.telemovel.trim()) return setErroCliente('Telefone ou telemóvel é obrigatório.');
+    if (!novoClienteForm.consumidor_final && !novoClienteForm.nif.trim()) return setErroCliente('NIF é obrigatório para clientes empresariais.');
     setErroCliente('');
     setSavingCliente(true);
     const { data: cli, error } = await sb.from('rbo_clientes').insert([{
-      nome:        novoClienteForm.nome.trim(),
-      nif:         novoClienteForm.nif        || null,
-      morada:      novoClienteForm.morada.trim(),
-      cp:          novoClienteForm.cp.trim(),
-      localidade:  novoClienteForm.localidade.trim(),
-      email:       novoClienteForm.email.trim() || null,
-      telefone:    novoClienteForm.telefone     || null,
-      telemovel:   novoClienteForm.telemovel    || null,
-      observacoes: novoClienteForm.observacoes  || null,
+      nome:             novoClienteForm.nome.trim(),
+      nif:              novoClienteForm.nif        || null,
+      consumidor_final: novoClienteForm.consumidor_final,
+      morada:           novoClienteForm.morada.trim(),
+      cp:               novoClienteForm.cp.trim(),
+      localidade:       novoClienteForm.localidade.trim(),
+      email:            novoClienteForm.email.trim() || null,
+      telefone:         novoClienteForm.telefone     || null,
+      telemovel:        novoClienteForm.telemovel    || null,
+      observacoes:      novoClienteForm.observacoes  || null,
     }]).select().single();
     if (error) {
       setErroCliente('Erro ao criar cliente: ' + error.message);
@@ -252,7 +254,17 @@ export const TicketNovoModal = ({ onClose, onCreated, currentUserId }) => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div style={{ fontSize: 13, fontWeight: 600, color: C.grey800, marginBottom: 2 }}>Novo Cliente</div>
               <Input label="Nome da Empresa" value={novoClienteForm.nome} onChange={v => setNovoClienteForm(f => ({ ...f, nome: v }))} required/>
-              <Input label="NIF (opcional)" value={novoClienteForm.nif} onChange={v => setNovoClienteForm(f => ({ ...f, nif: maskNif(v) }))} placeholder="XXX XXX XXX"/>
+              {/* Consumidor Final */}
+              <div>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', userSelect: 'none' }}>
+                  <input type="checkbox" checked={!!novoClienteForm.consumidor_final}
+                    onChange={e => setNovoClienteForm(f => ({ ...f, consumidor_final: e.target.checked }))}
+                    style={{ accentColor: C.teal, width: 15, height: 15, cursor: 'pointer' }}/>
+                  <span style={{ fontSize: 14, color: C.grey700 }}>Consumidor Final</span>
+                </label>
+                <div style={{ fontSize: 11, color: C.grey400, marginLeft: 23, marginTop: 3 }}>Quando ativo, o NIF é opcional</div>
+              </div>
+              <Input label={novoClienteForm.consumidor_final ? 'NIF (opcional)' : 'NIF'} value={novoClienteForm.nif} onChange={v => setNovoClienteForm(f => ({ ...f, nif: maskNif(v) }))} placeholder="XXX XXX XXX" required={!novoClienteForm.consumidor_final}/>
               <Input label="Morada" value={novoClienteForm.morada} onChange={v => setNovoClienteForm(f => ({ ...f, morada: v }))} required/>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <Input label="Código Postal" value={novoClienteForm.cp} onChange={v => setNovoClienteForm(f => ({ ...f, cp: maskCP(v) }))} placeholder="XXXX-XXX" required/>

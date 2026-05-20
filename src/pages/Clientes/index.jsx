@@ -16,7 +16,7 @@ export const ClientesPage = () => {
   const [tecnicoOpts, setTecnicoOpts] = useState([]);
   const [newModal,    setNewModal]    = useState(false);
   const [newSaving,   setNewSaving]   = useState(false);
-  const emptyNew = {nome:"",nif:"",tecnico_id:"",morada:"",cp:"",localidade:"",gps:"",email:"",telefone:"",telemovel:"",observacoes:""};
+  const emptyNew = {nome:"",nif:"",consumidor_final:false,tecnico_id:"",morada:"",cp:"",localidade:"",gps:"",email:"",telefone:"",telemovel:"",observacoes:""};
   const [newForm, setNewForm] = useState(emptyNew);
 
   useEffect(()=>{
@@ -25,12 +25,13 @@ export const ClientesPage = () => {
   },[]);
 
   const saveNew = async () => {
-    if (!newForm.nome)                           return alert("Nome é obrigatório");
-    if (!newForm.morada)                         return alert("Morada é obrigatória");
-    if (!newForm.cp)                             return alert("Código Postal é obrigatório");
-    if (!newForm.localidade)                     return alert("Localidade é obrigatória");
-    if (!newForm.email)                          return alert("Email é obrigatório");
-    if (!newForm.telefone && !newForm.telemovel) return alert("Pelo menos telefone ou telemóvel é obrigatório");
+    if (!newForm.nome)                                        return alert("Nome é obrigatório");
+    if (!newForm.morada)                                      return alert("Morada é obrigatória");
+    if (!newForm.cp)                                          return alert("Código Postal é obrigatório");
+    if (!newForm.localidade)                                  return alert("Localidade é obrigatória");
+    if (!newForm.email)                                       return alert("Email é obrigatório");
+    if (!newForm.telefone && !newForm.telemovel)              return alert("Pelo menos telefone ou telemóvel é obrigatório");
+    if (!newForm.consumidor_final && !newForm.nif)            return alert("NIF é obrigatório para clientes empresariais");
     setNewSaving(true);
     const { error } = await sb.from("rbo_clientes").insert([{ ...newForm, tecnico_id: newForm.tecnico_id || null }]);
     if (error) { alert("Erro: " + error.message); setNewSaving(false); return; }
@@ -73,7 +74,14 @@ export const ClientesPage = () => {
     <>
       <CrudPage key={reload} title="Clientes" table="rbo_clientes"
         cols={[
-          {key:"nome",       label:"Nome"},
+          {key:"nome", label:"Nome", render:(v,row)=>(
+            <div style={{display:"flex",alignItems:"center",gap:8}}>
+              <span>{v}</span>
+              {row.consumidor_final && (
+                <span style={{fontSize:10,fontWeight:700,color:C.teal,background:C.teal+"18",borderRadius:4,padding:"1px 7px",letterSpacing:".5px",flexShrink:0}}>CF</span>
+              )}
+            </div>
+          )},
           {key:"tecnico_id", label:"Técnico", render:(v)=>tecnicoOpts.find(t=>t.value===v)?.label||"—"},
           {key:"localidade", label:"Localidade"},
           {key:"telefone",   label:"Telefone"},
@@ -100,7 +108,16 @@ export const ClientesPage = () => {
             <div style={{gridColumn:"1/-1"}}>
               <Select label="Técnico" value={newForm.tecnico_id} onChange={v=>setNewForm(f=>({...f,tecnico_id:v}))} options={tecnicoOpts}/>
             </div>
-            <Input label="NIF" value={newForm.nif} onChange={v=>setNewForm(f=>({...f,nif:maskNif(v)}))} placeholder="XXX XXX XXX"/>
+            {/* Consumidor Final */}
+            <div style={{gridColumn:"1/-1"}}>
+              <label style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer",userSelect:"none"}}>
+                <input type="checkbox" checked={!!newForm.consumidor_final} onChange={e=>setNewForm(f=>({...f,consumidor_final:e.target.checked}))}
+                  style={{accentColor:C.teal,width:15,height:15,cursor:"pointer"}}/>
+                <span style={{fontSize:14,color:C.grey700}}>Consumidor Final</span>
+              </label>
+              <div style={{fontSize:11,color:C.grey400,marginLeft:23,marginTop:3}}>Quando ativo, o NIF é opcional</div>
+            </div>
+            <Input label={newForm.consumidor_final ? "NIF (opcional)" : "NIF"} value={newForm.nif} onChange={v=>setNewForm(f=>({...f,nif:maskNif(v)}))} placeholder="XXX XXX XXX" required={!newForm.consumidor_final}/>
             <div/>
             <div style={{gridColumn:"1/-1"}}>
               <Input label="Morada" value={newForm.morada} onChange={v=>setNewForm(f=>({...f,morada:v}))} required/>

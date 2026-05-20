@@ -20,12 +20,13 @@ export const ClienteDetalhe = ({ cliente: clienteInicial, tecnicoOpts, onBack, o
   const [tab,           setTab]           = useState("dados");
 
   const save = async () => {
-    if (!form.nome)                        return alert("Nome é obrigatório");
-    if (!form.morada)                      return alert("Morada é obrigatória");
-    if (!form.cp)                          return alert("Código Postal é obrigatório");
-    if (!form.localidade)                  return alert("Localidade é obrigatória");
-    if (!form.email)                       return alert("Email é obrigatório");
-    if (!form.telefone && !form.telemovel) return alert("Pelo menos telefone ou telemóvel é obrigatório");
+    if (!form.nome)                                      return alert("Nome é obrigatório");
+    if (!form.morada)                                    return alert("Morada é obrigatória");
+    if (!form.cp)                                        return alert("Código Postal é obrigatório");
+    if (!form.localidade)                                return alert("Localidade é obrigatória");
+    if (!form.email)                                     return alert("Email é obrigatório");
+    if (!form.telefone && !form.telemovel)               return alert("Pelo menos telefone ou telemóvel é obrigatório");
+    if (!form.consumidor_final && !form.nif)             return alert("NIF é obrigatório para clientes empresariais");
     setSaving(true);
     const { id: _id, created_at: _ca, ...rest } = form;
     const { data, error } = await sb.from("rbo_clientes").update(rest).eq("id", cliente.id).select().single();
@@ -67,7 +68,14 @@ export const ClienteDetalhe = ({ cliente: clienteInicial, tecnicoOpts, onBack, o
       {/* Header */}
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:12,marginBottom:20}}>
         <div>
-          <h1 style={{fontSize:22,fontWeight:700,color:C.grey800}}>{cliente.nome}</h1>
+          <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
+            <h1 style={{fontSize:22,fontWeight:700,color:C.grey800}}>{cliente.nome}</h1>
+            {cliente.consumidor_final && (
+              <span style={{fontSize:11,fontWeight:700,color:C.teal,background:C.teal+"18",borderRadius:6,padding:"3px 10px",textTransform:"uppercase",letterSpacing:".5px",flexShrink:0}}>
+                Consumidor Final
+              </span>
+            )}
+          </div>
           {tecNome !== "—" && <div style={{fontSize:13,color:C.grey400,marginTop:4}}>Técnico: {tecNome}</div>}
         </div>
         {onDelete && <Btn variant="danger" size="sm" icon="trash" onClick={onDelete}>Eliminar cliente</Btn>}
@@ -159,7 +167,16 @@ export const ClienteDetalhe = ({ cliente: clienteInicial, tecnicoOpts, onBack, o
                 <div style={{gridColumn:"1/-1"}}>
                   <Select label="Técnico" value={form.tecnico_id||""} onChange={v=>setForm(f=>({...f,tecnico_id:v}))} options={tecnicoOpts}/>
                 </div>
-                <Input label="NIF" value={form.nif||""} onChange={v=>setForm(f=>({...f,nif:maskNif(v)}))} placeholder="XXX XXX XXX"/>
+                {/* Consumidor Final */}
+                <div style={{gridColumn:"1/-1"}}>
+                  <label style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer",userSelect:"none"}}>
+                    <input type="checkbox" checked={!!form.consumidor_final} onChange={e=>setForm(f=>({...f,consumidor_final:e.target.checked}))}
+                      style={{accentColor:C.teal,width:15,height:15,cursor:"pointer"}}/>
+                    <span style={{fontSize:14,color:C.grey700}}>Consumidor Final</span>
+                  </label>
+                  <div style={{fontSize:11,color:C.grey400,marginLeft:23,marginTop:3}}>Quando ativo, o NIF é opcional</div>
+                </div>
+                <Input label={form.consumidor_final ? "NIF (opcional)" : "NIF"} value={form.nif||""} onChange={v=>setForm(f=>({...f,nif:maskNif(v)}))} placeholder="XXX XXX XXX" required={!form.consumidor_final}/>
                 <div/>
                 <div style={{gridColumn:"1/-1"}}>
                   <Input label="Morada" value={form.morada||""} onChange={v=>setForm(f=>({...f,morada:v}))} required/>
