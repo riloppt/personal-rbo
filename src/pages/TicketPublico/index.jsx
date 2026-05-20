@@ -3,6 +3,9 @@ import { sb } from '../../lib/supabase';
 
 const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY;
 
+// Define at module scope so it exists before the Turnstile script fires its onload
+window.__rboTsReady = () => {};
+
 const T = {
   teal:   '#1a7a7a', tealD:  '#0d5e5e', tealL:  '#2a9b9b',
   tealXL: '#e6f5f5', tealXXL:'#f0f9f9',
@@ -168,6 +171,8 @@ export default function TicketPublico() {
   const tsWidgetId = useRef(null);
 
   useEffect(() => {
+    if (!TURNSTILE_SITE_KEY) return; // skip if env var not configured
+
     const renderWidget = () => {
       if (!tsRef.current || tsWidgetId.current !== null) return;
       tsWidgetId.current = window.turnstile.render(tsRef.current, {
@@ -179,13 +184,14 @@ export default function TicketPublico() {
       });
     };
 
-    if (window.turnstile) {
-      renderWidget();
-    } else {
-      window.__rboTsReady = renderWidget;
-    }
+    // Override the module-scope no-op with the real handler
+    window.__rboTsReady = renderWidget;
+
+    // Script may have already fired before this effect ran
+    if (window.turnstile) renderWidget();
 
     return () => {
+      window.__rboTsReady = () => {};
       if (tsWidgetId.current !== null && window.turnstile) {
         window.turnstile.remove(tsWidgetId.current);
         tsWidgetId.current = null;
@@ -212,9 +218,8 @@ export default function TicketPublico() {
 
     if (!validate()) return;
 
-    // Turnstile check
-    if (!tsToken) {
-      // Try to trigger the challenge
+    // Turnstile check (skip if not configured — e.g. env var missing)
+    if (TURNSTILE_SITE_KEY && !tsToken) {
       if (window.turnstile && tsWidgetId.current !== null) {
         window.turnstile.execute(tsWidgetId.current);
       }
