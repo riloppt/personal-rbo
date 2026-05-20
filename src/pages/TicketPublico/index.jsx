@@ -166,6 +166,7 @@ export default function TicketPublico() {
     if (!form.nome_empresa.trim())        e.nome_empresa = 'Campo obrigatório';
     if (!form.nome_pessoa.trim())         e.nome_pessoa = 'Campo obrigatório';
     if (!form.email_cliente.trim())       e.email_cliente = 'Campo obrigatório';
+    if (!form.telefone_cliente.trim())    e.telefone_cliente = 'Campo obrigatório';
     if (!form.descricao_problema.trim())  e.descricao_problema = 'Campo obrigatório';
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -369,7 +370,7 @@ export default function TicketPublico() {
                   <Field label="Email" value={form.email_cliente} onChange={set('email_cliente')}
                     type="email" required error={errors.email_cliente} placeholder="email@empresa.pt"/>
                   <Field label="Telefone" value={form.telefone_cliente} onChange={set('telefone_cliente')}
-                    placeholder="XXX XXX XXX (opcional)"/>
+                    required error={errors.telefone_cliente} placeholder="XXX XXX XXX"/>
                 </div>
               </div>
 
@@ -442,7 +443,7 @@ export default function TicketPublico() {
         borderTop:`1px solid ${T.grey100}`,
         background:T.white,
       }}>
-        Rilop — Serviços de Tecnologia de Informação
+        Rilop — Informática e Comunicação
       </footer>
     </div>
   );
