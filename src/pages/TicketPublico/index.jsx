@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { sb } from '../../lib/supabase';
+
+const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY;
 
 const T = {
   teal:   '#1a7a7a', tealD:  '#0d5e5e', tealL:  '#2a9b9b',
@@ -157,7 +159,39 @@ export default function TicketPublico() {
     nome_empresa:'', nome_pessoa:'', email_cliente:'',
     telefone_cliente:'', descricao_problema:'',
   });
-  const [errors, setErrors] = useState({});
+  const [errors,   setErrors]   = useState({});
+  const [honeypot, setHoneypot] = useState('');
+  const [tsToken,  setTsToken]  = useState(null);
+  const [errorMsg, setErrorMsg] = useState(null);
+
+  const tsRef      = useRef(null);
+  const tsWidgetId = useRef(null);
+
+  useEffect(() => {
+    const renderWidget = () => {
+      if (!tsRef.current || tsWidgetId.current !== null) return;
+      tsWidgetId.current = window.turnstile.render(tsRef.current, {
+        sitekey: TURNSTILE_SITE_KEY,
+        size: 'invisible',
+        callback: (token) => setTsToken(token),
+        'expired-callback': () => setTsToken(null),
+        'error-callback': () => setTsToken(null),
+      });
+    };
+
+    if (window.turnstile) {
+      renderWidget();
+    } else {
+      window.__rboTsReady = renderWidget;
+    }
+
+    return () => {
+      if (tsWidgetId.current !== null && window.turnstile) {
+        window.turnstile.remove(tsWidgetId.current);
+        tsWidgetId.current = null;
+      }
+    };
+  }, []);
 
   const set = k => v => setForm(f => ({ ...f, [k]: v }));
 
@@ -173,26 +207,44 @@ export default function TicketPublico() {
   };
 
   const submit = async () => {
+    // Honeypot check — silent fake success
+    if (honeypot) { setTicketId(9999); setStatus('success'); return; }
+
     if (!validate()) return;
+
+    // Turnstile check
+    if (!tsToken) {
+      // Try to trigger the challenge
+      if (window.turnstile && tsWidgetId.current !== null) {
+        window.turnstile.execute(tsWidgetId.current);
+      }
+      setErrorMsg('Verificação pendente, tente novamente.');
+      return;
+    }
+
+    setErrorMsg(null);
     setStatus('submitting');
     try {
-      const { data: ticket, error } = await sb.from('rbo_tickets').insert([{
-        tipo: 'publico', estado: 'submetido',
-        nome_empresa:       form.nome_empresa.trim(),
-        nome_pessoa:        form.nome_pessoa.trim(),
-        email_cliente:      form.email_cliente.trim(),
-        telefone_cliente:   form.telefone_cliente.trim() || null,
-        descricao_problema: form.descricao_problema.trim(),
-      }]).select().single();
+      const { data, error } = await sb.functions.invoke('submit-ticket', {
+        body: {
+          ts_token:           tsToken,
+          nome_empresa:       form.nome_empresa.trim(),
+          nome_pessoa:        form.nome_pessoa.trim(),
+          email_cliente:      form.email_cliente.trim(),
+          telefone_cliente:   form.telefone_cliente.trim() || null,
+          descricao_problema: form.descricao_problema.trim(),
+        },
+      });
       if (error) throw error;
-      await sb.from('rbo_ticket_historico').insert([{
-        ticket_id: ticket.id, estado_anterior: null, estado_novo: 'submetido',
-        alterado_por_id: null, nota: 'Submetido via formulário público',
-      }]);
-      setTicketId(ticket.id);
+      setTicketId(data.id);
       setStatus('success');
     } catch (err) {
       console.error(err);
+      // Reset Turnstile token so next attempt gets a fresh one
+      if (window.turnstile && tsWidgetId.current !== null) {
+        window.turnstile.reset(tsWidgetId.current);
+      }
+      setTsToken(null);
       setStatus('error');
     }
   };
@@ -387,9 +439,20 @@ export default function TicketPublico() {
                 />
               </div>
 
+              {/* Honeypot — invisible to real users, must not be display:none */}
+              <div aria-hidden="true" style={{ position:'absolute', left:'-9999px', top:0, width:1, height:1, overflow:'hidden' }}>
+                <input
+                  type="text" name="website" tabIndex={-1} autoComplete="off"
+                  value={honeypot} onChange={e => setHoneypot(e.target.value)}
+                />
+              </div>
+
+              {/* Turnstile invisible widget mount point */}
+              <div ref={tsRef}/>
+
               {/* Form footer — submit */}
               <div style={{ padding:'24px 32px' }}>
-                {status === 'error' && (
+                {(status === 'error' || errorMsg) && (
                   <div style={{
                     marginBottom:16, padding:'11px 16px',
                     background:'#e05a5a0f', borderRadius:10,
@@ -400,7 +463,7 @@ export default function TicketPublico() {
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.red} strokeWidth="2.5" strokeLinecap="round">
                       <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
                     </svg>
-                    Ocorreu um erro. Por favor tente novamente.
+                    {errorMsg || 'Ocorreu um erro. Por favor tente novamente.'}
                   </div>
                 )}
 
