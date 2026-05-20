@@ -4,6 +4,7 @@ import { PageHeader } from '../../components/ui/PageHeader';
 import { Icon } from '../../components/ui/Icon';
 import { CrudPage } from '../../components/shared/CrudPage';
 import { UtilizadoresPanel } from './UtilizadoresPanel';
+import { CategoriasCredenciaisPanel } from './CategoriasCredenciaisPanel';
 
 export const Definicoes = ({ currentUserId }) => {
   const C = useTheme();
@@ -47,10 +48,7 @@ export const Definicoes = ({ currentUserId }) => {
           formFields={[{k:"nome",label:"Nome do Local",required:true}]}/>
       )}
       {tab==="categorias"&&(
-        <CrudPage key="categorias" compact title="Categorias de Credenciais" table="rbo_credential_categories"
-          cols={[{key:"nome",label:"Categoria"}]}
-          emptyForm={{nome:""}}
-          formFields={[{k:"nome",label:"Nome da Categoria",required:true}]}/>
+        <CategoriasCredenciaisPanel/>
       )}
       {tab==="equipamentos"&&(
         <CrudPage key="equipamentos" compact title="Tipos de Equipamento" table="rbo_equipment_types"

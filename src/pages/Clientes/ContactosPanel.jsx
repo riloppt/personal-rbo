@@ -17,7 +17,7 @@ export const ContactosPanel = ({ clienteId }) => {
   const [modal,    setModal]    = useState(false);
   const [saving,   setSaving]   = useState(false);
   const [editId,   setEditId]   = useState(null);
-  const empty = {nome:"",email:"",telefone:"",telemovel:""};
+  const empty = {nome:"",cargo:"",email:"",telefone:"",telemovel:""};
   const [form, setForm] = useState(empty);
 
   const load = useCallback(async () => {
@@ -67,7 +67,12 @@ export const ContactosPanel = ({ clienteId }) => {
           {contacts.map((c,i)=>(
             <div key={c.id} style={{padding:"14px 20px",borderBottom:i<contacts.length-1?`1px solid ${C.grey100}`:"none"}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
-                <span style={{fontWeight:600,fontSize:14,color:C.grey800}}>{c.nome}</span>
+                <div>
+                  <span style={{fontWeight:600,fontSize:14,color:C.grey800}}>{c.nome}</span>
+                  {c.cargo && (
+                    <span style={{display:"block",fontSize:12,color:C.grey400,marginTop:1}}>{c.cargo}</span>
+                  )}
+                </div>
                 <div style={{display:"flex",gap:2}}>
                   <Btn variant="ghost" size="sm" icon="edit"  onClick={()=>openEdit(c)}/>
                   <Btn variant="ghost" size="sm" icon="trash" onClick={()=>del(c.id)}/>
@@ -110,6 +115,7 @@ export const ContactosPanel = ({ clienteId }) => {
         <Modal title={editId?"Editar contacto":"Novo contacto"} onClose={()=>setModal(false)}>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
             <div style={{gridColumn:"1/-1"}}><Input label="Nome" value={form.nome} onChange={v=>setForm(f=>({...f,nome:v}))} required/></div>
+            <div style={{gridColumn:"1/-1"}}><Input label="Cargo" value={form.cargo||""} onChange={v=>setForm(f=>({...f,cargo:v}))} placeholder="ex: Diretor de IT, Responsável Financeiro"/></div>
             <div style={{gridColumn:"1/-1"}}><Input label="Email" value={form.email} onChange={v=>setForm(f=>({...f,email:v}))} type="email"/></div>
             <Input label="Telefone"  value={form.telefone}  onChange={v=>setForm(f=>({...f,telefone:maskPhone(v)}))}  placeholder="XXX XXX XXX"/>
             <Input label="Telemóvel" value={form.telemovel} onChange={v=>setForm(f=>({...f,telemovel:maskPhone(v)}))} placeholder="XXX XXX XXX"/>

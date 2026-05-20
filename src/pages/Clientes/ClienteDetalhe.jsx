@@ -47,12 +47,15 @@ export const ClienteDetalhe = ({ cliente: clienteInicial, tecnicoOpts, onBack, o
     {id:"equipamentos", label:"Equipamentos", icon:"wrench"},
   ];
 
-  const InfoField = ({ label, value }) => value ? (
+  const labelSx = {fontSize:11,fontWeight:600,color:C.grey400,textTransform:"uppercase",letterSpacing:".5px"};
+  const valueSx = {fontSize:14,marginTop:2,color:C.grey800};
+
+  const InfoField = ({ label, value }) => (
     <div>
-      <div style={{fontSize:11,fontWeight:600,color:C.grey400,textTransform:"uppercase",letterSpacing:".5px"}}>{label}</div>
-      <div style={{fontSize:14,marginTop:2,color:C.grey800}}>{value}</div>
+      <div style={labelSx}>{label}</div>
+      <div style={{...valueSx, color: value ? C.grey800 : C.grey300}}>{value || "—"}</div>
     </div>
-  ) : null;
+  );
 
   return (
     <div>
@@ -93,22 +96,58 @@ export const ClienteDetalhe = ({ cliente: clienteInicial, tecnicoOpts, onBack, o
                 <span style={{fontSize:14,fontWeight:600,color:C.grey600}}>Informações do cliente</span>
                 <Btn size="sm" icon="edit" onClick={()=>{ setForm({...cliente}); setEditingDados(true); }}>Editar dados</Btn>
               </div>
-              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(190px,1fr))",gap:16}}>
-                <InfoField label="NIF"           value={cliente.nif}/>
-                <InfoField label="Telefone"      value={cliente.telefone}/>
-                <InfoField label="Telemóvel"     value={cliente.telemovel}/>
-                <InfoField label="Email"         value={cliente.email}/>
-                <InfoField label="Morada"        value={cliente.morada}/>
-                <InfoField label="Localidade"    value={cliente.localidade}/>
-                <InfoField label="Código Postal" value={cliente.cp}/>
-                <InfoField label="GPS"           value={cliente.gps}/>
-              </div>
-              {cliente.observacoes && (
-                <div style={{marginTop:16,paddingTop:16,borderTop:`1px solid ${C.grey100}`}}>
-                  <div style={{fontSize:11,fontWeight:600,color:C.grey400,textTransform:"uppercase",letterSpacing:".5px",marginBottom:6}}>Observações</div>
-                  <div style={{fontSize:14,color:C.grey800,lineHeight:1.6,whiteSpace:"pre-wrap"}}>{cliente.observacoes}</div>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:16}}>
+                {/* Nome — full width */}
+                <div style={{gridColumn:"1/-1"}}>
+                  <InfoField label="Nome da Empresa" value={cliente.nome}/>
                 </div>
-              )}
+
+                {/* Técnico */}
+                <InfoField label="Técnico Atribuído" value={tecNome !== "—" ? tecNome : null}/>
+
+                {/* NIF */}
+                <InfoField label="NIF" value={cliente.nif}/>
+
+                {/* Consumidor Final */}
+                <div>
+                  <div style={labelSx}>Consumidor Final</div>
+                  {cliente.consumidor_final
+                    ? <span style={{display:"inline-block",marginTop:4,fontSize:11,fontWeight:700,color:C.teal,background:C.teal+"18",borderRadius:6,padding:"2px 10px",textTransform:"uppercase",letterSpacing:".5px"}}>Consumidor Final</span>
+                    : <div style={{...valueSx,color:C.grey300}}>—</div>
+                  }
+                </div>
+
+                {/* Email */}
+                <InfoField label="Email" value={cliente.email}/>
+
+                {/* Telefone */}
+                <InfoField label="Telefone" value={cliente.telefone}/>
+
+                {/* Telemóvel */}
+                <InfoField label="Telemóvel" value={cliente.telemovel}/>
+
+                {/* CP */}
+                <InfoField label="Código Postal" value={cliente.cp}/>
+
+                {/* Localidade */}
+                <InfoField label="Localidade" value={cliente.localidade}/>
+
+                {/* Morada — full width */}
+                <div style={{gridColumn:"1/-1"}}>
+                  <InfoField label="Morada" value={cliente.morada}/>
+                </div>
+
+                {/* GPS — full width */}
+                <div style={{gridColumn:"1/-1"}}>
+                  <InfoField label="Coordenadas GPS" value={cliente.gps}/>
+                </div>
+              </div>
+
+              {/* Observações */}
+              <div style={{marginTop:16,paddingTop:16,borderTop:`1px solid ${C.grey100}`}}>
+                <div style={{...labelSx,marginBottom:6}}>Observações</div>
+                <div style={{fontSize:14,color:cliente.observacoes?C.grey800:C.grey300,lineHeight:1.6,whiteSpace:"pre-wrap"}}>{cliente.observacoes||"—"}</div>
+              </div>
             </>
           ) : (
             <>
