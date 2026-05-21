@@ -20,13 +20,14 @@ export const ClienteDetalhe = ({ cliente: clienteInicial, tecnicoOpts, onBack, o
   const [tab,           setTab]           = useState("dados");
 
   const save = async () => {
-    if (!form.nome)                                      return alert("Nome é obrigatório");
-    if (!form.morada)                                    return alert("Morada é obrigatória");
-    if (!form.cp)                                        return alert("Código Postal é obrigatório");
-    if (!form.localidade)                                return alert("Localidade é obrigatória");
-    if (!form.email)                                     return alert("Email é obrigatório");
-    if (!form.telefone && !form.telemovel)               return alert("Pelo menos telefone ou telemóvel é obrigatório");
-    if (!form.consumidor_final && !form.nif)             return alert("NIF é obrigatório para clientes empresariais");
+    const cf = form.consumidor_final;
+    if (!form.nome)                          return alert("Nome é obrigatório");
+    if (!cf && !form.morada)                 return alert("Morada é obrigatória");
+    if (!cf && !form.cp)                     return alert("Código Postal é obrigatório");
+    if (!cf && !form.localidade)             return alert("Localidade é obrigatória");
+    if (!form.email)                         return alert("Email é obrigatório");
+    if (!form.telefone && !form.telemovel)   return alert("Pelo menos telefone ou telemóvel é obrigatório");
+    if (!cf && !form.nif)                    return alert("NIF é obrigatório para clientes empresariais");
     setSaving(true);
     const { id: _id, created_at: _ca, ...rest } = form;
     const { data, error } = await sb.from("rbo_clientes").update(rest).eq("id", cliente.id).select().single();
@@ -145,10 +146,6 @@ export const ClienteDetalhe = ({ cliente: clienteInicial, tecnicoOpts, onBack, o
                   <InfoField label="Morada" value={cliente.morada}/>
                 </div>
 
-                {/* GPS — full width */}
-                <div style={{gridColumn:"1/-1"}}>
-                  <InfoField label="Coordenadas GPS" value={cliente.gps}/>
-                </div>
               </div>
 
               {/* Observações */}
@@ -174,27 +171,15 @@ export const ClienteDetalhe = ({ cliente: clienteInicial, tecnicoOpts, onBack, o
                       style={{accentColor:C.teal,width:15,height:15,cursor:"pointer"}}/>
                     <span style={{fontSize:14,color:C.grey700}}>Consumidor Final</span>
                   </label>
-                  <div style={{fontSize:11,color:C.grey400,marginLeft:23,marginTop:3}}>Quando ativo, o NIF é opcional</div>
+                  <div style={{fontSize:11,color:C.grey400,marginLeft:23,marginTop:3}}>Quando ativo, NIF, morada, código postal e localidade são opcionais</div>
                 </div>
                 <Input label={form.consumidor_final ? "NIF (opcional)" : "NIF"} value={form.nif||""} onChange={v=>setForm(f=>({...f,nif:maskNif(v)}))} placeholder="XXX XXX XXX" required={!form.consumidor_final}/>
                 <div/>
                 <div style={{gridColumn:"1/-1"}}>
-                  <Input label="Morada" value={form.morada||""} onChange={v=>setForm(f=>({...f,morada:v}))} required/>
+                  <Input label="Morada" value={form.morada||""} onChange={v=>setForm(f=>({...f,morada:v}))} required={!form.consumidor_final}/>
                 </div>
-                <Input label="Código Postal" value={form.cp||""} onChange={v=>setForm(f=>({...f,cp:maskCP(v)}))} placeholder="0000-000" required/>
-                <Input label="Localidade"    value={form.localidade||""} onChange={v=>setForm(f=>({...f,localidade:v}))} required/>
-                <div style={{gridColumn:"1/-1",display:"flex",gap:8,alignItems:"flex-end"}}>
-                  <div style={{flex:1}}>
-                    <Input label="Coordenadas GPS" value={form.gps||""} onChange={v=>setForm(f=>({...f,gps:v}))} placeholder="lat,lng"/>
-                  </div>
-                  <Btn variant="secondary" size="sm" onClick={()=>{
-                    if (!navigator.geolocation) return alert("Geolocalização não suportada");
-                    navigator.geolocation.getCurrentPosition(
-                      p=>setForm(f=>({...f,gps:`${p.coords.latitude.toFixed(6)},${p.coords.longitude.toFixed(6)}`})),
-                      ()=>alert("Não foi possível obter a localização")
-                    );
-                  }}>📍 Obter</Btn>
-                </div>
+                <Input label="Código Postal" value={form.cp||""} onChange={v=>setForm(f=>({...f,cp:maskCP(v)}))} placeholder="0000-000" required={!form.consumidor_final}/>
+                <Input label="Localidade"    value={form.localidade||""} onChange={v=>setForm(f=>({...f,localidade:v}))} required={!form.consumidor_final}/>
                 <Input label="Email" value={form.email||""} onChange={v=>setForm(f=>({...f,email:v}))} type="email" required/>
                 <div/>
                 <Input label="Telefone"  value={form.telefone||""}  onChange={v=>setForm(f=>({...f,telefone:maskPhone(v)}))}  placeholder="XXX XXX XXX"/>

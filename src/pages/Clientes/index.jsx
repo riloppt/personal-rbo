@@ -16,7 +16,7 @@ export const ClientesPage = () => {
   const [tecnicoOpts, setTecnicoOpts] = useState([]);
   const [newModal,    setNewModal]    = useState(false);
   const [newSaving,   setNewSaving]   = useState(false);
-  const emptyNew = {nome:"",nif:"",consumidor_final:false,tecnico_id:"",morada:"",cp:"",localidade:"",gps:"",email:"",telefone:"",telemovel:"",observacoes:""};
+  const emptyNew = {nome:"",nif:"",consumidor_final:false,tecnico_id:"",morada:"",cp:"",localidade:"",email:"",telefone:"",telemovel:"",observacoes:""};
   const [newForm, setNewForm] = useState(emptyNew);
 
   useEffect(()=>{
@@ -25,13 +25,14 @@ export const ClientesPage = () => {
   },[]);
 
   const saveNew = async () => {
-    if (!newForm.nome)                                        return alert("Nome é obrigatório");
-    if (!newForm.morada)                                      return alert("Morada é obrigatória");
-    if (!newForm.cp)                                          return alert("Código Postal é obrigatório");
-    if (!newForm.localidade)                                  return alert("Localidade é obrigatória");
-    if (!newForm.email)                                       return alert("Email é obrigatório");
-    if (!newForm.telefone && !newForm.telemovel)              return alert("Pelo menos telefone ou telemóvel é obrigatório");
-    if (!newForm.consumidor_final && !newForm.nif)            return alert("NIF é obrigatório para clientes empresariais");
+    const cf = newForm.consumidor_final;
+    if (!newForm.nome)                           return alert("Nome é obrigatório");
+    if (!cf && !newForm.morada)                  return alert("Morada é obrigatória");
+    if (!cf && !newForm.cp)                      return alert("Código Postal é obrigatório");
+    if (!cf && !newForm.localidade)              return alert("Localidade é obrigatória");
+    if (!newForm.email)                          return alert("Email é obrigatório");
+    if (!newForm.telefone && !newForm.telemovel) return alert("Pelo menos telefone ou telemóvel é obrigatório");
+    if (!cf && !newForm.nif)                     return alert("NIF é obrigatório para clientes empresariais");
     setNewSaving(true);
     const { error } = await sb.from("rbo_clientes").insert([{ ...newForm, tecnico_id: newForm.tecnico_id || null }]);
     if (error) { alert("Erro: " + error.message); setNewSaving(false); return; }
@@ -117,27 +118,15 @@ export const ClientesPage = () => {
                   style={{accentColor:C.teal,width:15,height:15,cursor:"pointer"}}/>
                 <span style={{fontSize:14,color:C.grey700}}>Consumidor Final</span>
               </label>
-              <div style={{fontSize:11,color:C.grey400,marginLeft:23,marginTop:3}}>Quando ativo, o NIF é opcional</div>
+              <div style={{fontSize:11,color:C.grey400,marginLeft:23,marginTop:3}}>Quando ativo, NIF, morada, código postal e localidade são opcionais</div>
             </div>
             <Input label={newForm.consumidor_final ? "NIF (opcional)" : "NIF"} value={newForm.nif} onChange={v=>setNewForm(f=>({...f,nif:maskNif(v)}))} placeholder="XXX XXX XXX" required={!newForm.consumidor_final}/>
             <div/>
             <div style={{gridColumn:"1/-1"}}>
-              <Input label="Morada" value={newForm.morada} onChange={v=>setNewForm(f=>({...f,morada:v}))} required/>
+              <Input label="Morada" value={newForm.morada} onChange={v=>setNewForm(f=>({...f,morada:v}))} required={!newForm.consumidor_final}/>
             </div>
-            <Input label="Código Postal" value={newForm.cp}        onChange={v=>setNewForm(f=>({...f,cp:maskCP(v)}))}       placeholder="0000-000" required/>
-            <Input label="Localidade"    value={newForm.localidade} onChange={v=>setNewForm(f=>({...f,localidade:v}))}       required/>
-            <div style={{gridColumn:"1/-1",display:"flex",gap:8,alignItems:"flex-end"}}>
-              <div style={{flex:1}}>
-                <Input label="Coordenadas GPS" value={newForm.gps} onChange={v=>setNewForm(f=>({...f,gps:v}))} placeholder="lat,lng"/>
-              </div>
-              <Btn variant="secondary" size="sm" onClick={()=>{
-                if (!navigator.geolocation) return alert("Geolocalização não suportada");
-                navigator.geolocation.getCurrentPosition(
-                  p=>setNewForm(f=>({...f,gps:`${p.coords.latitude.toFixed(6)},${p.coords.longitude.toFixed(6)}`})),
-                  ()=>alert("Não foi possível obter a localização")
-                );
-              }}>📍 Obter</Btn>
-            </div>
+            <Input label="Código Postal" value={newForm.cp}        onChange={v=>setNewForm(f=>({...f,cp:maskCP(v)}))}       placeholder="0000-000" required={!newForm.consumidor_final}/>
+            <Input label="Localidade"    value={newForm.localidade} onChange={v=>setNewForm(f=>({...f,localidade:v}))}       required={!newForm.consumidor_final}/>
             <Input label="Email"     value={newForm.email}     onChange={v=>setNewForm(f=>({...f,email:v}))}               type="email" required/>
             <div/>
             <Input label="Telefone"  value={newForm.telefone}  onChange={v=>setNewForm(f=>({...f,telefone:maskPhone(v)}))}  placeholder="XXX XXX XXX"/>
