@@ -71,35 +71,34 @@ export const Equipamentos = ({ navigate }) => {
     <div>
       <PageHeader title="Equipamentos" subtitle={`${filtered.length} equipamento${filtered.length !== 1 ? 's' : ''}`} />
 
-      <div style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
-        <input
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder="Pesquisar por descrição, nº série ou cliente..."
-          style={{ ...inputStyle, flex: '1 1 220px', minWidth: 180 }}
-        />
-        <select
-          value={filterTipo}
-          onChange={e => setFilterTipo(e.target.value)}
-          style={{ ...inputStyle, minWidth: 160 }}
-        >
-          <option value="">Todos os tipos</option>
-          {tipos.map(t => (
-            <option key={t.id} value={String(t.id)}>{t.nome}</option>
-          ))}
-        </select>
-        <select
-          value={filterEstado}
-          onChange={e => setFilterEstado(e.target.value)}
-          style={{ ...inputStyle, minWidth: 130 }}
-        >
-          <option value="todos">Todos os estados</option>
-          <option value="ativo">Ativos</option>
-          <option value="inativo">Inativos</option>
-        </select>
-      </div>
-
       <Card style={{ padding: 0, overflow: 'hidden' }}>
+        <div style={{ padding: '14px 20px', borderBottom: `1px solid ${C.grey100}`, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Pesquisar por descrição, nº série ou cliente..."
+            style={{ ...inputStyle, flex: '1 1 200px', minWidth: 180 }}
+          />
+          <select
+            value={filterTipo}
+            onChange={e => setFilterTipo(e.target.value)}
+            style={{ ...inputStyle, minWidth: 150 }}
+          >
+            <option value="">Todos os tipos</option>
+            {tipos.map(t => (
+              <option key={t.id} value={String(t.id)}>{t.nome}</option>
+            ))}
+          </select>
+          <select
+            value={filterEstado}
+            onChange={e => setFilterEstado(e.target.value)}
+            style={{ ...inputStyle, minWidth: 120 }}
+          >
+            <option value="todos">Todos os estados</option>
+            <option value="ativo">Ativos</option>
+            <option value="inativo">Inativos</option>
+          </select>
+        </div>
         {loading ? <Loading /> : (
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
