@@ -1,5 +1,5 @@
 const RESEND_KEY  = import.meta.env.VITE_RESEND_KEY;
-const RESEND_FROM = 'Rilop RBO <onboarding@resend.dev>';
+const RESEND_FROM = 'Rilop <noreply@rilop.pt>';
 
 export const sendEmailResend = async ({ to, subject, html }) => {
   const res = await fetch('https://api.resend.com/emails', {
