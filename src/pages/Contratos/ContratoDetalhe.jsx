@@ -39,7 +39,7 @@ export const ContratoDetalhe = ({ contrato, onBack, onDelete }) => {
       sb.from("rbo_locais").select("*").order("nome"),
       sb.from("rbo_clientes").select("*").eq("id",contrato.cliente_id).single(),
       sb.from("rbo_tipologias").select("*").eq("id",contrato.tipologia_id).single(),
-      sb.from("rbo_client_equipment").select("id,descricao,tipo_id").eq("cliente_id",contrato.cliente_id).eq("ativo",true),
+      sb.from("rbo_client_equipment").select("id,descricao,tipo_id,num_serie").eq("cliente_id",contrato.cliente_id).eq("ativo",true),
     ]);
     setMovimentos(movRes.data||[]);
     setTecnicos(tecRes.data||[]);
@@ -102,8 +102,9 @@ export const ContratoDetalhe = ({ contrato, onBack, onDelete }) => {
 
   const lookup = mov => ({
     cliente, tipologia,
-    tecnico: mov.profile_tecnico_id?tecnicos.find(t=>t.id===mov.profile_tecnico_id):null,
-    local:   mov.local_id  ?locais.find(l=>l.id===mov.local_id)    :null,
+    tecnico:     mov.profile_tecnico_id ? tecnicos.find(t=>t.id===mov.profile_tecnico_id)  : null,
+    local:       mov.local_id           ? locais.find(l=>l.id===mov.local_id)              : null,
+    equipamento: mov.equipment_id       ? equipamentos.find(e=>e.id===mov.equipment_id)    : null,
   });
 
   const getMovVal = useCallback((key, row) => {
@@ -173,8 +174,8 @@ export const ContratoDetalhe = ({ contrato, onBack, onDelete }) => {
           extraActions={row=>row.tipo==="assistencia"?(
             <>
               <button onClick={()=>{
-                const { cliente: cl, tipologia: tip, tecnico, local } = lookup(row);
-                const html = buildReportHtml({ mov: row, cliente: cl, tipologia: tip, tecnico, local });
+                const { cliente: cl, tipologia: tip, tecnico, local, equipamento } = lookup(row);
+                const html = buildReportHtml({ mov: row, cliente: cl, tipologia: tip, tecnico, local, equipamento });
                 window.open(URL.createObjectURL(new Blob([html], { type: 'text/html' })), '_blank');
               }} title="Abrir relatório"
                 style={{background:"none",border:"none",cursor:"pointer",padding:"4px 6px",borderRadius:6,display:"flex",alignItems:"center",transition:"background .15s"}}

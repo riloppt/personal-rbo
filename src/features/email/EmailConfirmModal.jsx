@@ -10,7 +10,7 @@ import { fmtDate } from '../../utils/formatters';
 
 export const EmailConfirmModal = ({ mov, lookup, onSent, onClose }) => {
   const C = useTheme();
-  const { cliente, tipologia, tecnico, local } = lookup(mov);
+  const { cliente, tipologia, tecnico, local, equipamento } = lookup(mov);
   const [emailTo,  setEmailTo]  = useState(cliente?.email || "");
   const [sending,  setSending]  = useState(false);
   const [result,   setResult]   = useState(null);
@@ -19,7 +19,7 @@ export const EmailConfirmModal = ({ mov, lookup, onSent, onClose }) => {
     if (!emailTo) return;
     setSending(true); setResult(null);
     try {
-      const html    = buildReportHtml({ mov, cliente, tipologia, tecnico, local });
+      const html    = buildReportHtml({ mov, cliente, tipologia, tecnico, local, equipamento });
       const subject = `Relatório de Assistência Técnica — ${cliente?.nome||""} — ${fmtDate(mov.data)}`;
       await sendEmailResend({ to: emailTo, subject, html });
       await onSent(mov.id);

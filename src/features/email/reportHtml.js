@@ -1,6 +1,6 @@
 import { fmtDate } from '../../utils/formatters';
 
-export const buildReportHtml = ({ mov, cliente, tipologia, tecnico, local }) => {
+export const buildReportHtml = ({ mov, cliente, tipologia, tecnico, local, equipamento }) => {
   const duracao = mov.hora_inicio && mov.hora_fim ? (() => {
     const [h1,m1]=mov.hora_inicio.split(":").map(Number);
     const [h2,m2]=mov.hora_fim.split(":").map(Number);
@@ -51,6 +51,7 @@ export const buildReportHtml = ({ mov, cliente, tipologia, tecnico, local }) => 
       <div class="field"><label>Duração</label><div class="val">${duracao}</div></div>
       <div class="field"><label>Técnico</label><div class="val">${tecnico?.nome||"—"}</div></div>
       <div class="field"><label>Local</label><div class="val">${local?.nome||"—"}</div></div>
+      ${equipamento ? `<div class="field" style="grid-column:1/-1"><label>Equipamento</label><div class="val">${equipamento.descricao}${equipamento.num_serie ? ` <span style="font-family:'DM Mono',monospace;font-size:12px;color:#8fa6ab;">· N/S: ${equipamento.num_serie}</span>` : ''}</div></div>` : ''}
     </div>
     <div class="desc">${mov.descritivo||"—"}</div>
   </div>
