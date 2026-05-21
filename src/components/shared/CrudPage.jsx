@@ -14,7 +14,7 @@ import { Input } from '../ui/Input';
 import { Icon } from '../ui/Icon';
 import { Badge } from '../ui/Badge';
 
-export const CrudPage = ({ title, table, cols, formFields, emptyForm, compact, hasAtivo, fieldOptions, onView, onNew, noInlineEdit, viewIcon, newLabel = 'Novo', preDeleteCheck, searchPlaceholder, noListDelete, sortableKeys }) => {
+export const CrudPage = ({ title, table, cols, formFields, emptyForm, compact, hasAtivo, fieldOptions, onView, onNew, noInlineEdit, viewIcon, newLabel = 'Novo', preDeleteCheck, searchPlaceholder, noListDelete, sortableKeys, orderBy = 'id' }) => {
   const C = useTheme();
   const [rows,      setRows]      = useState([]);
   const [loading,   setLoading]   = useState(true);
@@ -29,10 +29,10 @@ export const CrudPage = ({ title, table, cols, formFields, emptyForm, compact, h
 
   const load = useCallback(async()=>{
     setLoading(true); setError(null);
-    const { data, error } = await sb.from(table).select("*").order("id");
+    const { data, error } = await sb.from(table).select("*").order(orderBy);
     if (error) setError(error.message); else setRows(data||[]);
     setLoading(false);
-  },[table]);
+  },[table, orderBy]);
 
   useEffect(()=>{ load(); },[load]);
 

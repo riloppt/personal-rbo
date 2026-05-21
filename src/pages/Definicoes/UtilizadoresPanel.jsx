@@ -20,7 +20,7 @@ export const UtilizadoresPanel = ({ currentUserId }) => {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const { data } = await sb.from('rbo_profiles').select('*').order('created_at');
+    const { data } = await sb.from('rbo_profiles').select('*').order('nome');
     setUsers(data || []);
     setLoading(false);
   }, []);

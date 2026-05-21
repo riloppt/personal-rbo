@@ -11,6 +11,7 @@ export const DefinicaoPanel = ({ tabela, nomeLabel = 'Nome', verificarUso }) => 
     cols={[{ key: 'nome', label: nomeLabel }]}
     emptyForm={{ nome: '', ativo: true }}
     formFields={[{ k: 'nome', label: nomeLabel, required: true }]}
+    orderBy="nome"
     preDeleteCheck={verificarUso}
   />
 );
