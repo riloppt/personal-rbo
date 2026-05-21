@@ -226,10 +226,13 @@ export const Tickets = ({ currentUserId }) => {
                         <div style={{ fontSize: 12, color: C.grey400, marginTop: 2, visibility: t.nome_pessoa ? 'visible' : 'hidden' }}>
                           {t.nome_pessoa || ' '}
                         </div>
+                        <div style={{ fontSize: 11, visibility: 'hidden' }}>&nbsp;</div>
                       </td>
                       {/* Equipamento */}
                       <td style={{ padding: '13px 16px', color: C.grey600, fontSize: 13 }}>
-                        <div>{t.equipamento?.descricao || '—'}</div>
+                        <div style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                          {t.equipamento?.descricao || '—'}
+                        </div>
                         <div style={{ fontSize: 11, color: C.grey400, fontFamily: "'DM Mono', monospace", marginTop: 2, visibility: t.equipamento?.num_serie ? 'visible' : 'hidden' }}>
                           {t.equipamento?.num_serie ? `S/N ${t.equipamento.num_serie}` : ' '}
                         </div>
