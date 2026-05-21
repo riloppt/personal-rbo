@@ -26,6 +26,18 @@ const calcularCreditos = (minutos) => {
   return -Math.ceil(Number(minutos) / 15);
 };
 
+const today = () => new Date().toISOString().split('T')[0];
+
+const DURACAO_PRESETS = [15, 30, 45, 60, 90, 120, 180];
+
+const duracaoLabel = m => {
+  const n = Number(m);
+  if (!n) return '—';
+  if (n < 60) return `${n}m`;
+  const h = Math.floor(n / 60), r = n % 60;
+  return r ? `${h}h ${r}m` : `${h}h`;
+};
+
 const tempoRelativo = (dateStr) => {
   if (!dateStr) return '';
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -85,7 +97,8 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
   const [tiposEquip, setTiposEquip] = useState([]);
   const [tipologias, setTipologias] = useState([]);
   const [loading,    setLoading]    = useState(true);
-  const [saving,     setSaving]     = useState(false);
+  const [saving,       setSaving]       = useState(false);
+  const [tecnicoSaving, setTecnicoSaving] = useState(false);
   const [saveError,  setSaveError]  = useState('');
 
   const [editSection,   setEditSection]   = useState(null);
@@ -270,9 +283,15 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
 
   // ── Técnico: immediate persist + auto state transition ──────────────────────
   const onTecnicoChange = async (novoTecnicoId) => {
+    setTecnicoSaving(true);
+    const tecnico = tecnicos.find(t => t.id === novoTecnicoId) || null;
     setAssocForm(f => ({ ...f, tecnico_id: novoTecnicoId }));
-    setTicket(t => ({ ...t, tecnico_id: novoTecnicoId }));
-    if (!novoTecnicoId) return;
+    setTicket(t => ({ ...t, tecnico_id: novoTecnicoId, tecnico }));
+    if (!novoTecnicoId) {
+      await sb.from('rbo_tickets').update({ tecnico_id: null }).eq('id', ticket.id);
+      setTecnicoSaving(false);
+      return;
+    }
     const estadoAnterior = ticket.estado;
     const estadosAvancados = ['em_curso', 'aguarda_cliente', 'concluido', 'cancelado'];
     if (!estadosAvancados.includes(estadoAnterior)) {
@@ -288,6 +307,7 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
     } else {
       await sb.from('rbo_tickets').update({ tecnico_id: novoTecnicoId }).eq('id', ticket.id);
     }
+    setTecnicoSaving(false);
   };
 
   const eliminarTicket = async () => {
@@ -302,9 +322,9 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
   const alterarEstado = async () => {
     if (!novoEstado) return;
     if (novoEstado === 'concluido') {
-      const tempoOk = ticket.data_inicio && ticket.hora_inicio && ticket.data_fim && ticket.hora_fim && ticket.duracao_minutos != null;
+      const tempoOk = ticket.data_inicio && ticket.data_fim && ticket.duracao_minutos != null;
       if (!tempoOk) {
-        setErroEstado('Preencha o tempo de trabalho (data/hora início, data/hora fim e duração) antes de concluir o ticket.');
+        setErroEstado('Preencha o tempo de trabalho (data início, data fim e duração) antes de concluir o ticket.');
         return;
       }
     }
@@ -513,7 +533,18 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
             <FieldView label="Cliente"     value={ticket.cliente?.nome}/>
             <FieldView label="Equipamento" value={ticket.equipamento ? `${ticket.equipamento.descricao}${ticket.equipamento.num_serie ? ' · ' + ticket.equipamento.num_serie : ''}` : null}/>
             <FieldView label="Contrato"    value={ticket.contrato ? tipNome(ticket.contrato.tipologia_id) || `Contrato #${ticket.contrato_id}` : null}/>
-            <FieldView label="Técnico"     value={ticket.tecnico?.nome}/>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: C.grey400, textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 4 }}>Técnico</div>
+              <select
+                value={ticket.tecnico_id || ''}
+                onChange={e => onTecnicoChange(e.target.value || null)}
+                disabled={tecnicoSaving || !!editSection}
+                style={{ width: '100%', border: `1.5px solid ${C.grey200}`, borderRadius: 8, padding: '6px 10px', fontSize: 14, background: C.white, color: C.grey800, fontFamily: "'DM Sans',sans-serif", cursor: 'pointer', outline: 'none' }}>
+                <option value="">— Sem técnico —</option>
+                {tecnicos.map(t => <option key={t.id} value={t.id}>{t.nome}</option>)}
+              </select>
+              {tecnicoSaving && <div style={{ fontSize: 11, color: C.grey400, marginTop: 3 }}>A guardar...</div>}
+            </div>
           </div>
         )}
       </SectionCard>
@@ -552,38 +583,85 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
         {showTempoSection && (
           <SectionCard title="Tempo de Trabalho" sectionKey="tempo" editSection={editSection} saving={saving} onEdit={enterEdit} onCancel={cancelEdit} onSave={saveTempo} noEdit={!tempoEditavel}>
             {editSection === 'tempo' ? (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-                <Input label="Data Início" value={tempoForm.data_inicio} type="date" onChange={v => {
-                  const f = { ...tempoForm, data_inicio: v };
-                  const dur = calcularDuracao(f.data_inicio, f.hora_inicio, f.data_fim, f.hora_fim);
-                  setTempoForm({ ...f, duracao_minutos: dur != null ? String(dur) : f.duracao_minutos });
-                }}/>
-                <Input label="Hora Início" value={tempoForm.hora_inicio} type="time" onChange={v => {
-                  const f = { ...tempoForm, hora_inicio: v };
-                  const dur = calcularDuracao(f.data_inicio, f.hora_inicio, f.data_fim, f.hora_fim);
-                  setTempoForm({ ...f, duracao_minutos: dur != null ? String(dur) : f.duracao_minutos });
-                }}/>
-                <Input label="Data Fim" value={tempoForm.data_fim} type="date" onChange={v => {
-                  const f = { ...tempoForm, data_fim: v };
-                  const dur = calcularDuracao(f.data_inicio, f.hora_inicio, f.data_fim, f.hora_fim);
-                  setTempoForm({ ...f, duracao_minutos: dur != null ? String(dur) : f.duracao_minutos });
-                }}/>
-                <Input label="Hora Fim" value={tempoForm.hora_fim} type="time" onChange={v => {
-                  const f = { ...tempoForm, hora_fim: v };
-                  const dur = calcularDuracao(f.data_inicio, f.hora_inicio, f.data_fim, f.hora_fim);
-                  setTempoForm({ ...f, duracao_minutos: dur != null ? String(dur) : f.duracao_minutos });
-                }}/>
-                <div style={{ gridColumn: '1/-1' }}>
-                  <Input label="Duração (blocos 15 min)" value={tempoForm.duracao_minutos} onChange={v => setTempoForm(f => ({ ...f, duracao_minutos: v }))} type="number"/>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 500, color: C.grey600, marginBottom: 6 }}>Data Início</div>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <input type="date" value={tempoForm.data_inicio}
+                        onChange={e => { const v = e.target.value; setTempoForm(f => ({ ...f, data_inicio: v, data_fim: f.data_fim || v })); }}
+                        style={{ flex: 1, border: `1.5px solid ${C.grey200}`, borderRadius: 8, padding: '7px 10px', fontSize: 14, background: C.white, color: C.grey800, fontFamily: 'inherit', outline: 'none' }}/>
+                      <button onClick={() => { const t = today(); setTempoForm(f => ({ ...f, data_inicio: t, data_fim: f.data_fim || t })); }}
+                        style={{ background: C.teal + '18', border: `1.5px solid ${C.teal}44`, borderRadius: 8, padding: '0 10px', fontSize: 12, color: C.teal, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'inherit' }}>
+                        Hoje
+                      </button>
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 500, color: C.grey600, marginBottom: 6 }}>Data Fim</div>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <input type="date" value={tempoForm.data_fim}
+                        onChange={e => setTempoForm(f => ({ ...f, data_fim: e.target.value }))}
+                        style={{ flex: 1, border: `1.5px solid ${C.grey200}`, borderRadius: 8, padding: '7px 10px', fontSize: 14, background: C.white, color: C.grey800, fontFamily: 'inherit', outline: 'none' }}/>
+                      <button onClick={() => setTempoForm(f => ({ ...f, data_fim: today() }))}
+                        style={{ background: C.teal + '18', border: `1.5px solid ${C.teal}44`, borderRadius: 8, padding: '0 10px', fontSize: 12, color: C.teal, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'inherit' }}>
+                        Hoje
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 500, color: C.grey600, marginBottom: 8 }}>Duração</div>
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
+                    {DURACAO_PRESETS.map(m => (
+                      <button key={m} onClick={() => setTempoForm(f => ({ ...f, duracao_minutos: String(m) }))}
+                        style={{ background: tempoForm.duracao_minutos === String(m) ? C.teal : C.grey50, color: tempoForm.duracao_minutos === String(m) ? '#fff' : C.grey600, border: `1.5px solid ${tempoForm.duracao_minutos === String(m) ? C.teal : C.grey200}`, borderRadius: 8, padding: '7px 14px', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 500, transition: 'all .1s' }}>
+                        {duracaoLabel(m)}
+                      </button>
+                    ))}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <input type="number" min="1" value={tempoForm.duracao_minutos}
+                      onChange={e => setTempoForm(f => ({ ...f, duracao_minutos: e.target.value }))}
+                      placeholder="Outro..."
+                      style={{ width: 100, border: `1.5px solid ${C.grey200}`, borderRadius: 8, padding: '7px 10px', fontSize: 14, background: C.white, color: C.grey800, fontFamily: 'inherit', outline: 'none' }}/>
+                    <span style={{ fontSize: 13, color: C.grey400 }}>min</span>
+                    {tempoForm.duracao_minutos && Number(tempoForm.duracao_minutos) > 0 && !DURACAO_PRESETS.includes(Number(tempoForm.duracao_minutos)) && (
+                      <span style={{ fontSize: 13, color: C.grey500 }}>= {duracaoLabel(tempoForm.duracao_minutos)}</span>
+                    )}
+                  </div>
+                </div>
+
+                <div style={{ borderTop: `1px solid ${C.grey100}`, paddingTop: 14 }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: C.grey400, textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 10 }}>Horas (opcional)</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                    <Input label="Hora Início" value={tempoForm.hora_inicio} type="time" onChange={v => setTempoForm(f => ({ ...f, hora_inicio: v }))}/>
+                    <Input label="Hora Fim"    value={tempoForm.hora_fim}    type="time" onChange={v => setTempoForm(f => ({ ...f, hora_fim: v }))}/>
+                  </div>
                 </div>
               </div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 14 }}>
-                <FieldView label="Data Início"   value={fmtDate(ticket.data_inicio)}/>
-                <FieldView label="Hora Início"   value={ticket.hora_inicio}/>
-                <FieldView label="Data Fim"      value={fmtDate(ticket.data_fim)}/>
-                <FieldView label="Hora Fim"      value={ticket.hora_fim}/>
-                <FieldView label="Duração (blocos 15 min)" value={ticket.duracao_minutos != null ? String(ticket.duracao_minutos) : null}/>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                  <FieldView label="Data Início" value={fmtDate(ticket.data_inicio)}/>
+                  <FieldView label="Data Fim"    value={fmtDate(ticket.data_fim)}/>
+                </div>
+                {ticket.duracao_minutos != null && (
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: C.grey400, textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 3 }}>Duração</div>
+                    <div style={{ fontSize: 14, color: C.grey800, fontWeight: 600 }}>
+                      {duracaoLabel(ticket.duracao_minutos)}
+                      <span style={{ fontSize: 12, color: C.grey400, fontWeight: 400, marginLeft: 6 }}>({ticket.duracao_minutos} min)</span>
+                    </div>
+                  </div>
+                )}
+                {(ticket.hora_inicio || ticket.hora_fim) && (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                    <FieldView label="Hora Início" value={ticket.hora_inicio}/>
+                    <FieldView label="Hora Fim"    value={ticket.hora_fim}/>
+                  </div>
+                )}
               </div>
             )}
           </SectionCard>
