@@ -113,7 +113,7 @@ export const CrudPage = ({ title, table, cols, formFields, emptyForm, compact, h
       )}
       <Card style={{padding:0,overflow:"hidden"}}>
         {searchPlaceholder && (
-          <div style={{padding:"12px 20px",borderBottom:`1px solid ${C.grey100}`}}>
+          <div style={{padding:"14px 20px",borderBottom:`1px solid ${C.grey100}`}}>
             <input value={search} onChange={e=>setSearch(e.target.value)} placeholder={searchPlaceholder}
               style={{width:"100%",maxWidth:340,border:`1.5px solid ${C.grey200}`,borderRadius:8,padding:"7px 12px",fontSize:13,outline:"none",background:C.white,color:C.grey800,fontFamily:"inherit"}}/>
           </div>
