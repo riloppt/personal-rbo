@@ -12,7 +12,7 @@ import { Select } from '../../components/ui/Select';
 import { Icon } from '../../components/ui/Icon';
 import { fmtDate } from '../../utils/formatters';
 import { useSortable } from '../../hooks/useSortable';
-import { buildReportHtml } from '../../features/email/reportHtml';
+import { buildReportHtml, buildPeriodReportHtml } from '../../features/email/reportHtml';
 import { EmailReportBtn } from '../../features/email/EmailReportBtn';
 import { AssistenciaModal } from './AssistenciaModal';
 
@@ -30,6 +30,9 @@ export const ContratoDetalhe = ({ contrato, onBack, onDelete }) => {
   const [editingId,  setEditingId]  = useState(null);
   const emptyMov = {data:new Date().toISOString().split("T")[0],hora_inicio:"",hora_fim:"",creditos:"",descritivo:"",profile_tecnico_id:"",local_id:"",equipment_id:"",tipo:"assistencia"};
   const [form, setForm] = useState(emptyMov);
+  const [periodModal, setPeriodModal] = useState(false);
+  const [periodDates, setPeriodDates] = useState({ inicio: '', fim: '' });
+  const [periodError, setPeriodError] = useState('');
 
   const load = useCallback(async()=>{
     setLoading(true);
@@ -88,6 +91,21 @@ export const ContratoDetalhe = ({ contrato, onBack, onDelete }) => {
     setSaving(false);
   };
 
+  const generatePeriodReport = () => {
+    if (!periodDates.inicio || !periodDates.fim) { setPeriodError('Ambas as datas são obrigatórias'); return; }
+    if (periodDates.fim < periodDates.inicio)    { setPeriodError('A data de fim não pode ser anterior à data de início'); return; }
+    const periodoMovs = [...movimentos]
+      .filter(m => m.data >= periodDates.inicio && m.data <= periodDates.fim)
+      .sort((a, b) => a.data.localeCompare(b.data));
+    const html = buildPeriodReportHtml({
+      contrato, cliente, tipologia,
+      inicio: periodDates.inicio, fim: periodDates.fim,
+      movimentos: periodoMovs, saldoTotal: saldo,
+      tecnicos, locais, equipamentos,
+    });
+    window.open(URL.createObjectURL(new Blob([html], { type: 'text/html' })), '_blank');
+  };
+
   const delMov = async id => {
     if (!confirm("Eliminar movimento?")) return;
     await sb.from("rbo_movimentos").delete().eq("id",id);
@@ -134,6 +152,7 @@ export const ContratoDetalhe = ({ contrato, onBack, onDelete }) => {
           </div>
         </div>
         <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
+          <Btn variant="secondary" size="sm" icon="contracts" onClick={()=>{ setPeriodModal(true); setPeriodError(''); }}>Relatório de Período</Btn>
           <Btn variant="secondary" size="sm" icon="credit" onClick={()=>openNew("credito")}>Adicionar Créditos</Btn>
           <Btn size="sm" icon="plus" onClick={()=>openNew("assistencia")}>Nova Assistência</Btn>
           {onDelete && <Btn variant="danger" size="sm" icon="trash" onClick={onDelete}>Eliminar contrato</Btn>}
@@ -213,6 +232,24 @@ export const ContratoDetalhe = ({ contrato, onBack, onDelete }) => {
           <div style={{display:"flex",gap:10,justifyContent:"flex-end",marginTop:20}}>
             <Btn variant="secondary" onClick={()=>setModal(null)}>Cancelar</Btn>
             <Btn onClick={saveMov} disabled={saving}>{saving?"A guardar...":"Guardar"}</Btn>
+          </div>
+        </Modal>
+      )}
+
+      {periodModal && (
+        <Modal title="Relatório de Período" onClose={()=>{ setPeriodModal(false); setPeriodError(''); }}>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+            <Input label="Data de início" value={periodDates.inicio} onChange={v=>{ setPeriodDates(d=>({...d,inicio:v})); setPeriodError(''); }} type="date" required/>
+            <Input label="Data de fim"    value={periodDates.fim}    onChange={v=>{ setPeriodDates(d=>({...d,fim:v}));    setPeriodError(''); }} type="date" required/>
+          </div>
+          {periodError && (
+            <div style={{marginTop:10,fontSize:13,color:C.red,display:"flex",alignItems:"center",gap:6}}>
+              <Icon name="alert" size={14} color={C.red}/> {periodError}
+            </div>
+          )}
+          <div style={{display:"flex",gap:10,justifyContent:"flex-end",marginTop:20}}>
+            <Btn variant="secondary" onClick={()=>{ setPeriodModal(false); setPeriodError(''); }}>Cancelar</Btn>
+            <Btn icon="contracts" onClick={generatePeriodReport}>Gerar Relatório</Btn>
           </div>
         </Modal>
       )}
