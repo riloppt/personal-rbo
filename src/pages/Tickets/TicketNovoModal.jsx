@@ -188,7 +188,6 @@ export const TicketNovoModal = ({ onClose, onCreated, currentUserId }) => {
         telefone_cliente: null,
         descricao_problema: form3.descricao_problema.trim(),
         created_at: ticket.created_at,
-        tipo: 'manual',
       }),
     }).catch(e => console.error('[email] novo ticket:', e?.message || e));
     setSaving(false);

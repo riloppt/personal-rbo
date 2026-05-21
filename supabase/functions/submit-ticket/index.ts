@@ -6,7 +6,7 @@ const CORS = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const buildNewTicketEmail = (id: number, nome_empresa: string, nome_pessoa: string, email_cliente: string, telefone_cliente: string, descricao_problema: string, created_at: string) => {
+const buildEmailHtml = (id: number, nome_empresa: string, nome_pessoa: string, email_cliente: string, telefone_cliente: string, descricao_problema: string, created_at: string) => {
   const idPadded = String(id).padStart(4, '0');
   const dataFormatada = new Date(created_at).toLocaleString('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
@@ -51,8 +51,7 @@ const buildNewTicketEmail = (id: number, nome_empresa: string, nome_pessoa: stri
               <td width="50%" style="padding-bottom:20px;">${field('Telefone', telefone_cliente)}</td>
             </tr>
             <tr>
-              <td width="50%" style="padding-right:20px;padding-bottom:20px;">${field('Submetido em', dataFormatada)}</td>
-              <td width="50%" style="padding-bottom:20px;">${field('Origem', 'Formulário público')}</td>
+              <td colspan="2" style="padding-bottom:20px;">${field('Submetido em', dataFormatada)}</td>
             </tr>
           </table>
         </td></tr>
@@ -99,7 +98,6 @@ serve(async (req) => {
       });
     }
 
-    // Insert using service role key (bypasses RLS)
     const sb = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
@@ -121,27 +119,34 @@ serve(async (req) => {
       alterado_por_id: null, nota: 'Submetido via formulário público',
     }]);
 
-    // Notificação por email — falha silenciosa para não bloquear resposta
+    // Envio de email — awaited mas com catch para não bloquear resposta
     const resendKey = Deno.env.get('RESEND_API_KEY');
     if (resendKey) {
-      fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${resendKey}` },
-        body: JSON.stringify({
-          from: 'Rilop <noreply@rilop.pt>',
-          to: ['sergiohenriques@graficaideal.pt'],
-          subject: `Novo pedido de assistência #${String(ticket.id).padStart(4, '0')}`,
-          html: buildNewTicketEmail(
-            ticket.id,
-            nome_empresa?.trim() ?? '',
-            nome_pessoa?.trim() ?? '',
-            email_cliente?.trim() ?? '',
-            telefone_cliente?.trim() ?? '',
-            descricao_problema?.trim() ?? '',
-            ticket.created_at,
-          ),
-        }),
-      }).then(r => r.json()).then(d => console.log('[email] resend response:', JSON.stringify(d))).catch(e => console.error('[email] fetch error:', e));
+      try {
+        const emailRes = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${resendKey}` },
+          body: JSON.stringify({
+            from: 'Rilop <noreply@rilop.pt>',
+            to: ['sergiohenriques@graficaideal.pt'],
+            subject: `Novo pedido de assistência #${String(ticket.id).padStart(4, '0')}`,
+            html: buildEmailHtml(
+              ticket.id,
+              nome_empresa?.trim() ?? '',
+              nome_pessoa?.trim() ?? '',
+              email_cliente?.trim() ?? '',
+              telefone_cliente?.trim() ?? '',
+              descricao_problema?.trim() ?? '',
+              ticket.created_at,
+            ),
+          }),
+        });
+        const emailData = await emailRes.json();
+        if (!emailRes.ok) console.error('[email] Resend error:', JSON.stringify(emailData));
+        else console.log('[email] sent:', emailData?.id);
+      } catch (emailErr) {
+        console.error('[email] fetch error:', emailErr);
+      }
     }
 
     return new Response(JSON.stringify({ id: ticket.id }), {

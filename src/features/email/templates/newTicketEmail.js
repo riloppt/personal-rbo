@@ -1,6 +1,5 @@
-export const buildNewTicketEmail = ({ id, nome_empresa, nome_pessoa, email_cliente, telefone_cliente, descricao_problema, created_at, tipo }) => {
+export const buildNewTicketEmail = ({ id, nome_empresa, nome_pessoa, email_cliente, telefone_cliente, descricao_problema, created_at }) => {
   const idPadded = String(id).padStart(4, '0');
-  const origem = tipo === 'publico' ? 'Formulário público' : 'Criado manualmente';
   const dataFormatada = created_at
     ? new Date(created_at).toLocaleString('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
     : '—';
@@ -50,8 +49,7 @@ export const buildNewTicketEmail = ({ id, nome_empresa, nome_pessoa, email_clien
               <td width="50%" style="padding-bottom:20px;">${field('Telefone', telefone_cliente)}</td>
             </tr>
             <tr>
-              <td width="50%" style="padding-right:20px;padding-bottom:20px;">${field('Submetido em', dataFormatada)}</td>
-              <td width="50%" style="padding-bottom:20px;">${field('Origem', origem)}</td>
+              <td colspan="2" style="padding-bottom:20px;">${field('Submetido em', dataFormatada)}</td>
             </tr>
           </table>
         </td></tr>
