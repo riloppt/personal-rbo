@@ -1,6 +1,7 @@
 import React from 'react';
 import { CrudPage } from '../../components/shared/CrudPage';
 
+
 export const DefinicaoPanel = ({ tabela, nomeLabel = 'Nome', verificarUso }) => (
   <CrudPage
     key={tabela}
