@@ -6,7 +6,15 @@ import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Loading } from '../../components/ui/Loading';
 import { Icon } from '../../components/ui/Icon';
+import { useSortable } from '../../hooks/useSortable';
 import { EquipamentoDetalhe } from './EquipamentoDetalhe';
+
+const getVal = (k, r) => {
+  if (k === 'tipo')    return r.tipo?.nome    ?? '';
+  if (k === 'cliente') return r.cliente?.nome ?? '';
+  if (k === 'ativo')   return r.ativo === false ? 0 : 1;
+  return r[k] ?? '';
+};
 
 export const Equipamentos = ({ navigate }) => {
   const C = useTheme();
@@ -56,6 +64,8 @@ export const Equipamentos = ({ navigate }) => {
     return true;
   });
 
+  const { sorted, sortKey, sortDir, toggleSort } = useSortable(filtered, getVal);
+
   const inputStyle = {
     border: `1.5px solid ${C.grey200}`,
     borderRadius: 8,
@@ -104,16 +114,39 @@ export const Equipamentos = ({ navigate }) => {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
               <thead>
                 <tr style={{ borderBottom: `2px solid ${C.grey100}` }}>
-                  {['Descrição', 'Nº Série', 'Tipo', 'Cliente', 'Localização', 'Estado', ''].map(h => (
-                    <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: C.grey400, textTransform: 'uppercase', letterSpacing: '.5px', background: C.white, whiteSpace: 'nowrap' }}>{h}</th>
-                  ))}
+                  {[
+                    { label: 'Descrição',   sk: 'descricao'  },
+                    { label: 'Nº Série',    sk: 'num_serie'  },
+                    { label: 'Tipo',        sk: 'tipo'       },
+                    { label: 'Cliente',     sk: 'cliente'    },
+                    { label: 'Localização', sk: 'localizacao'},
+                    { label: 'Estado',      sk: 'ativo'      },
+                    { label: '',            sk: null         },
+                  ].map(({ label, sk }) => {
+                    const active = sk && sortKey === sk;
+                    return (
+                      <th key={label}
+                        onClick={sk ? () => toggleSort(sk) : undefined}
+                        style={{ padding: '12px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: active ? C.teal : C.grey400, textTransform: 'uppercase', letterSpacing: '.5px', background: C.white, whiteSpace: 'nowrap', cursor: sk ? 'pointer' : 'default', userSelect: 'none' }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                          {label}
+                          {sk && (
+                            <span style={{ display: 'inline-flex', flexDirection: 'column', gap: 1.5, flexShrink: 0 }}>
+                              <svg width="7" height="4" viewBox="0 0 7 4" fill="none"><path d="M3.5 0L7 4H0L3.5 0Z" fill={active && sortDir === 'asc' ? C.teal : C.grey200}/></svg>
+                              <svg width="7" height="4" viewBox="0 0 7 4" fill="none"><path d="M3.5 4L0 0H7L3.5 4Z" fill={active && sortDir === 'desc' ? C.teal : C.grey200}/></svg>
+                            </span>
+                          )}
+                        </span>
+                      </th>
+                    );
+                  })}
                 </tr>
               </thead>
               <tbody>
-                {filtered.length === 0 && (
+                {sorted.length === 0 && (
                   <tr><td colSpan={7} style={{ padding: '32px 16px', textAlign: 'center', color: C.grey400, fontSize: 13 }}>Sem equipamentos</td></tr>
                 )}
-                {filtered.map(r => (
+                {sorted.map(r => (
                   <tr key={r.id}
                     style={{ borderBottom: `1px solid ${C.grey100}`, transition: 'background .1s' }}
                     onMouseEnter={e => e.currentTarget.style.background = C.grey50}
