@@ -128,12 +128,6 @@ export const UtilizadoresPanel = ({ currentUserId }) => {
                     </td>
                     <td style={{ padding: '8px 16px' }}>
                       <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
-                        <button onClick={() => openEdit(u)} title="Editar"
-                          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 6px', borderRadius: 6, display: 'flex', alignItems: 'center', transition: 'background .15s' }}
-                          onMouseEnter={e => e.currentTarget.style.background = C.grey100}
-                          onMouseLeave={e => e.currentTarget.style.background = 'none'}>
-                          <Icon name="edit" size={14} color={C.teal}/>
-                        </button>
                         {u.id !== currentUserId && (
                           <button onClick={() => toggleAtivo(u)} title={u.ativo ? 'Inativar' : 'Ativar'}
                             style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 6px', borderRadius: 6, display: 'flex', alignItems: 'center', transition: 'background .15s' }}
@@ -142,6 +136,12 @@ export const UtilizadoresPanel = ({ currentUserId }) => {
                             <Icon name={u.ativo ? 'close' : 'eye'} size={14} color={u.ativo ? C.amber : C.green}/>
                           </button>
                         )}
+                        <button onClick={() => openEdit(u)} title="Editar"
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 6px', borderRadius: 6, display: 'flex', alignItems: 'center', transition: 'background .15s' }}
+                          onMouseEnter={e => e.currentTarget.style.background = C.grey100}
+                          onMouseLeave={e => e.currentTarget.style.background = 'none'}>
+                          <Icon name="edit" size={14} color={C.teal}/>
+                        </button>
                       </div>
                     </td>
                   </tr>
