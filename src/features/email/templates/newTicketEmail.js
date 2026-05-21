@@ -1,16 +1,11 @@
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-
-const CORS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
-const buildNewTicketEmail = (id: number, nome_empresa: string, nome_pessoa: string, email_cliente: string, telefone_cliente: string, descricao_problema: string, created_at: string) => {
+export const buildNewTicketEmail = ({ id, nome_empresa, nome_pessoa, email_cliente, telefone_cliente, descricao_problema, created_at, tipo }) => {
   const idPadded = String(id).padStart(4, '0');
-  const dataFormatada = new Date(created_at).toLocaleString('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  const origem = tipo === 'publico' ? 'Formulário público' : 'Criado manualmente';
+  const dataFormatada = created_at
+    ? new Date(created_at).toLocaleString('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+    : '—';
 
-  const field = (label: string, value: string) => `
+  const field = (label, value) => `
     <div>
       <div style="font-size:10px;font-weight:600;color:#999999;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">${label}</div>
       <div style="font-size:14px;color:#1a1a1a;">${value || '—'}</div>
@@ -24,11 +19,13 @@ const buildNewTicketEmail = (id: number, nome_empresa: string, nome_pessoa: stri
     <tr><td align="center">
       <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border-radius:12px;box-shadow:0 2px 16px rgba(0,0,0,0.08);overflow:hidden;">
 
+        <!-- Header -->
         <tr><td style="background:#0d3d3d;padding:28px 32px;">
           <div style="font-size:22px;font-weight:700;color:#ffffff;letter-spacing:-0.3px;">Rilop</div>
           <div style="font-size:13px;color:#4d9898;margin-top:2px;">BackOffice de Assistência</div>
         </td></tr>
 
+        <!-- Ticket ID + badge -->
         <tr><td style="padding:28px 32px 20px;">
           <table cellpadding="0" cellspacing="0"><tr>
             <td style="font-size:38px;font-weight:800;color:#0d5e5e;letter-spacing:-1px;line-height:1;">#${idPadded}</td>
@@ -38,8 +35,10 @@ const buildNewTicketEmail = (id: number, nome_empresa: string, nome_pessoa: stri
           </tr></table>
         </td></tr>
 
+        <!-- Divider -->
         <tr><td style="padding:0 32px;"><div style="height:1px;background:#f0f0f0;"></div></td></tr>
 
+        <!-- Info fields -->
         <tr><td style="padding:24px 32px 8px;">
           <table width="100%" cellpadding="0" cellspacing="0">
             <tr>
@@ -52,22 +51,26 @@ const buildNewTicketEmail = (id: number, nome_empresa: string, nome_pessoa: stri
             </tr>
             <tr>
               <td width="50%" style="padding-right:20px;padding-bottom:20px;">${field('Submetido em', dataFormatada)}</td>
-              <td width="50%" style="padding-bottom:20px;">${field('Origem', 'Formulário público')}</td>
+              <td width="50%" style="padding-bottom:20px;">${field('Origem', origem)}</td>
             </tr>
           </table>
         </td></tr>
 
+        <!-- Divider -->
         <tr><td style="padding:0 32px;"><div style="height:1px;background:#f0f0f0;"></div></td></tr>
 
+        <!-- Description -->
         <tr><td style="padding:24px 32px 28px;">
           <div style="font-size:10px;font-weight:600;color:#999999;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Descrição do Problema</div>
           <div style="background:#f9f9f9;border-left:3px solid #0d6e6e;border-radius:0 6px 6px 0;padding:14px 16px;font-size:14px;color:#333333;line-height:1.6;white-space:pre-wrap;">${descricao_problema || '—'}</div>
         </td></tr>
 
+        <!-- CTA -->
         <tr><td style="padding:0 32px 36px;text-align:center;">
           <a href="https://rbo-gules.vercel.app" style="display:inline-block;background:#0d6e6e;color:#ffffff;text-decoration:none;font-size:14px;font-weight:600;padding:13px 32px;border-radius:8px;letter-spacing:0.2px;">Abrir no RBO</a>
         </td></tr>
 
+        <!-- Footer -->
         <tr><td style="background:#0d3d3d;padding:18px 32px;text-align:center;">
           <div style="font-size:12px;color:#4d9898;">Rilop · noreply@rilop.pt</div>
         </td></tr>
@@ -78,79 +81,3 @@ const buildNewTicketEmail = (id: number, nome_empresa: string, nome_pessoa: stri
 </body>
 </html>`;
 };
-
-serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
-
-  try {
-    const { ts_token, nome_empresa, nome_pessoa, email_cliente, telefone_cliente, descricao_problema } = await req.json();
-
-    // Validate Turnstile token
-    const fd = new FormData();
-    fd.append('secret', Deno.env.get('TURNSTILE_SECRET_KEY') ?? '');
-    fd.append('response', ts_token ?? '');
-
-    const tsRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', { method: 'POST', body: fd });
-    const tsData = await tsRes.json();
-
-    if (!tsData.success) {
-      return new Response(JSON.stringify({ error: 'Verificação falhou. Tente novamente.' }), {
-        status: 400, headers: { ...CORS, 'Content-Type': 'application/json' },
-      });
-    }
-
-    // Insert using service role key (bypasses RLS)
-    const sb = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-    );
-
-    const { data: ticket, error } = await sb.from('rbo_tickets').insert([{
-      tipo: 'publico', estado: 'submetido',
-      nome_empresa:       nome_empresa?.trim(),
-      nome_pessoa:        nome_pessoa?.trim(),
-      email_cliente:      email_cliente?.trim(),
-      telefone_cliente:   telefone_cliente?.trim() || null,
-      descricao_problema: descricao_problema?.trim(),
-    }]).select().single();
-
-    if (error) throw error;
-
-    await sb.from('rbo_ticket_historico').insert([{
-      ticket_id: ticket.id, estado_anterior: null, estado_novo: 'submetido',
-      alterado_por_id: null, nota: 'Submetido via formulário público',
-    }]);
-
-    // Notificação por email — falha silenciosa para não bloquear resposta
-    const resendKey = Deno.env.get('RESEND_API_KEY');
-    if (resendKey) {
-      fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${resendKey}` },
-        body: JSON.stringify({
-          from: 'Rilop <noreply@rilop.pt>',
-          to: ['sergiohenriques@graficaideal.pt'],
-          subject: `Novo pedido de assistência #${String(ticket.id).padStart(4, '0')}`,
-          html: buildNewTicketEmail(
-            ticket.id,
-            nome_empresa?.trim() ?? '',
-            nome_pessoa?.trim() ?? '',
-            email_cliente?.trim() ?? '',
-            telefone_cliente?.trim() ?? '',
-            descricao_problema?.trim() ?? '',
-            ticket.created_at,
-          ),
-        }),
-      }).catch(() => {});
-    }
-
-    return new Response(JSON.stringify({ id: ticket.id }), {
-      status: 200, headers: { ...CORS, 'Content-Type': 'application/json' },
-    });
-  } catch (err) {
-    console.error(err);
-    return new Response(JSON.stringify({ error: 'Erro interno. Tente novamente.' }), {
-      status: 500, headers: { ...CORS, 'Content-Type': 'application/json' },
-    });
-  }
-});

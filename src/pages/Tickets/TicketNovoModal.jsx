@@ -7,6 +7,8 @@ import { Select } from '../../components/ui/Select';
 import { Btn } from '../../components/ui/Btn';
 import { Badge } from '../../components/ui/Badge';
 import { maskNif, maskPhone, maskCP } from '../../utils/formatters';
+import { sendEmailResend } from '../../lib/email';
+import { buildNewTicketEmail } from '../../features/email/templates/newTicketEmail';
 
 export const TicketNovoModal = ({ onClose, onCreated, currentUserId }) => {
   const C = useTheme();
@@ -174,6 +176,21 @@ export const TicketNovoModal = ({ onClose, onCreated, currentUserId }) => {
       ticket_id: ticket.id, estado_anterior: null, estado_novo: 'pendente',
       alterado_por_id: currentUserId || null, nota: null,
     }]);
+    // Notificação por email — falha silenciosa para não bloquear criação
+    sendEmailResend({
+      to: 'sergiohenriques@graficaideal.pt',
+      subject: `Novo pedido de assistência #${String(ticket.id).padStart(4, '0')}`,
+      html: buildNewTicketEmail({
+        id: ticket.id,
+        nome_empresa: clienteSeleccionado?.nome || null,
+        nome_pessoa: null,
+        email_cliente: null,
+        telefone_cliente: null,
+        descricao_problema: form3.descricao_problema.trim(),
+        created_at: ticket.created_at,
+        tipo: 'manual',
+      }),
+    }).catch(() => {});
     setSaving(false);
     onCreated?.();
   };
