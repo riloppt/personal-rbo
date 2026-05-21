@@ -113,9 +113,16 @@ export const CrudPage = ({ title, table, cols, formFields, emptyForm, compact, h
       )}
       <Card style={{padding:0,overflow:"hidden"}}>
         {searchPlaceholder && (
-          <div style={{padding:"14px 20px",borderBottom:`1px solid ${C.grey100}`}}>
+          <div style={{padding:"14px 20px",borderBottom:`1px solid ${C.grey100}`,display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
             <input value={search} onChange={e=>setSearch(e.target.value)} placeholder={searchPlaceholder}
-              style={{width:"100%",maxWidth:340,border:`1.5px solid ${C.grey200}`,borderRadius:8,padding:"7px 12px",fontSize:13,outline:"none",background:C.white,color:C.grey800,fontFamily:"inherit"}}/>
+              style={{flex:"1 1 200px",minWidth:180,border:`1.5px solid ${C.grey200}`,borderRadius:8,padding:"7px 12px",fontSize:13,outline:"none",background:C.white,color:C.grey800,fontFamily:"inherit"}}/>
+            {hasAtivo && (
+              <select value={showInativos?'todos':'ativo'} onChange={e=>setShowInativos(e.target.value==='todos')}
+                style={{border:`1.5px solid ${C.grey200}`,borderRadius:8,padding:"7px 12px",fontSize:13,outline:"none",background:C.white,color:C.grey800,cursor:"pointer",fontFamily:"inherit"}}>
+                <option value="ativo">Ativos</option>
+                <option value="todos">Todos os estados</option>
+              </select>
+            )}
           </div>
         )}
         {loading?<Loading/>:<Table

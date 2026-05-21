@@ -7,6 +7,7 @@ import { Btn } from '../../components/ui/Btn';
 import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
 import { maskNif, maskPhone, maskCP } from '../../utils/formatters';
+import { Badge } from '../../components/ui/Badge';
 import { ContactosPanel } from './ContactosPanel';
 import { EquipamentosPanel } from './EquipamentosPanel';
 import { CredenciaisPanel } from './CredenciaisPanel';
@@ -18,6 +19,14 @@ export const ClienteDetalhe = ({ cliente: clienteInicial, tecnicoOpts, onBack, o
   const [saving,        setSaving]        = useState(false);
   const [editingDados,  setEditingDados]  = useState(false);
   const [tab,           setTab]           = useState("dados");
+
+  const toggleAtivo = async () => {
+    setSaving(true);
+    const novoAtivo = cliente.ativo === false ? true : false;
+    const { data, error } = await sb.from("rbo_clientes").update({ ativo: novoAtivo }).eq("id", cliente.id).select().single();
+    if (error) { alert("Erro: " + error.message); setSaving(false); return; }
+    setCliente(data); setForm({...data}); setSaving(false);
+  };
 
   const save = async () => {
     const cf = form.consumidor_final;
@@ -71,6 +80,7 @@ export const ClienteDetalhe = ({ cliente: clienteInicial, tecnicoOpts, onBack, o
         <div>
           <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
             <h1 style={{fontSize:22,fontWeight:700,color:C.grey800}}>{cliente.nome}</h1>
+            <Badge color={cliente.ativo===false ? C.grey400 : C.green}>{cliente.ativo===false ? 'Inativo' : 'Ativo'}</Badge>
             {cliente.consumidor_final && (
               <span style={{fontSize:11,fontWeight:700,color:C.teal,background:C.teal+"18",borderRadius:6,padding:"3px 10px",textTransform:"uppercase",letterSpacing:".5px",flexShrink:0}}>
                 Consumidor Final
@@ -79,7 +89,12 @@ export const ClienteDetalhe = ({ cliente: clienteInicial, tecnicoOpts, onBack, o
           </div>
           {tecNome !== "—" && <div style={{fontSize:13,color:C.grey400,marginTop:4}}>Técnico: {tecNome}</div>}
         </div>
-        {onDelete && <Btn variant="danger" size="sm" icon="trash" onClick={onDelete}>Eliminar cliente</Btn>}
+        <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+          <Btn variant="secondary" size="sm" icon={cliente.ativo===false?"eye":"close"} onClick={toggleAtivo} disabled={saving}>
+            {cliente.ativo===false ? 'Ativar cliente' : 'Inativar cliente'}
+          </Btn>
+          {onDelete && <Btn variant="danger" size="sm" icon="trash" onClick={onDelete}>Eliminar cliente</Btn>}
+        </div>
       </div>
 
       {/* Tab bar */}

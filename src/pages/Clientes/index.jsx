@@ -19,7 +19,7 @@ export const ClientesPage = () => {
   const [newModal,    setNewModal]    = useState(false);
   const [newSaving,   setNewSaving]   = useState(false);
   const [emailError,  setEmailError]  = useState('');
-  const emptyNew = {nome:"",nif:"",consumidor_final:false,tecnico_id:"",morada:"",cp:"",localidade:"",email:"",telefone:"",telemovel:"",observacoes:""};
+  const emptyNew = {nome:"",nif:"",consumidor_final:false,tecnico_id:"",morada:"",cp:"",localidade:"",email:"",telefone:"",telemovel:"",observacoes:"",ativo:true};
   const [newForm, setNewForm] = useState(emptyNew);
 
   useEffect(()=>{
@@ -86,6 +86,7 @@ export const ClientesPage = () => {
   return (
     <>
       <CrudPage key={reload} title="Clientes" table="rbo_clientes"
+        hasAtivo
         sortableKeys={["nome","nif","localidade"]}
         cols={[
           {key:"nome", label:"Nome", render:(v,row)=>(
