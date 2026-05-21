@@ -79,11 +79,11 @@ export const Definicoes = ({ currentUserId, accent, onAccentChange }) => {
 
   const tabs = [
     { id: 'gerais',       label: 'Gerais',               icon: 'settings'  },
+    { id: 'utilizadores', label: 'Utilizadores',          icon: 'user'      },
     { id: 'tipologias',   label: 'Tipologias',            icon: 'types'     },
     { id: 'locais',       label: 'Locais de Assistência', icon: 'locations' },
     { id: 'categorias',   label: 'Categorias',            icon: 'key'       },
     { id: 'equipamentos', label: 'Tipos de Equipamento',  icon: 'wrench'    },
-    { id: 'utilizadores', label: 'Utilizadores',          icon: 'user'      },
   ];
 
   return (
