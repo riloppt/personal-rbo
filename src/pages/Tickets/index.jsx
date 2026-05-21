@@ -30,7 +30,7 @@ export const Tickets = ({ currentUserId }) => {
       sb.from('rbo_tickets')
         .select('*,cliente:rbo_clientes(id,nome),tecnico:rbo_profiles(id,nome),equipamento:rbo_client_equipment(id,descricao,num_serie)')
         .order('created_at', { ascending: false }),
-      sb.from('rbo_profiles').select('id,nome').eq('is_tecnico', true).eq('ativo', true).order('nome'),
+      sb.from('rbo_profiles').select('id,nome').eq('is_tecnico', true).neq('ativo', false).order('nome'),
     ]);
     setTickets(tkR.data || []);
     setTecnicos(tecR.data || []);

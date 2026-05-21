@@ -23,7 +23,7 @@ export const ClientesPage = () => {
   const [newForm, setNewForm] = useState(emptyNew);
 
   useEffect(()=>{
-    sb.from("rbo_profiles").select("id,nome").eq("is_tecnico",true).eq("ativo",true).order("nome")
+    sb.from("rbo_profiles").select("id,nome").eq("is_tecnico",true).neq("ativo",false).order("nome")
       .then(({data})=>setTecnicoOpts((data||[]).map(t=>({value:t.id,label:t.nome||t.email}))));
   },[]);
 

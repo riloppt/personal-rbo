@@ -119,7 +119,7 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
     const [tkR, histR, tecR, cliR, tipEqR, tipR] = await Promise.all([
       sb.from('rbo_tickets').select('*').eq('id', initialTicket.id).single(),
       sb.from('rbo_ticket_historico').select('*').eq('ticket_id', initialTicket.id).order('created_at', { ascending: false }),
-      sb.from('rbo_profiles').select('id,nome,is_tecnico').eq('ativo', true).order('nome'),
+      sb.from('rbo_profiles').select('id,nome,is_tecnico').neq('ativo', false).order('nome'),
       sb.from('rbo_clientes').select('id,nome,nif,email,telefone').order('nome'),
       sb.from('rbo_equipment_types').select('id,nome').order('nome'),
       sb.from('rbo_tipologias').select('id,nome').order('nome'),

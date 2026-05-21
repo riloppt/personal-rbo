@@ -52,7 +52,7 @@ export const EquipamentoDetalhe = ({ equipamentoId, onBack, navigate }) => {
 
     const movimentos = (movData || []).map(m => ({
       _type: 'movimento',
-      _date: m.data + 'T00:00:00',
+      _date: m.data,
       _id: m.id,
       descricao: m.descritivo,
       tecnico: m.tecnico,
