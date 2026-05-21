@@ -9,14 +9,44 @@ import { Loading } from '../../components/ui/Loading';
 import { Modal } from '../../components/ui/Modal';
 import { Input } from '../../components/ui/Input';
 
+const getInitials = (nome, email) => {
+  if (nome) {
+    const parts = nome.trim().split(/\s+/);
+    return parts.length >= 2
+      ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+      : parts[0].slice(0, 2).toUpperCase();
+  }
+  return (email || '?').slice(0, 2).toUpperCase();
+};
+
+const Avatar = ({ nome, email, avatar_url, size = 32 }) => {
+  const C = useTheme();
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: '50%',
+      background: avatar_url ? 'transparent' : `${C.teal}22`,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      flexShrink: 0, overflow: 'hidden', border: `1.5px solid ${C.teal}33`,
+    }}>
+      {avatar_url
+        ? <img src={avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }}/>
+        : <span style={{ fontSize: size * 0.35, fontWeight: 700, color: C.teal }}>
+            {getInitials(nome, email)}
+          </span>
+      }
+    </div>
+  );
+};
+
 export const UtilizadoresPanel = ({ currentUserId }) => {
   const C = useTheme();
-  const [users,   setUsers]   = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [modal,   setModal]   = useState(false);
-  const [saving,  setSaving]  = useState(false);
-  const [errMsg,  setErrMsg]  = useState(null);
-  const [form,    setForm]    = useState({ email: '', nome: '', password: '', is_tecnico: false });
+  const [users,        setUsers]        = useState([]);
+  const [loading,      setLoading]      = useState(true);
+  const [modal,        setModal]        = useState(false);
+  const [saving,       setSaving]       = useState(false);
+  const [uploading,    setUploading]    = useState(false);
+  const [errMsg,       setErrMsg]       = useState(null);
+  const [form,         setForm]         = useState({ email: '', nome: '', password: '', is_tecnico: false, avatar_url: '' });
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -34,16 +64,31 @@ export const UtilizadoresPanel = ({ currentUserId }) => {
   };
 
   const openEdit = user => {
-    setForm({ id: user.id, nome: user.nome || '', email: user.email || '', password: '', is_tecnico: !!user.is_tecnico });
+    setForm({ id: user.id, nome: user.nome || '', email: user.email || '', password: '', is_tecnico: !!user.is_tecnico, avatar_url: user.avatar_url || '' });
     setErrMsg(null);
     setModal('edit');
   };
+
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !form.id) return;
+    setUploading(true);
+    const ext = file.name.split('.').pop().toLowerCase();
+    const path = `${form.id}.${ext}`;
+    const { error: upErr } = await sb.storage.from('avatars').upload(path, file, { upsert: true, contentType: file.type });
+    if (upErr) { setErrMsg('Erro ao carregar foto: ' + upErr.message); setUploading(false); return; }
+    const { data: { publicUrl } } = sb.storage.from('avatars').getPublicUrl(path);
+    setForm(f => ({ ...f, avatar_url: `${publicUrl}?t=${Date.now()}` }));
+    setUploading(false);
+  };
+
+  const removeAvatar = () => setForm(f => ({ ...f, avatar_url: '' }));
 
   const saveUser = async () => {
     if (!form.id) return;
     setSaving(true); setErrMsg(null);
     const { error: profErr } = await sb.from('rbo_profiles')
-      .update({ nome: form.nome || null, is_tecnico: form.is_tecnico })
+      .update({ nome: form.nome || null, is_tecnico: form.is_tecnico, avatar_url: form.avatar_url || null })
       .eq('id', form.id);
     if (profErr) { setErrMsg('Erro ao guardar: ' + profErr.message); setSaving(false); return; }
     if (form.password && form.id === currentUserId) {
@@ -76,7 +121,7 @@ export const UtilizadoresPanel = ({ currentUserId }) => {
     await load();
     setSaving(false);
     setModal(false);
-    setForm({ email: '', nome: '', password: '', is_tecnico: false });
+    setForm({ email: '', nome: '', password: '', is_tecnico: false, avatar_url: '' });
   };
 
   const closeModal = () => { setModal(false); setErrMsg(null); };
@@ -85,7 +130,7 @@ export const UtilizadoresPanel = ({ currentUserId }) => {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <span style={{ fontSize: 13, color: C.grey400 }}>{users.length} utilizador{users.length !== 1 ? 'es' : ''}</span>
-        <Btn icon="plus" size="sm" onClick={() => { setForm({ email: '', nome: '', password: '', is_tecnico: false }); setErrMsg(null); setModal('new'); }}>Novo</Btn>
+        <Btn icon="plus" size="sm" onClick={() => { setForm({ email: '', nome: '', password: '', is_tecnico: false, avatar_url: '' }); setErrMsg(null); setModal('new'); }}>Novo</Btn>
       </div>
 
       {errMsg && (
@@ -115,15 +160,20 @@ export const UtilizadoresPanel = ({ currentUserId }) => {
                   <tr key={u.id} style={{ borderBottom: `1px solid ${C.grey100}`, transition: 'background .1s' }}
                     onMouseEnter={e => e.currentTarget.style.background = C.grey50}
                     onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                    <td style={{ padding: '13px 16px', color: C.grey800, fontWeight: 500, whiteSpace: 'nowrap' }}>
-                      {u.nome || '—'}
-                      {u.id === currentUserId && <span style={{ marginLeft: 8, fontSize: 11, background: C.teal + '22', color: C.teal, borderRadius: 10, padding: '1px 8px', fontWeight: 600 }}>Tu</span>}
+                    <td style={{ padding: '10px 16px', color: C.grey800, fontWeight: 500, whiteSpace: 'nowrap' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <Avatar nome={u.nome} email={u.email} avatar_url={u.avatar_url} size={32}/>
+                        <span>
+                          {u.nome || '—'}
+                          {u.id === currentUserId && <span style={{ marginLeft: 8, fontSize: 11, background: C.teal + '22', color: C.teal, borderRadius: 10, padding: '1px 8px', fontWeight: 600 }}>Tu</span>}
+                        </span>
+                      </div>
                     </td>
-                    <td style={{ padding: '13px 16px', color: C.grey600, fontSize: 13 }}>{u.email}</td>
-                    <td style={{ padding: '13px 16px' }}>
+                    <td style={{ padding: '10px 16px', color: C.grey600, fontSize: 13 }}>{u.email}</td>
+                    <td style={{ padding: '10px 16px' }}>
                       <Badge color={u.is_tecnico ? C.teal : C.grey400}>{u.is_tecnico ? 'Técnico' : '—'}</Badge>
                     </td>
-                    <td style={{ padding: '13px 16px' }}>
+                    <td style={{ padding: '10px 16px' }}>
                       <Badge color={u.ativo ? C.green : C.grey400}>{u.ativo ? 'Ativo' : 'Inativo'}</Badge>
                     </td>
                     <td style={{ padding: '8px 16px' }}>
@@ -155,6 +205,37 @@ export const UtilizadoresPanel = ({ currentUserId }) => {
       {modal && (
         <Modal title={modal === 'edit' ? 'Editar utilizador' : 'Novo utilizador'} onClose={closeModal}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+            {/* Avatar — só no modo editar */}
+            {modal === 'edit' && (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '8px 0 4px' }}>
+                <div style={{
+                  width: 72, height: 72, borderRadius: '50%', overflow: 'hidden',
+                  background: form.avatar_url ? 'transparent' : `${C.teal}18`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  border: `2px solid ${C.teal}33`,
+                }}>
+                  {form.avatar_url
+                    ? <img src={form.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }}/>
+                    : <span style={{ fontSize: 24, fontWeight: 700, color: C.teal }}>{getInitials(form.nome, form.email)}</span>
+                  }
+                </div>
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                  <label style={{ cursor: uploading ? 'wait' : 'pointer' }}>
+                    <span style={{ fontSize: 13, color: C.teal, textDecoration: 'underline', fontWeight: 500 }}>
+                      {uploading ? 'A carregar...' : form.avatar_url ? 'Alterar foto' : 'Adicionar foto'}
+                    </span>
+                    <input type="file" accept="image/*" style={{ display: 'none' }} disabled={uploading} onChange={handleAvatarChange}/>
+                  </label>
+                  {form.avatar_url && !uploading && (
+                    <button onClick={removeAvatar} style={{ fontSize: 12, color: C.grey400, background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>
+                      Remover
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
             <Input label="Nome" value={form.nome} onChange={v => setForm(f => ({ ...f, nome: v }))} placeholder="Nome completo"/>
             {modal === 'edit' ? (
               <div>
@@ -193,7 +274,7 @@ export const UtilizadoresPanel = ({ currentUserId }) => {
           <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 20 }}>
             <Btn variant="secondary" onClick={closeModal}>Cancelar</Btn>
             <Btn onClick={modal === 'edit' ? saveUser : createUser}
-              disabled={saving || (modal === 'new' && (!form.email || !form.password))}>
+              disabled={saving || uploading || (modal === 'new' && (!form.email || !form.password))}>
               {saving ? (modal === 'edit' ? 'A guardar...' : 'A criar...') : (modal === 'edit' ? 'Guardar' : 'Criar utilizador')}
             </Btn>
           </div>

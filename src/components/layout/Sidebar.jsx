@@ -3,6 +3,16 @@ import { useTheme } from '../../theme';
 import { Icon } from '../ui/Icon';
 import { sb } from '../../lib/supabase';
 
+const getInitials = (nome, email) => {
+  if (nome) {
+    const parts = nome.trim().split(/\s+/);
+    return parts.length >= 2
+      ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+      : parts[0].slice(0, 2).toUpperCase();
+  }
+  return (email || '?').slice(0, 2).toUpperCase();
+};
+
 export const Sidebar = ({ sideOpen, setSideOpen, page, navigate, darkMode, toggleDark, profile, navItems }) => {
   const C = useTheme();
   const [navTooltip, setNavTooltip] = useState(null);
@@ -44,18 +54,33 @@ export const Sidebar = ({ sideOpen, setSideOpen, page, navigate, darkMode, toggl
         </nav>
         {/* Bottom controls */}
         <div style={{borderTop:`1px solid ${C.teal}33`,flexShrink:0}}>
-          {/* User info */}
-          {sideOpen && (
-            <div style={{padding:"10px 18px",display:"flex",alignItems:"center",gap:10,borderBottom:`1px solid ${C.teal}1a`}}>
-              <div style={{width:30,height:30,borderRadius:"50%",background:`${C.teal}33`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                <Icon name="user" size={15} color={C.tealL}/>
-              </div>
+          {/* User avatar — always visible */}
+          <div style={{
+            padding:sideOpen?"10px 18px":"10px 0",
+            display:"flex", alignItems:"center", gap:10,
+            borderBottom:`1px solid ${C.teal}1a`,
+            justifyContent:sideOpen?"flex-start":"center",
+          }}>
+            <div style={{
+              width:32, height:32, borderRadius:"50%",
+              background:profile?.avatar_url?"transparent":`${C.teal}33`,
+              display:"flex", alignItems:"center", justifyContent:"center",
+              flexShrink:0, overflow:"hidden",
+            }}>
+              {profile?.avatar_url
+                ? <img src={profile.avatar_url} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                : <span style={{fontSize:11,fontWeight:700,color:C.tealL,letterSpacing:".5px"}}>
+                    {getInitials(profile?.nome, profile?.email)}
+                  </span>
+              }
+            </div>
+            {sideOpen && (
               <div style={{minWidth:0}}>
                 <div style={{fontSize:12,fontWeight:600,color:"rgba(255,255,255,0.9)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{profile?.nome || profile?.email}</div>
                 {profile?.nome && <div style={{fontSize:10,color:C.sidebarFg,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{profile?.email}</div>}
               </div>
-            </div>
-          )}
+            )}
+          </div>
           <button onClick={toggleDark} title={darkMode?"Modo claro":"Modo escuro"}
             style={{width:"100%",display:"flex",alignItems:"center",gap:12,padding:sideOpen?"11px 18px":"11px 0",justifyContent:sideOpen?"flex-start":"center",background:"transparent",border:"none",cursor:"pointer",transition:"all .15s"}}
             onMouseEnter={e=>e.currentTarget.style.background=`${C.teal}26`}
