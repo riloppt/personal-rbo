@@ -148,11 +148,16 @@ export const ContratoDetalhe = ({ contrato, onBack, onDelete }) => {
           onDelete={delMov}
           extraActions={row=>row.tipo==="assistencia"?(
             <>
-              <Btn size="sm" icon="eye" variant="secondary" onClick={()=>{
+              <button onClick={()=>{
                 const { cliente: cl, tipologia: tip, tecnico, local } = lookup(row);
                 const html = buildReportHtml({ mov: row, cliente: cl, tipologia: tip, tecnico, local });
                 window.open(URL.createObjectURL(new Blob([html], { type: 'text/html' })), '_blank');
-              }}>Abrir Relatório</Btn>
+              }} title="Abrir relatório"
+                style={{background:"none",border:"none",cursor:"pointer",padding:"4px 6px",borderRadius:6,display:"flex",alignItems:"center",transition:"background .15s"}}
+                onMouseEnter={e=>e.currentTarget.style.background=C.grey100}
+                onMouseLeave={e=>e.currentTarget.style.background="none"}>
+                <Icon name="qr" size={15} color={C.grey600}/>
+              </button>
               <EmailReportBtn mov={row} lookup={lookup} onSent={onSent}/>
             </>
           ):null}
