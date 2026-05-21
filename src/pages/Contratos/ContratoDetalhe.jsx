@@ -13,6 +13,7 @@ import { Icon } from '../../components/ui/Icon';
 import { fmtDate } from '../../utils/formatters';
 import { useSortable } from '../../hooks/useSortable';
 import { buildReportHtml, buildPeriodReportHtml } from '../../features/email/reportHtml';
+import { sendEmailResend } from '../../lib/email';
 import { EmailReportBtn } from '../../features/email/EmailReportBtn';
 import { AssistenciaModal } from './AssistenciaModal';
 
@@ -30,9 +31,12 @@ export const ContratoDetalhe = ({ contrato, onBack, onDelete }) => {
   const [editingId,  setEditingId]  = useState(null);
   const emptyMov = {data:new Date().toISOString().split("T")[0],hora_inicio:"",hora_fim:"",creditos:"",descritivo:"",profile_tecnico_id:"",local_id:"",equipment_id:"",tipo:"assistencia"};
   const [form, setForm] = useState(emptyMov);
-  const [periodModal, setPeriodModal] = useState(false);
-  const [periodDates, setPeriodDates] = useState({ inicio: '', fim: '' });
-  const [periodError, setPeriodError] = useState('');
+  const [periodModal,        setPeriodModal]        = useState(false);
+  const [periodDates,        setPeriodDates]        = useState({ inicio: '', fim: '' });
+  const [periodError,        setPeriodError]        = useState('');
+  const [periodEmailTo,      setPeriodEmailTo]      = useState('');
+  const [periodEmailSending, setPeriodEmailSending] = useState(false);
+  const [periodEmailResult,  setPeriodEmailResult]  = useState(null);
 
   const load = useCallback(async()=>{
     setLoading(true);
@@ -91,19 +95,42 @@ export const ContratoDetalhe = ({ contrato, onBack, onDelete }) => {
     setSaving(false);
   };
 
-  const generatePeriodReport = () => {
-    if (!periodDates.inicio || !periodDates.fim) { setPeriodError('Ambas as datas são obrigatórias'); return; }
-    if (periodDates.fim < periodDates.inicio)    { setPeriodError('A data de fim não pode ser anterior à data de início'); return; }
+  const buildPeriodHtml = () => {
     const periodoMovs = [...movimentos]
       .filter(m => m.data >= periodDates.inicio && m.data <= periodDates.fim)
       .sort((a, b) => a.data.localeCompare(b.data));
-    const html = buildPeriodReportHtml({
+    return buildPeriodReportHtml({
       contrato, cliente, tipologia,
       inicio: periodDates.inicio, fim: periodDates.fim,
       movimentos: periodoMovs, saldoTotal: saldo,
       tecnicos, locais, equipamentos,
     });
-    window.open(URL.createObjectURL(new Blob([html], { type: 'text/html' })), '_blank');
+  };
+
+  const validatePeriod = () => {
+    if (!periodDates.inicio || !periodDates.fim) { setPeriodError('Ambas as datas são obrigatórias'); return false; }
+    if (periodDates.fim < periodDates.inicio)    { setPeriodError('A data de fim não pode ser anterior à data de início'); return false; }
+    return true;
+  };
+
+  const generatePeriodReport = () => {
+    if (!validatePeriod()) return;
+    window.open(URL.createObjectURL(new Blob([buildPeriodHtml()], { type: 'text/html' })), '_blank');
+  };
+
+  const sendPeriodReport = async () => {
+    if (!validatePeriod() || !periodEmailTo) return;
+    setPeriodEmailSending(true); setPeriodEmailResult(null);
+    try {
+      const html    = buildPeriodHtml();
+      const subject = `Relatório de Assistências — ${cliente?.nome||''} — ${fmtDate(periodDates.inicio)} a ${fmtDate(periodDates.fim)}`;
+      await sendEmailResend({ to: periodEmailTo, subject, html });
+      setPeriodEmailResult('ok');
+    } catch (err) {
+      setPeriodEmailResult(err.message || 'Erro desconhecido');
+    } finally {
+      setPeriodEmailSending(false);
+    }
   };
 
   const delMov = async id => {
@@ -152,7 +179,7 @@ export const ContratoDetalhe = ({ contrato, onBack, onDelete }) => {
           </div>
         </div>
         <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
-          <Btn variant="secondary" size="sm" icon="contracts" onClick={()=>{ setPeriodModal(true); setPeriodError(''); }}>Relatório de Período</Btn>
+          <Btn variant="secondary" size="sm" icon="contracts" onClick={()=>{ setPeriodModal(true); setPeriodError(''); setPeriodEmailTo(cliente?.email||''); setPeriodEmailResult(null); }}>Relatório de Período</Btn>
           <Btn variant="secondary" size="sm" icon="credit" onClick={()=>openNew("credito")}>Adicionar Créditos</Btn>
           <Btn size="sm" icon="plus" onClick={()=>openNew("assistencia")}>Nova Assistência</Btn>
           {onDelete && <Btn variant="danger" size="sm" icon="trash" onClick={onDelete}>Eliminar contrato</Btn>}
@@ -238,17 +265,45 @@ export const ContratoDetalhe = ({ contrato, onBack, onDelete }) => {
 
       {periodModal && (
         <Modal title="Relatório de Período" onClose={()=>{ setPeriodModal(false); setPeriodError(''); }}>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:18}}>
             <Input label="Data de início" value={periodDates.inicio} onChange={v=>{ setPeriodDates(d=>({...d,inicio:v})); setPeriodError(''); }} type="date" required/>
             <Input label="Data de fim"    value={periodDates.fim}    onChange={v=>{ setPeriodDates(d=>({...d,fim:v}));    setPeriodError(''); }} type="date" required/>
           </div>
+
+          <div style={{height:1,background:C.grey100,marginBottom:18}}/>
+
+          <Input label="Enviar por email (opcional)" value={periodEmailTo}
+            onChange={v=>{ setPeriodEmailTo(v); setPeriodEmailResult(null); }}
+            type="email" placeholder="email@cliente.pt"/>
+          {cliente?.email && periodEmailTo && periodEmailTo !== cliente.email && (
+            <div style={{marginTop:6,fontSize:12,color:C.amber,display:"flex",alignItems:"center",gap:5}}>
+              <Icon name="alert" size={13} color={C.amber}/> Email diferente do registado na ficha ({cliente.email})
+            </div>
+          )}
+
           {periodError && (
-            <div style={{marginTop:10,fontSize:13,color:C.red,display:"flex",alignItems:"center",gap:6}}>
+            <div style={{marginTop:12,fontSize:13,color:C.red,display:"flex",alignItems:"center",gap:6}}>
               <Icon name="alert" size={14} color={C.red}/> {periodError}
             </div>
           )}
+          {periodEmailResult==="ok" && (
+            <div style={{marginTop:12,fontSize:13,color:C.green,background:C.green+"12",border:`1px solid ${C.green}33`,borderRadius:8,padding:"10px 14px",display:"flex",alignItems:"center",gap:8}}>
+              <Icon name="mailDone" size={14} color={C.green}/> Email enviado para <strong style={{marginLeft:4}}>{periodEmailTo}</strong>
+            </div>
+          )}
+          {periodEmailResult && periodEmailResult!=="ok" && (
+            <div style={{marginTop:12,fontSize:13,color:C.red,background:C.red+"10",border:`1px solid ${C.red}33`,borderRadius:8,padding:"10px 14px",display:"flex",alignItems:"center",gap:8}}>
+              <Icon name="alert" size={14} color={C.red}/> {periodEmailResult}
+            </div>
+          )}
+
           <div style={{display:"flex",gap:10,justifyContent:"flex-end",marginTop:20}}>
             <Btn variant="secondary" onClick={()=>{ setPeriodModal(false); setPeriodError(''); }}>Cancelar</Btn>
+            <Btn variant="secondary" icon={periodEmailSending?"loader":"mail"}
+              onClick={sendPeriodReport}
+              disabled={periodEmailSending||!periodEmailTo}>
+              {periodEmailSending?"A enviar...":"Enviar por Email"}
+            </Btn>
             <Btn icon="contracts" onClick={generatePeriodReport}>Gerar Relatório</Btn>
           </div>
         </Modal>
