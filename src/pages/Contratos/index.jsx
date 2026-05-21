@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTheme } from '../../theme';
+import { useSortable } from '../../hooks/useSortable';
 import { sb } from '../../lib/supabase';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Btn } from '../../components/ui/Btn';
@@ -66,6 +67,15 @@ export const Contratos = () => {
     return !q||cli?.nome.toLowerCase().includes(q)||tip?.nome.toLowerCase().includes(q);
   });
 
+  const getContratosVal = useCallback((key, row) => {
+    if (key === 'cliente')   return clientes.find(x=>x.id===row.cliente_id)?.nome ?? '';
+    if (key === 'tipologia') return tipologias.find(x=>x.id===row.tipologia_id)?.nome ?? '';
+    if (key === 'creditos')  return movStats[row.id]?.creditos ?? 0;
+    return row[key] ?? '';
+  }, [clientes, tipologias, movStats]);
+
+  const { sorted, sortKey, sortDir, toggleSort } = useSortable(filtered, getContratosVal);
+
   const handleDeleteContrato = async () => {
     if (!confirm("Eliminar contrato e todos os seus movimentos?")) return;
     const { error } = await sb.from("rbo_contratos").delete().eq("id", detalhe.id);
@@ -86,14 +96,17 @@ export const Contratos = () => {
         </div>
         {loading?<Loading/>:<Table
           cols={[
-            {key:"cliente_id",    label:"Cliente",     render:v=>{const cl=clientes.find(x=>x.id===v);return <span style={{fontWeight:500,color:C.grey800}}>{cl?.nome||"—"}</span>;}},
-            {key:"tipologia_id",  label:"Tipologia",   render:v=>{const t=tipologias.find(x=>x.id===v);return <Badge>{t?.nome||"—"}</Badge>;}},
-            {key:"data_contrato", label:"Data",        render:v=>fmtDate(v)},
-            {key:"id",            label:"Últ. Assist.", render:v=>{const s=movStats[v];return s?.ultimaAssist?fmtDate(s.ultimaAssist):<span style={{color:C.grey400}}>—</span>;}},
-            {key:"id",            label:"Créditos",    render:v=>{const cr=movStats[v]?.creditos||0;return <span style={{fontFamily:"'DM Mono',monospace",fontWeight:600,color:cr>10?C.green:cr>0?C.amber:C.red}}>{cr}</span>;}},
-            {key:"ativo",         label:"Estado",      render:v=><Badge color={v?C.green:C.grey400}>{v?"Ativo":"Inativo"}</Badge>},
+            {key:"cliente_id",    label:"Cliente",     sortable:true, sortKey:"cliente",   render:v=>{const cl=clientes.find(x=>x.id===v);return <span style={{fontWeight:500,color:C.grey800}}>{cl?.nome||"—"}</span>;}},
+            {key:"tipologia_id",  label:"Tipologia",   sortable:true, sortKey:"tipologia", render:v=>{const t=tipologias.find(x=>x.id===v);return <Badge>{t?.nome||"—"}</Badge>;}},
+            {key:"data_contrato", label:"Data",        sortable:true,                      render:v=>fmtDate(v)},
+            {key:"id",            label:"Últ. Assist.",                                    render:v=>{const s=movStats[v];return s?.ultimaAssist?fmtDate(s.ultimaAssist):<span style={{color:C.grey400}}>—</span>;}},
+            {key:"id",            label:"Créditos",    sortable:true, sortKey:"creditos",  render:v=>{const cr=movStats[v]?.creditos||0;return <span style={{fontFamily:"'DM Mono',monospace",fontWeight:600,color:cr>10?C.green:cr>0?C.amber:C.red}}>{cr}</span>;}},
+            {key:"ativo",         label:"Estado",                                          render:v=><Badge color={v?C.green:C.grey400}>{v?"Ativo":"Inativo"}</Badge>},
           ]}
-          data={filtered}
+          data={sorted}
+          sortKey={sortKey}
+          sortDir={sortDir}
+          onSort={toggleSort}
           onView={r=>setDetalhe(r)}
           emptyMsg="Sem contratos. Crie o primeiro contrato."
         />}

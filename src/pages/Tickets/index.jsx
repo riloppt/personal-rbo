@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTheme } from '../../theme';
+import { useSortable } from '../../hooks/useSortable';
 import { sb } from '../../lib/supabase';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Btn } from '../../components/ui/Btn';
@@ -48,6 +49,17 @@ export const Tickets = ({ currentUserId }) => {
     }
     return true;
   });
+
+  const getTicketsVal = useCallback((key, row) => {
+    if (key === 'empresa')    return row.nome_empresa || row.cliente?.nome || '';
+    if (key === 'tecnico')    return row.tecnico?.nome || '';
+    if (key === 'estado')     return row.estado || '';
+    if (key === 'id')         return row.id;
+    if (key === 'created_at') return row.created_at || '';
+    return row[key] ?? '';
+  }, []);
+
+  const { sorted, sortKey, sortDir, toggleSort } = useSortable(filtered, getTicketsVal);
 
   const submCount = tickets.filter(t => t.estado === 'submetido').length;
 
@@ -105,9 +117,49 @@ export const Tickets = ({ currentUserId }) => {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
               <thead>
                 <tr style={{ borderBottom: `2px solid ${C.grey100}` }}>
-                  {['', '#ID', 'Empresa / Pessoa', 'Equipamento', 'Estado', 'Técnico', 'Criado em', ''].map((h, i) => (
-                    <th key={i} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 12, fontWeight: 600, color: C.grey400, textTransform: 'uppercase', letterSpacing: '.5px', whiteSpace: 'nowrap', background: C.white }}>{h}</th>
-                  ))}
+                  {/* indicator dot — not sortable */}
+                  <th style={{ padding: '12px 16px', width: 20, background: C.white }}/>
+                  {[
+                    { label: '#ID',            sk: 'id' },
+                    { label: 'Empresa / Pessoa', sk: 'empresa' },
+                    { label: 'Equipamento',    sk: null },
+                    { label: 'Estado',         sk: 'estado' },
+                    { label: 'Técnico',        sk: 'tecnico' },
+                    { label: 'Criado em',      sk: 'created_at' },
+                  ].map(({ label, sk }) => {
+                    const isActive = sk && sortKey === sk;
+                    return (
+                      <th key={label}
+                        onClick={sk ? () => toggleSort(sk) : undefined}
+                        style={{
+                          padding: '12px 16px', textAlign: 'left', fontSize: 12, fontWeight: 600,
+                          textTransform: 'uppercase', letterSpacing: '.5px', whiteSpace: 'nowrap',
+                          color: isActive ? C.teal : C.grey400,
+                          background: C.white,
+                          cursor: sk ? 'pointer' : 'default',
+                          userSelect: 'none',
+                          transition: 'color .15s',
+                        }}
+                        onMouseEnter={sk ? e => { e.currentTarget.style.background = C.grey50; } : undefined}
+                        onMouseLeave={sk ? e => { e.currentTarget.style.background = C.white; } : undefined}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                          {label}
+                          {sk && (
+                            <span style={{ display:'inline-flex', flexDirection:'column', gap:1.5, flexShrink:0, lineHeight:1 }}>
+                              <svg width="7" height="4" viewBox="0 0 7 4" fill="none">
+                                <path d="M3.5 0L7 4H0L3.5 0Z" fill={isActive && sortDir === 'asc' ? C.teal : C.grey200}/>
+                              </svg>
+                              <svg width="7" height="4" viewBox="0 0 7 4" fill="none">
+                                <path d="M3.5 4L0 0H7L3.5 4Z" fill={isActive && sortDir === 'desc' ? C.teal : C.grey200}/>
+                              </svg>
+                            </span>
+                          )}
+                        </span>
+                      </th>
+                    );
+                  })}
+                  {/* actions column */}
+                  <th style={{ padding: '12px 16px', background: C.white }}/>
                 </tr>
               </thead>
               <tbody>
@@ -116,7 +168,7 @@ export const Tickets = ({ currentUserId }) => {
                     {tickets.length === 0 ? 'Sem tickets. Crie o primeiro ticket ou aguarde submissões pelo formulário público.' : 'Nenhum ticket corresponde aos filtros.'}
                   </td></tr>
                 )}
-                {filtered.map(t => {
+                {sorted.map(t => {
                   const isSubmetido = t.estado === 'submetido';
                   const rowBg = isSubmetido ? '#e8a83a08' : 'transparent';
                   return (

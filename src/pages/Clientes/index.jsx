@@ -73,6 +73,7 @@ export const ClientesPage = () => {
   return (
     <>
       <CrudPage key={reload} title="Clientes" table="rbo_clientes"
+        sortableKeys={["nome","nif","localidade"]}
         cols={[
           {key:"nome", label:"Nome", render:(v,row)=>(
             <div style={{display:"flex",alignItems:"center",gap:8}}>
@@ -82,6 +83,7 @@ export const ClientesPage = () => {
               )}
             </div>
           )},
+          {key:"nif",        label:"NIF"},
           {key:"tecnico_id", label:"Técnico", render:(v)=>tecnicoOpts.find(t=>t.value===v)?.label||"—"},
           {key:"localidade", label:"Localidade"},
           {key:"telefone",   label:"Telefone"},

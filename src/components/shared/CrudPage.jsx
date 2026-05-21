@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTheme } from '../../theme';
 import { sb } from '../../lib/supabase';
+import { useSortable } from '../../hooks/useSortable';
 import { PageHeader } from '../ui/PageHeader';
 import { Btn } from '../ui/Btn';
 import { Card } from '../ui/Card';
@@ -13,7 +14,7 @@ import { Input } from '../ui/Input';
 import { Icon } from '../ui/Icon';
 import { Badge } from '../ui/Badge';
 
-export const CrudPage = ({ title, table, cols, formFields, emptyForm, compact, hasAtivo, fieldOptions, onView, onNew, noInlineEdit, viewIcon, newLabel = 'Novo', preDeleteCheck, searchPlaceholder, noListDelete }) => {
+export const CrudPage = ({ title, table, cols, formFields, emptyForm, compact, hasAtivo, fieldOptions, onView, onNew, noInlineEdit, viewIcon, newLabel = 'Novo', preDeleteCheck, searchPlaceholder, noListDelete, sortableKeys }) => {
   const C = useTheme();
   const [rows,      setRows]      = useState([]);
   const [loading,   setLoading]   = useState(true);
@@ -81,6 +82,8 @@ export const CrudPage = ({ title, table, cols, formFields, emptyForm, compact, h
     Object.values(r).some(v => typeof v === 'string' && v.toLowerCase().includes(search.toLowerCase()))
   );
 
+  const { sorted, sortKey, sortDir, toggleSort } = useSortable(filteredRows);
+
   const inativosCount = hasAtivo ? rows.filter(r => r.ativo === false).length : 0;
 
   return (
@@ -117,10 +120,13 @@ export const CrudPage = ({ title, table, cols, formFields, emptyForm, compact, h
         )}
         {loading?<Loading/>:<Table
           cols={[
-            ...cols,
+            ...cols.map(c => sortableKeys?.includes(c.key) ? { ...c, sortable:true } : c),
             ...(hasAtivo ? [{key:"ativo",label:"Estado",render:v=><Badge color={v===false?C.grey400:C.green}>{v===false?"Inativo":"Ativo"}</Badge>}] : []),
           ]}
-          data={filteredRows}
+          data={sorted}
+          sortKey={sortKey}
+          sortDir={sortDir}
+          onSort={sortableKeys?.length ? toggleSort : undefined}
           onView={onView}
           viewIcon={viewIcon}
           onEdit={noInlineEdit ? undefined : openEdit}
