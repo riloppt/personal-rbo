@@ -7,6 +7,7 @@ import { Icon } from '../../components/ui/Icon';
 import { Card } from '../../components/ui/Card';
 import { DefinicaoPanel } from './DefinicaoPanel';
 import { UtilizadoresPanel } from './UtilizadoresPanel';
+import { NotificacoesPanel } from './NotificacoesPanel';
 
 const checkTipologia = async id => {
   const { count } = await sb.from('rbo_contratos').select('id', { count: 'exact', head: true }).eq('tipologia_id', id);
@@ -83,7 +84,8 @@ export const Definicoes = ({ currentUserId, accent, onAccentChange }) => {
     { id: 'tipologias',   label: 'Tipologias',            icon: 'types'     },
     { id: 'locais',       label: 'Locais de Assistência', icon: 'locations' },
     { id: 'categorias',   label: 'Categorias',            icon: 'key'       },
-    { id: 'equipamentos', label: 'Tipos de Equipamento',  icon: 'wrench'    },
+    { id: 'equipamentos',   label: 'Tipos de Equipamento',  icon: 'wrench'    },
+    { id: 'notificacoes',   label: 'Notificações',          icon: 'mail'      },
   ];
 
   return (
@@ -107,7 +109,8 @@ export const Definicoes = ({ currentUserId, accent, onAccentChange }) => {
       {tab === 'locais'      && <DefinicaoPanel tabela="rbo_locais"                nomeLabel="Local" verificarUso={checkLocal}/>}
       {tab === 'categorias'  && <DefinicaoPanel tabela="rbo_credential_categories" nomeLabel="Nome"  verificarUso={checkCategoria}/>}
       {tab === 'equipamentos'&& <DefinicaoPanel tabela="rbo_equipment_types"       nomeLabel="Tipo"  verificarUso={checkTipoEquipamento}/>}
-      {tab === 'utilizadores'&& <UtilizadoresPanel currentUserId={currentUserId}/>}
+      {tab === 'utilizadores'  && <UtilizadoresPanel currentUserId={currentUserId}/>}
+      {tab === 'notificacoes'  && <NotificacoesPanel/>}
     </div>
   );
 };

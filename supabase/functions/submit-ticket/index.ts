@@ -119,31 +119,46 @@ serve(async (req) => {
       alterado_por_id: null, nota: 'Submetido via formulário público',
     }]);
 
-    // Envio de email — awaited mas com catch para não bloquear resposta
+    // Envio de email — consulta configuração de notificações
     const resendKey = Deno.env.get('RESEND_API_KEY');
     if (resendKey) {
       try {
-        const emailRes = await fetch('https://api.resend.com/emails', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${resendKey}` },
-          body: JSON.stringify({
-            from: 'Rilop <noreply@rilop.pt>',
-            to: ['sergiohenriques@graficaideal.pt'],
-            subject: `Novo pedido de assistência #${String(ticket.id).padStart(4, '0')}`,
-            html: buildEmailHtml(
-              ticket.id,
-              nome_empresa?.trim() ?? '',
-              nome_pessoa?.trim() ?? '',
-              email_cliente?.trim() ?? '',
-              telefone_cliente?.trim() ?? '',
-              descricao_problema?.trim() ?? '',
-              ticket.created_at,
-            ),
-          }),
-        });
-        const emailData = await emailRes.json();
-        if (!emailRes.ok) console.error('[email] Resend error:', JSON.stringify(emailData));
-        else console.log('[email] sent:', emailData?.id);
+        const { data: notifConfig } = await sb
+          .from('rbo_notificacoes_config')
+          .select('ativa, destinatarios')
+          .eq('evento', 'ticket_novo')
+          .maybeSingle();
+
+        const ativa = notifConfig?.ativa ?? true;
+        const destinatarios: string[] = notifConfig?.destinatarios ?? [];
+
+        if (ativa && destinatarios.length > 0) {
+          const emailRes = await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${resendKey}` },
+            body: JSON.stringify({
+              from: 'Rilop <noreply@rilop.pt>',
+              to: destinatarios,
+              subject: `Novo pedido de assistência #${String(ticket.id).padStart(4, '0')}`,
+              html: buildEmailHtml(
+                ticket.id,
+                nome_empresa?.trim() ?? '',
+                nome_pessoa?.trim() ?? '',
+                email_cliente?.trim() ?? '',
+                telefone_cliente?.trim() ?? '',
+                descricao_problema?.trim() ?? '',
+                ticket.created_at,
+              ),
+            }),
+          });
+          const emailData = await emailRes.json();
+          if (!emailRes.ok) console.error('[email] Resend error:', JSON.stringify(emailData));
+          else console.log('[email] sent:', emailData?.id);
+        } else if (ativa && destinatarios.length === 0) {
+          console.log('[email] ticket_novo ativa mas sem destinatários — email não enviado');
+        } else {
+          console.log('[email] ticket_novo desativada — email não enviado');
+        }
       } catch (emailErr) {
         console.error('[email] fetch error:', emailErr);
       }
