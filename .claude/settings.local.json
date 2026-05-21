@@ -15,7 +15,22 @@
       "Bash(git add *)",
       "Bash(git rm *)",
       "Bash(git commit -m ' *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Skill(frontend-design:frontend-design)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\sergiohenriques\\\\GitHub\\\\personal-rbo\" -Force)",
+      "Bash(Select-Object Name, Mode)",
+      "mcp__claude_ai_Vercel__list_teams",
+      "mcp__claude_ai_Vercel__list_projects",
+      "mcp__claude_ai_Vercel__get_project",
+      "Read(//c/Users/sergiohenriques/.claude/plugins/cache/ui-ux-pro-max-skill/ui-ux-pro-max/2.5.0/**)",
+      "Bash(python skills/ui-ux-pro-max/scripts/search.py \"admin backoffice SaaS button interaction action\" --domain ux -n 6)",
+      "Bash(python3 skills/ui-ux-pro-max/scripts/search.py \"admin backoffice SaaS button secondary action add create\" --domain style -n 4)",
+      "Bash(python3 skills/ui-ux-pro-max/scripts/search.py \"button ghost dashed secondary action\" --domain ux -n 4)",
+      "Bash(py skills/ui-ux-pro-max/scripts/search.py \"admin backoffice SaaS button secondary action add create\" --domain style -n 4)",
+      "Bash(where python *)",
+      "Bash(where python3 *)",
+      "Bash(where py *)",
+      "Bash(git *)"
     ]
   }
 }
