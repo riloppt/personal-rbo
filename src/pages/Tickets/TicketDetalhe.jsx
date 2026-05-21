@@ -293,7 +293,7 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
       return;
     }
     const estadoAnterior = ticket.estado;
-    const estadosAvancados = ['em_curso', 'aguarda_cliente', 'concluido', 'cancelado'];
+    const estadosAvancados = ['em_curso', 'aguarda_cliente', 'concluido', 'reaberto', 'cancelado'];
     if (!estadosAvancados.includes(estadoAnterior)) {
       setTicket(t => ({ ...t, estado: 'atribuido' }));
       await sb.from('rbo_ticket_historico').insert([{
@@ -410,8 +410,9 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
   );
 
   const tid = `#${String(ticket.id).padStart(4, '0')}`;
+  const isLocked = ticket.estado === 'concluido';
   const transicoes = TRANSICOES[ticket.estado] || [];
-  const tempoEditavel = ['em_curso', 'aguarda_cliente', 'concluido'].includes(ticket.estado);
+  const tempoEditavel = ['em_curso', 'aguarda_cliente', 'reaberto'].includes(ticket.estado);
   const showTempoSection = tempoEditavel || ticket.data_inicio || ticket.data_fim;
 
   const clientesFiltrados = clientes.filter(c => {
@@ -451,7 +452,7 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
       </div>
 
       {/* ── Secção 2 — Dados de contacto ── */}
-      <SectionCard title="Dados de Contacto" sectionKey="contactos" editSection={editSection} saving={saving} onEdit={enterEdit} onCancel={cancelEdit} onSave={saveContact}>
+      <SectionCard title="Dados de Contacto" sectionKey="contactos" editSection={editSection} saving={saving} onEdit={enterEdit} onCancel={cancelEdit} onSave={saveContact} noEdit={isLocked}>
         {editSection === 'contactos' ? (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
             <Input label="Nome da Empresa"    value={contactForm.nome_empresa}      onChange={v => setContactForm(f => ({ ...f, nome_empresa: v }))}/>
@@ -471,7 +472,7 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
 
       {/* ── Secção 3 — Associações ── */}
       {saveError && <div style={{ background: '#fee', border: '1px solid #fcc', borderRadius: 8, padding: '10px 14px', marginBottom: 12, fontSize: 13, color: '#c00' }}>{saveError}</div>}
-      <SectionCard title="Associações" sectionKey="associacoes" editSection={editSection} saving={saving} onEdit={enterEdit} onCancel={cancelEdit} onSave={saveAssoc}>
+      <SectionCard title="Associações" sectionKey="associacoes" editSection={editSection} saving={saving} onEdit={enterEdit} onCancel={cancelEdit} onSave={saveAssoc} noEdit={isLocked}>
         {editSection === 'associacoes' ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {/* Client search */}
@@ -538,7 +539,7 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
               <select
                 value={ticket.tecnico_id || ''}
                 onChange={e => onTecnicoChange(e.target.value || null)}
-                disabled={tecnicoSaving || !!editSection}
+                disabled={tecnicoSaving || !!editSection || isLocked}
                 style={{ width: '100%', border: `1.5px solid ${C.grey200}`, borderRadius: 8, padding: '6px 10px', fontSize: 14, background: C.white, color: C.grey800, fontFamily: "'DM Sans',sans-serif", cursor: 'pointer', outline: 'none' }}>
                 <option value="">— Sem técnico —</option>
                 {tecnicos.map(t => <option key={t.id} value={t.id}>{t.nome}</option>)}
@@ -554,7 +555,7 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
       <div className="desc-tempo-grid" style={{ display: 'grid', gridTemplateColumns: showTempoSection ? '1fr 1fr' : '1fr', gap: 16, alignItems: 'stretch', marginBottom: 16 }}>
 
         {/* ── Secção 4 — Descrição e notas ── */}
-        <SectionCard title="Descrição e Notas" sectionKey="descricao" editSection={editSection} saving={saving} onEdit={enterEdit} onCancel={cancelEdit} onSave={saveDesc}>
+        <SectionCard title="Descrição e Notas" sectionKey="descricao" editSection={editSection} saving={saving} onEdit={enterEdit} onCancel={cancelEdit} onSave={saveDesc} noEdit={isLocked}>
           {editSection === 'descricao' ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <Input label="Descrição do Problema" value={descForm.descricao_problema} onChange={v => setDescForm(f => ({ ...f, descricao_problema: v }))} textarea rows={4}/>

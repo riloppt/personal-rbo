@@ -5,6 +5,7 @@ export const ESTADOS = [
   { id: 'em_curso',        label: 'Em Curso',         cor: '#2db87d' },
   { id: 'aguarda_cliente', label: 'Aguarda Cliente',  cor: '#e07878' },
   { id: 'concluido',       label: 'Concluído',        cor: '#4a6468' },
+  { id: 'reaberto',        label: 'Reaberto',         cor: '#e07d3c' },
   { id: 'cancelado',       label: 'Cancelado',        cor: '#e05a5a' },
 ];
 
@@ -17,6 +18,7 @@ export const TRANSICOES = {
   atribuido:       ['em_curso', 'pendente', 'cancelado'],
   em_curso:        ['aguarda_cliente', 'concluido', 'cancelado'],
   aguarda_cliente: ['em_curso', 'concluido', 'cancelado'],
-  concluido:       [],
+  concluido:       ['reaberto'],
+  reaberto:        ['em_curso', 'concluido', 'cancelado'],
   cancelado:       [],
 };
