@@ -1,5 +1,4 @@
 import { fmtDate } from '../../utils/formatters';
-import { qrUrl } from '../../utils/helpers';
 
 export const buildReportHtml = ({ mov, cliente, tipologia, tecnico, local }) => {
   const duracao = mov.hora_inicio && mov.hora_fim ? (() => {
@@ -26,8 +25,6 @@ export const buildReportHtml = ({ mov, cliente, tipologia, tecnico, local }) => 
 .desc{background:#f8fafb;border:1px solid #eef2f3;border-radius:10px;padding:16px;font-size:14px;line-height:1.7;color:#4a6468;}
 .cred-box{background:#0d5e5e;border-radius:12px;padding:20px 24px;}.cred-val{font-size:40px;font-weight:700;font-family:'DM Mono',monospace;}
 .cred-label{font-size:13px;color:#b3e0e0;margin-top:4px;}
-.qr-box{display:flex;gap:20px;align-items:center;background:#f8fafb;border-radius:12px;padding:20px 24px;border:1px solid #eef2f3;}
-.qr-info strong{font-size:14px;font-weight:600;display:block;margin-bottom:4px;}.qr-info p{font-size:13px;color:#4a6468;line-height:1.6;}
 .footer{background:#f8fafb;padding:24px 40px;border-top:1px solid #eef2f3;display:flex;justify-content:space-between;align-items:center;}
 .footer-brand{font-size:12px;color:#8fa6ab;}.footer-brand strong{color:#1e3236;display:block;font-size:13px;}
 .btn-pdf{background:#1a7a7a;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:14px;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:500;}
@@ -35,7 +32,7 @@ export const buildReportHtml = ({ mov, cliente, tipologia, tecnico, local }) => 
 @media print{.btn-pdf{display:none!important;}.page{box-shadow:none;}}
 </style></head><body><div class="page">
 <div class="header">
-  <div><div class="logo">rilop</div><div class="logo-sub">Serviços de Tecnologia de Informação</div>
+  <div><div class="logo">rilop</div><div class="logo-sub">Informática e Comunicação</div>
   <div class="client-name">${cliente?.nome||"—"}</div><span class="tag">${tipologia?.nome||"—"}</span></div>
   <div class="ref"><div class="ref-num">#${mov.id}</div><div>${fmtDate(mov.data)}</div>${mov.hora_inicio?`<div>${mov.hora_inicio}${mov.hora_fim?" → "+mov.hora_fim:""}</div>`:""}</div>
 </div>
@@ -61,15 +58,6 @@ export const buildReportHtml = ({ mov, cliente, tipologia, tecnico, local }) => 
     <div class="cred-box">
       <div class="cred-val ${mov.creditos<0?"neg":"pos"}">${mov.creditos>0?"+":""}${mov.creditos}</div>
       <div class="cred-label">créditos nesta assistência</div>
-    </div>
-  </div>
-  <div class="section"><div class="sec-title">Verificação Digital</div>
-    <div class="qr-box">
-      <img src="${qrUrl("Assistencia Rilop Ref#"+mov.id+" | "+(cliente?.nome||"")+" | "+fmtDate(mov.data)+" | "+(tecnico?.nome||""))}" width="110" height="110" alt="QR" style="border-radius:8px;border:1px solid #eef2f3;flex-shrink:0;"/>
-      <div class="qr-info"><strong>QR Code de Verificação</strong>
-        <p>Digitalize para verificar a autenticidade deste relatório e aceder à versão digital com opção de download em PDF.</p>
-        <p style="margin-top:8px;font-size:12px;color:#8fa6ab;">Ref. #${mov.id} · ${fmtDate(mov.data)} · ${cliente?.nome||""}</p>
-      </div>
     </div>
   </div>
 </div>

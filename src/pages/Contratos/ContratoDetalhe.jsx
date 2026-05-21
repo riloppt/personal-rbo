@@ -10,8 +10,7 @@ import { Table } from '../../components/ui/Table';
 import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
 import { Icon } from '../../components/ui/Icon';
-import { fmtDate, fmtDateTime } from '../../utils/formatters';
-import { qrUrl } from '../../utils/helpers';
+import { fmtDate } from '../../utils/formatters';
 import { buildReportHtml } from '../../features/email/reportHtml';
 import { EmailReportBtn } from '../../features/email/EmailReportBtn';
 
@@ -25,7 +24,6 @@ export const ContratoDetalhe = ({ contrato, onBack, onDelete }) => {
   const [equipamentos, setEquipamentos] = useState([]);
   const [loading,    setLoading]    = useState(true);
   const [modal,      setModal]      = useState(null);
-  const [previewMov, setPreviewMov] = useState(null);
   const [saving,     setSaving]     = useState(false);
   const [editingId,  setEditingId]  = useState(null);
   const emptyMov = {data:new Date().toISOString().split("T")[0],hora_inicio:"",hora_fim:"",creditos:"",descritivo:"",profile_tecnico_id:"",local_id:"",equipment_id:"",tipo:"assistencia"};
@@ -150,12 +148,11 @@ export const ContratoDetalhe = ({ contrato, onBack, onDelete }) => {
           onDelete={delMov}
           extraActions={row=>row.tipo==="assistencia"?(
             <>
-              <button onClick={()=>setPreviewMov(row)} title="Pré-visualizar relatório"
-                style={{background:"none",border:"none",cursor:"pointer",padding:"4px 6px",borderRadius:6,display:"flex",alignItems:"center",transition:"background .15s"}}
-                onMouseEnter={e=>e.currentTarget.style.background=C.grey100}
-                onMouseLeave={e=>e.currentTarget.style.background="none"}>
-                <Icon name="qr" size={15} color={C.grey600}/>
-              </button>
+              <Btn size="sm" icon="eye" variant="secondary" onClick={()=>{
+                const { cliente: cl, tipologia: tip, tecnico, local } = lookup(row);
+                const html = buildReportHtml({ mov: row, cliente: cl, tipologia: tip, tecnico, local });
+                window.open(URL.createObjectURL(new Blob([html], { type: 'text/html' })), '_blank');
+              }}>Abrir Relatório</Btn>
               <EmailReportBtn mov={row} lookup={lookup} onSent={onSent}/>
             </>
           ):null}
@@ -184,34 +181,6 @@ export const ContratoDetalhe = ({ contrato, onBack, onDelete }) => {
         </Modal>
       )}
 
-      {previewMov&&(()=>{
-        const tec = previewMov.profile_tecnico_id?tecnicos.find(t=>t.id===previewMov.profile_tecnico_id):null;
-        const loc = previewMov.local_id  ?locais.find(l=>l.id===previewMov.local_id)   :null;
-        const html = buildReportHtml({mov:previewMov,cliente,tipologia,tecnico:tec,local:loc});
-        const blobUrl = URL.createObjectURL(new Blob([html],{type:"text/html"}));
-        return (
-          <Modal title={`Relatório #${previewMov.id} — ${fmtDate(previewMov.data)}`} onClose={()=>setPreviewMov(null)} wide>
-            <div style={{display:"flex",gap:10,marginBottom:20,flexWrap:"wrap"}}>
-              <Btn icon="eye"      onClick={()=>window.open(blobUrl,"_blank")}>Abrir relatório</Btn>
-              <Btn icon="download" variant="secondary" onClick={()=>{ const a=document.createElement("a");a.href=blobUrl;a.download=`relatorio_${previewMov.id}_${previewMov.data}.html`;a.click(); }}>Download HTML</Btn>
-              <EmailReportBtn mov={previewMov} lookup={lookup} onSent={async id=>{ await onSent(id); setPreviewMov(p=>({...p,relatorio_enviado_em:new Date().toISOString()})); }}/>
-            </div>
-            <div style={{background:C.grey50,borderRadius:12,padding:20,display:"flex",gap:20,alignItems:"center",border:`1px solid ${C.grey100}`,flexWrap:"wrap"}}>
-              <img src={qrUrl("Assistencia Rilop Ref#"+previewMov.id+" | "+(cliente?.nome||"")+" | "+fmtDate(previewMov.data))} width={120} height={120} alt="QR" style={{borderRadius:8,border:`1px solid ${C.grey200}`,flexShrink:0}}/>
-              <div>
-                <div style={{fontWeight:600,fontSize:15,marginBottom:6,color:C.grey800}}>QR Code de Verificação</div>
-                <div style={{fontSize:13,color:C.grey600,lineHeight:1.6}}>Incluído no relatório. Ao digitalizar, o cliente pode verificar a autenticidade e descarregar o PDF.</div>
-                <div style={{marginTop:10,display:"flex",gap:6,flexWrap:"wrap"}}>
-                  <Badge color={C.teal}>#{previewMov.id}</Badge>
-                  <Badge color={C.grey400}>{fmtDate(previewMov.data)}</Badge>
-                  <Badge color={previewMov.creditos<0?C.red:C.green}>{previewMov.creditos>0?"+":""}{previewMov.creditos} cr</Badge>
-                  {previewMov.relatorio_enviado_em&&<Badge color={C.green}>✓ Enviado {fmtDateTime(previewMov.relatorio_enviado_em)}</Badge>}
-                </div>
-              </div>
-            </div>
-          </Modal>
-        );
-      })()}
     </div>
   );
 };

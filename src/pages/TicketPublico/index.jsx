@@ -6,6 +6,15 @@ const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY;
 // Define at module scope so it exists before the Turnstile script fires its onload
 window.__rboTsReady = () => {};
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const maskTelefone = (raw) => {
+  const digits = raw.replace(/\D/g, '').slice(0, 9);
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 6) return `${digits.slice(0, 3)} ${digits.slice(3)}`;
+  return `${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6)}`;
+};
+
 const T = {
   teal:   '#1a7a7a', tealD:  '#0d5e5e', tealL:  '#2a9b9b',
   tealXL: '#e6f5f5', tealXXL:'#f0f9f9',
@@ -123,7 +132,7 @@ function SectionBadge({ n, label }) {
   );
 }
 
-function Field({ label, value, onChange, type='text', required, textarea, error, placeholder }) {
+function Field({ label, value, onChange, onBlur, type='text', required, textarea, error, placeholder }) {
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
       <label style={{ fontSize:12, fontWeight:600, color:T.grey600, textTransform:'uppercase', letterSpacing:'.5px' }}>
@@ -134,12 +143,14 @@ function Field({ label, value, onChange, type='text', required, textarea, error,
         ? <textarea
             value={value} rows={5} placeholder={placeholder}
             onChange={e => onChange(e.target.value)}
+            onBlur={onBlur}
             className={`pub-input${error ? ' err' : ''}`}
             style={{ resize:'vertical', minHeight:120 }}
           />
         : <input
             type={type} value={value} placeholder={placeholder}
             onChange={e => onChange(e.target.value)}
+            onBlur={onBlur}
             className={`pub-input${error ? ' err' : ''}`}
           />
       }
@@ -201,13 +212,23 @@ export default function TicketPublico() {
 
   const set = k => v => setForm(f => ({ ...f, [k]: v }));
 
+  const handleEmailBlur = () => {
+    const val = form.email_cliente.trim();
+    if (!val) return;
+    if (!EMAIL_RE.test(val)) {
+      setErrors(prev => ({ ...prev, email_cliente: 'Email inválido' }));
+    } else {
+      setErrors(prev => { const { email_cliente, ...rest } = prev; return rest; });
+    }
+  };
+
   const validate = () => {
     const e = {};
-    if (!form.nome_empresa.trim())        e.nome_empresa = 'Campo obrigatório';
-    if (!form.nome_pessoa.trim())         e.nome_pessoa = 'Campo obrigatório';
-    if (!form.email_cliente.trim())       e.email_cliente = 'Campo obrigatório';
-    if (!form.telefone_cliente.trim())    e.telefone_cliente = 'Campo obrigatório';
-    if (!form.descricao_problema.trim())  e.descricao_problema = 'Campo obrigatório';
+    if (!form.nome_empresa.trim())       e.nome_empresa = 'Campo obrigatório';
+    if (!form.nome_pessoa.trim())        e.nome_pessoa = 'Campo obrigatório';
+    if (!form.email_cliente.trim())      e.email_cliente = 'Campo obrigatório';
+    else if (!EMAIL_RE.test(form.email_cliente.trim())) e.email_cliente = 'Email inválido';
+    if (!form.descricao_problema.trim()) e.descricao_problema = 'Campo obrigatório';
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -425,9 +446,11 @@ export default function TicketPublico() {
                   <Field label="Pessoa de Contacto" value={form.nome_pessoa} onChange={set('nome_pessoa')}
                     required error={errors.nome_pessoa} placeholder="O seu nome"/>
                   <Field label="Email" value={form.email_cliente} onChange={set('email_cliente')}
+                    onBlur={handleEmailBlur}
                     type="email" required error={errors.email_cliente} placeholder="email@empresa.pt"/>
-                  <Field label="Telefone" value={form.telefone_cliente} onChange={set('telefone_cliente')}
-                    required error={errors.telefone_cliente} placeholder="XXX XXX XXX"/>
+                  <Field label="Telefone" value={form.telefone_cliente}
+                    onChange={v => setForm(f => ({ ...f, telefone_cliente: maskTelefone(v) }))}
+                    placeholder="XXX XXX XXX"/>
                 </div>
               </div>
 
