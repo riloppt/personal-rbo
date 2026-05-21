@@ -141,7 +141,7 @@ serve(async (req) => {
             ticket.created_at,
           ),
         }),
-      }).catch(() => {});
+      }).then(r => r.json()).then(d => console.log('[email] resend response:', JSON.stringify(d))).catch(e => console.error('[email] fetch error:', e));
     }
 
     return new Response(JSON.stringify({ id: ticket.id }), {

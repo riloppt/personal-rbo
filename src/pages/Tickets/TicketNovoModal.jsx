@@ -190,7 +190,7 @@ export const TicketNovoModal = ({ onClose, onCreated, currentUserId }) => {
         created_at: ticket.created_at,
         tipo: 'manual',
       }),
-    }).catch(() => {});
+    }).catch(e => console.error('[email] novo ticket:', e?.message || e));
     setSaving(false);
     onCreated?.();
   };
