@@ -124,8 +124,8 @@ export const Tickets = ({ currentUserId }) => {
                     { label: 'Empresa / Pessoa', sk: 'empresa' },
                     { label: 'Equipamento',    sk: null },
                     { label: 'Técnico',        sk: 'tecnico' },
-                    { label: 'Estado',         sk: 'estado' },
                     { label: 'Criado em',      sk: 'created_at' },
+                    { label: 'Estado',         sk: 'estado' },
                   ].map(({ label, sk }) => {
                     const isActive = sk && sortKey === sk;
                     return (
@@ -207,13 +207,13 @@ export const Tickets = ({ currentUserId }) => {
                           : <span style={{ color: C.amber, fontSize: 12 }}>Sem técnico</span>
                         }
                       </td>
-                      {/* Estado */}
-                      <td style={{ padding: '13px 16px' }}>
-                        <Badge color={estadoCor(t.estado)}>{estadoLabel(t.estado)}</Badge>
-                      </td>
                       {/* Criado em */}
                       <td style={{ padding: '13px 16px', color: C.grey400, fontSize: 12, whiteSpace: 'nowrap' }}>
                         {fmtDate(t.created_at?.split('T')[0])}
+                      </td>
+                      {/* Estado */}
+                      <td style={{ padding: '13px 16px' }}>
+                        <Badge color={estadoCor(t.estado)}>{estadoLabel(t.estado)}</Badge>
                       </td>
                       {/* Ação */}
                       <td style={{ padding: '8px 16px' }}>
