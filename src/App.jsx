@@ -12,6 +12,7 @@ import { Contratos } from './pages/Contratos';
 import { ClientesPage } from './pages/Clientes';
 import { Definicoes } from './pages/Definicoes';
 import { Tickets } from './pages/Tickets';
+import { Equipamentos } from './pages/Equipamentos';
 
 const checkMobile = () => {
   const w = window.visualViewport?.width ?? window.innerWidth;
@@ -21,8 +22,9 @@ const checkMobile = () => {
 export const navItems = [
   { id: 'dashboard',  label: 'Dashboard',  icon: 'dashboard'  },
   { id: 'clientes',   label: 'Clientes',   icon: 'clients'    },
-  { id: 'contratos',  label: 'Contratos',  icon: 'contracts'  },
-  { id: 'tickets',    label: 'Tickets',    icon: 'wrench'     },
+  { id: 'contratos',    label: 'Contratos',    icon: 'contracts' },
+  { id: 'equipamentos', label: 'Equipamentos', icon: 'cpu'       },
+  { id: 'tickets',      label: 'Tickets',      icon: 'wrench'    },
   { id: 'definicoes', label: 'Definições', icon: 'settings'   },
 ];
 
@@ -107,6 +109,7 @@ export default function App() {
     dashboard:  <Dashboard/>,
     contratos:  <Contratos/>,
     clientes:   <ClientesPage/>,
+    equipamentos: <Equipamentos navigate={navigate}/>,
     tickets:    <Tickets currentUserId={currentUserId}/>,
     definicoes: <Definicoes currentUserId={currentUserId}/>,
   };
