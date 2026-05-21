@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { sb } from './lib/supabase';
-import { ThemeCtx, LIGHT, DARK } from './theme';
+import { ThemeCtx, buildTheme } from './theme';
 import { getGlobalStyle } from './theme/globalStyle';
 import { Sidebar } from './components/layout/Sidebar';
 import { BottomNav } from './components/layout/BottomNav';
@@ -32,20 +32,24 @@ export default function App() {
   const [page,        setPage]        = useState("dashboard");
   const [sideOpen,    setSideOpen]    = useState(false);
   const [darkMode,    setDarkMode]    = useState(true); // default até o perfil carregar
+  const [accent,      setAccent]      = useState('teal');
   const [isMobile,    setIsMobile]    = useState(checkMobile);
   const [session,     setSession]     = useState(null);
   const [profile,     setProfile]     = useState(null);   // rbo_profiles row
   const [authLoading, setAuthLoading] = useState(true);
   const initialLoadDone = useRef(false);
 
-  const theme = darkMode ? DARK : LIGHT;
+  const theme = buildTheme(accent, darkMode);
 
   // ── Auth ──────────────────────────────────────────────────────────────────
   const loadProfile = useCallback(async (userId) => {
     if (!initialLoadDone.current) setAuthLoading(true);
     const { data } = await sb.from("rbo_profiles").select("*").eq("id", userId).single();
     setProfile(data || null);
-    if (data) setDarkMode(data.dark_mode ?? true);
+    if (data) {
+      setDarkMode(data.dark_mode ?? true);
+      setAccent(data.accent || 'teal');
+    }
     setAuthLoading(false);
     initialLoadDone.current = true;
   }, []);
@@ -105,13 +109,20 @@ export default function App() {
     }
   };
 
+  const changeAccent = async (newAccent) => {
+    setAccent(newAccent);
+    if (currentUserId) {
+      await sb.from("rbo_profiles").update({ accent: newAccent }).eq("id", currentUserId);
+    }
+  };
+
   const pages = {
     dashboard:  <Dashboard/>,
     contratos:  <Contratos/>,
     clientes:   <ClientesPage/>,
     equipamentos: <Equipamentos navigate={navigate}/>,
     tickets:    <Tickets currentUserId={currentUserId}/>,
-    definicoes: <Definicoes currentUserId={currentUserId}/>,
+    definicoes: <Definicoes currentUserId={currentUserId} accent={accent} onAccentChange={changeAccent}/>,
   };
 
   // Auth guards
@@ -149,16 +160,16 @@ export default function App() {
         <div style={{flex:1,display:"flex",flexDirection:"column",minWidth:0}}>
           {/* Mobile: top bar simples com título da página */}
           {isMobile && (
-            <div style={{position:"sticky",top:0,background:"#0d5e5e",padding:"0 16px",height:52,display:"flex",alignItems:"center",justifyContent:"space-between",zIndex:50,flexShrink:0}}>
+            <div style={{position:"sticky",top:0,background:theme.tealD,padding:"0 16px",height:52,display:"flex",alignItems:"center",justifyContent:"space-between",zIndex:50,flexShrink:0}}>
               <div style={{display:"flex",alignItems:"center",gap:10}}>
                 <div style={{width:28,height:28,borderRadius:8,background:"#ffffff",display:"flex",alignItems:"center",justifyContent:"center"}}>
                   <svg width="16" height="16" viewBox="0 0 50 50" fill="none">
-                    <path d="M8 42 C8 42 8 8 8 8 C8 4 12 4 12 4 C12 4 28 4 28 4 C42 4 42 18 34 22 C42 26 44 42 30 42 Z" fill="#0d5e5e"/>
+                    <path d="M8 42 C8 42 8 8 8 8 C8 4 12 4 12 4 C12 4 28 4 28 4 C42 4 42 18 34 22 C42 26 44 42 30 42 Z" fill={theme.tealD}/>
                   </svg>
                 </div>
                 <span style={{color:"#ffffff",fontWeight:700,fontSize:15}}>RBO</span>
               </div>
-              <span style={{color:"#7abfbf",fontSize:13,fontWeight:500}}>
+              <span style={{color:theme.sidebarFg,fontSize:13,fontWeight:500}}>
                 {navItems.find(n=>n.id===page)?.label||""}
               </span>
             </div>

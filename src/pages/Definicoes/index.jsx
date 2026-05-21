@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { useTheme } from '../../theme';
+import { ACCENTS } from '../../theme';
 import { sb } from '../../lib/supabase';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Icon } from '../../components/ui/Icon';
+import { Card } from '../../components/ui/Card';
 import { DefinicaoPanel } from './DefinicaoPanel';
 import { UtilizadoresPanel } from './UtilizadoresPanel';
 
@@ -36,11 +38,47 @@ const checkTipoEquipamento = async id => {
     : null;
 };
 
-export const Definicoes = ({ currentUserId }) => {
+const GeraisPanel = ({ accent, onAccentChange }) => {
   const C = useTheme();
-  const [tab, setTab] = useState('tipologias');
+  return (
+    <Card style={{ padding: '24px' }}>
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ fontSize: 14, fontWeight: 600, color: C.grey800, marginBottom: 4 }}>Cor de destaque</div>
+        <div style={{ fontSize: 13, color: C.grey400 }}>Afeta a sidebar, botões e elementos de destaque da aplicação.</div>
+      </div>
+      <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+        {ACCENTS.map(a => {
+          const active = accent === a.id;
+          return (
+            <button key={a.id} onClick={() => onAccentChange(a.id)}
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+              <div style={{
+                width: 44, height: 44, borderRadius: '50%', background: a.color,
+                boxShadow: active ? `0 0 0 3px ${C.white}, 0 0 0 5px ${a.color}` : '0 2px 6px rgba(0,0,0,0.18)',
+                transition: 'box-shadow .15s',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                {active && (
+                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                    <path d="M4 9l4 4 6-7" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                )}
+              </div>
+              <span style={{ fontSize: 12, color: active ? C.teal : C.grey600, fontWeight: active ? 600 : 400 }}>{a.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    </Card>
+  );
+};
+
+export const Definicoes = ({ currentUserId, accent, onAccentChange }) => {
+  const C = useTheme();
+  const [tab, setTab] = useState('gerais');
 
   const tabs = [
+    { id: 'gerais',       label: 'Gerais',               icon: 'settings'  },
     { id: 'tipologias',   label: 'Tipologias',            icon: 'types'     },
     { id: 'locais',       label: 'Locais de Assistência', icon: 'locations' },
     { id: 'categorias',   label: 'Categorias',            icon: 'key'       },
@@ -64,11 +102,12 @@ export const Definicoes = ({ currentUserId }) => {
         })}
       </div>
 
-      {tab === 'tipologias'   && <DefinicaoPanel tabela="rbo_tipologias"            nomeLabel="Nome"  verificarUso={checkTipologia}/>}
-      {tab === 'locais'       && <DefinicaoPanel tabela="rbo_locais"                nomeLabel="Local" verificarUso={checkLocal}/>}
-      {tab === 'categorias'   && <DefinicaoPanel tabela="rbo_credential_categories" nomeLabel="Nome"  verificarUso={checkCategoria}/>}
-      {tab === 'equipamentos' && <DefinicaoPanel tabela="rbo_equipment_types"       nomeLabel="Tipo"  verificarUso={checkTipoEquipamento}/>}
-      {tab === 'utilizadores' && <UtilizadoresPanel currentUserId={currentUserId}/>}
+      {tab === 'gerais'      && <GeraisPanel accent={accent} onAccentChange={onAccentChange}/>}
+      {tab === 'tipologias'  && <DefinicaoPanel tabela="rbo_tipologias"            nomeLabel="Nome"  verificarUso={checkTipologia}/>}
+      {tab === 'locais'      && <DefinicaoPanel tabela="rbo_locais"                nomeLabel="Local" verificarUso={checkLocal}/>}
+      {tab === 'categorias'  && <DefinicaoPanel tabela="rbo_credential_categories" nomeLabel="Nome"  verificarUso={checkCategoria}/>}
+      {tab === 'equipamentos'&& <DefinicaoPanel tabela="rbo_equipment_types"       nomeLabel="Tipo"  verificarUso={checkTipoEquipamento}/>}
+      {tab === 'utilizadores'&& <UtilizadoresPanel currentUserId={currentUserId}/>}
     </div>
   );
 };
