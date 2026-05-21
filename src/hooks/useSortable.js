@@ -1,16 +1,16 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useReducer, useMemo, useCallback } from 'react';
+
+function sortReducer(state, key) {
+  if (state.sortKey === key) {
+    return { sortKey: key, sortDir: state.sortDir === 'asc' ? 'desc' : 'asc' };
+  }
+  return { sortKey: key, sortDir: 'asc' };
+}
 
 export function useSortable(data, getVal) {
-  const [sortKey, setSortKey] = useState(null);
-  const [sortDir, setSortDir] = useState('asc');
+  const [{ sortKey, sortDir }, dispatch] = useReducer(sortReducer, { sortKey: null, sortDir: 'asc' });
 
-  const toggleSort = useCallback((key) => {
-    setSortKey(prev => {
-      if (prev !== key) { setSortDir('asc'); return key; }
-      setSortDir(d => d === 'asc' ? 'desc' : 'asc');
-      return key;
-    });
-  }, []);
+  const toggleSort = useCallback((key) => dispatch(key), []);
 
   const sorted = useMemo(() => {
     if (!sortKey) return data;
