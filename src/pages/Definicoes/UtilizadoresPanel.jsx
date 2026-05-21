@@ -75,9 +75,9 @@ export const UtilizadoresPanel = ({ currentUserId }) => {
     setUploading(true);
     const ext = file.name.split('.').pop().toLowerCase();
     const path = `${form.id}.${ext}`;
-    const { error: upErr } = await sb.storage.from('avatars').upload(path, file, { upsert: true, contentType: file.type });
+    const { error: upErr } = await sb.storage.from('photos').upload(path, file, { upsert: true, contentType: file.type });
     if (upErr) { setErrMsg('Erro ao carregar foto: ' + upErr.message); setUploading(false); return; }
-    const { data: { publicUrl } } = sb.storage.from('avatars').getPublicUrl(path);
+    const { data: { publicUrl } } = sb.storage.from('photos').getPublicUrl(path);
     setForm(f => ({ ...f, avatar_url: `${publicUrl}?t=${Date.now()}` }));
     setUploading(false);
   };
