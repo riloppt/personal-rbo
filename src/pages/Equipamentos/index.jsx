@@ -41,14 +41,6 @@ export const Equipamentos = ({ navigate }) => {
 
   useEffect(() => { load(); }, [load]);
 
-  if (detalhe) return (
-    <EquipamentoDetalhe
-      equipamentoId={detalhe}
-      onBack={() => setDetalhe(null)}
-      navigate={navigate}
-    />
-  );
-
   const filtered = rows.filter(r => {
     if (filterEstado === 'ativo' && r.ativo === false) return false;
     if (filterEstado === 'inativo' && r.ativo !== false) return false;
@@ -65,6 +57,14 @@ export const Equipamentos = ({ navigate }) => {
   });
 
   const { sorted, sortKey, sortDir, toggleSort } = useSortable(filtered, getVal);
+
+  if (detalhe) return (
+    <EquipamentoDetalhe
+      equipamentoId={detalhe}
+      onBack={() => setDetalhe(null)}
+      navigate={navigate}
+    />
+  );
 
   const inputStyle = {
     border: `1.5px solid ${C.grey200}`,
