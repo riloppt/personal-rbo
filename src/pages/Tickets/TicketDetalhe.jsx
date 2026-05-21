@@ -9,7 +9,7 @@ import { Select } from '../../components/ui/Select';
 import { Modal } from '../../components/ui/Modal';
 import { Loading } from '../../components/ui/Loading';
 import { fmtDate, fmtDateTime } from '../../utils/formatters';
-import { estadoLabel, estadoCor, TRANSICOES } from './helpers';
+import { estadoLabel, estadoCor, TRANSICOES, transicaoLabel } from './helpers';
 
 // ── Pure helpers ──────────────────────────────────────────────────────────────
 
@@ -685,7 +685,7 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
                     style={{ background: estadoCor(id) + '18', color: estadoCor(id), border: `1.5px solid ${estadoCor(id)}55`, borderRadius: 8, padding: '8px 18px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
                     onMouseEnter={e => e.currentTarget.style.background = estadoCor(id) + '30'}
                     onMouseLeave={e => e.currentTarget.style.background = estadoCor(id) + '18'}>
-                    → {estadoLabel(id)}
+                    → {transicaoLabel(id)}
                   </button>
                 ))}
               </div>

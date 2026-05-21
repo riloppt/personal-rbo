@@ -12,6 +12,14 @@ export const ESTADOS = [
 export const estadoLabel = id => ESTADOS.find(e => e.id === id)?.label || id;
 export const estadoCor   = id => ESTADOS.find(e => e.id === id)?.cor   || '#8fa6ab';
 
+const TRANSICAO_LABELS = {
+  atribuido: 'Atribuir',
+  concluido: 'Concluir',
+  reaberto:  'Reabrir',
+  cancelado: 'Cancelar',
+};
+export const transicaoLabel = id => TRANSICAO_LABELS[id] || estadoLabel(id);
+
 export const TRANSICOES = {
   submetido:       ['pendente', 'cancelado'],
   pendente:        ['atribuido', 'cancelado'],
