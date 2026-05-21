@@ -23,6 +23,10 @@ export const Tickets = ({ currentUserId }) => {
   const [search,        setSearch]        = useState('');
   const [filterEstado,  setFilterEstado]  = useState('');
   const [filterTecnico, setFilterTecnico] = useState('');
+  const [hideClosed,    setHideClosed]    = useState(() => {
+    const stored = localStorage.getItem('rbo_tickets_hide_closed');
+    return stored === null ? true : stored === 'true';
+  });
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -39,7 +43,10 @@ export const Tickets = ({ currentUserId }) => {
 
   useEffect(() => { load(); }, [load]);
 
+  const CLOSED_STATES = ['concluido', 'cancelado'];
+
   const filtered = tickets.filter(t => {
+    if (hideClosed && !filterEstado && CLOSED_STATES.includes(t.estado)) return false;
     if (filterEstado && t.estado !== filterEstado) return false;
     if (filterTecnico && t.tecnico_id !== filterTecnico) return false;
     if (search) {
@@ -49,6 +56,14 @@ export const Tickets = ({ currentUserId }) => {
     }
     return true;
   });
+
+  const toggleHideClosed = () => {
+    setHideClosed(v => {
+      const next = !v;
+      localStorage.setItem('rbo_tickets_hide_closed', String(next));
+      return next;
+    });
+  };
 
   const getTicketsVal = useCallback((key, row) => {
     if (key === 'empresa')    return row.nome_empresa || row.cliente?.nome || '';
@@ -80,7 +95,7 @@ export const Tickets = ({ currentUserId }) => {
         title="Tickets"
         subtitle={
           <span>
-            {tickets.length} tickets
+            {filtered.length}{hideClosed && !filterEstado ? ` de ${tickets.length}` : ''} tickets
             {submCount > 0 && (
               <span style={{ marginLeft: 10, background: '#e8a83a22', color: '#e8a83a', border: '1px solid #e8a83a44', borderRadius: 20, padding: '1px 8px', fontSize: 11, fontWeight: 700 }}>
                 {submCount} a aguardar triagem
@@ -109,6 +124,24 @@ export const Tickets = ({ currentUserId }) => {
             <option value="">Todos os técnicos</option>
             {tecnicos.map(t => <option key={t.id} value={t.id}>{t.nome}</option>)}
           </select>
+          <button
+            onClick={toggleHideClosed}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              border: `1.5px solid ${hideClosed ? C.teal : C.grey200}`,
+              borderRadius: 20, padding: '6px 12px', fontSize: 12, fontWeight: 600,
+              background: hideClosed ? `${C.teal}18` : C.white,
+              color: hideClosed ? C.teal : C.grey400,
+              cursor: 'pointer', transition: 'all .15s', fontFamily: 'inherit', whiteSpace: 'nowrap',
+            }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              {hideClosed
+                ? <><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></>
+                : <><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></>
+              }
+            </svg>
+            {hideClosed ? 'Concluídos ocultos' : 'Mostrar todos'}
+          </button>
         </div>
 
         {loading ? <Loading/> : (
