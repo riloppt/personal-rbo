@@ -11,6 +11,7 @@ import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
 import { Icon } from '../../components/ui/Icon';
 import { fmtDate } from '../../utils/formatters';
+import { useSortable } from '../../hooks/useSortable';
 import { buildReportHtml } from '../../features/email/reportHtml';
 import { EmailReportBtn } from '../../features/email/EmailReportBtn';
 
@@ -93,6 +94,14 @@ export const ContratoDetalhe = ({ contrato, onBack, onDelete }) => {
     local:   mov.local_id  ?locais.find(l=>l.id===mov.local_id)    :null,
   });
 
+  const getMovVal = useCallback((key, row) => {
+    if (key === 'tecnico') return tecnicos.find(t=>t.id===row.profile_tecnico_id)?.nome ?? '';
+    if (key === 'local')   return locais.find(l=>l.id===row.local_id)?.nome ?? '';
+    return row[key] ?? '';
+  }, [tecnicos, locais]);
+
+  const { sorted: sortedMovimentos, sortKey, sortDir, toggleSort } = useSortable(movimentos, getMovVal);
+
   const F = ({ k, label, type }) => <Input label={label} value={form[k]!==undefined?String(form[k]):""} onChange={v=>setForm(f=>({...f,[k]:v}))} type={type}/>;
 
   if (loading) return <><button onClick={onBack} style={{background:"none",border:"none",cursor:"pointer",color:C.teal,fontSize:14,marginBottom:20}}>← Voltar</button><Loading/></>;
@@ -133,17 +142,20 @@ export const ContratoDetalhe = ({ contrato, onBack, onDelete }) => {
         </div>
         <Table
           cols={[
-            {key:"data",        label:"Data",       render:v=>fmtDate(v)},
-            {key:"tipo",        label:"Tipo",       render:v=><Badge color={v==="credito"?C.green:C.teal}>{v==="credito"?"Crédito":"Assistência"}</Badge>},
-            {key:"hora_inicio", label:"Início",     render:v=>v||"—"},
-            {key:"hora_fim",    label:"Fim",        render:v=>v||"—"},
-            {key:"creditos",    label:"Créditos",   render:v=><span style={{color:v>0?C.green:C.red,fontWeight:600,fontFamily:"'DM Mono',monospace"}}>{v>0?"+":""}{v}</span>},
+            {key:"data",        label:"Data",       sortable:true, render:v=>fmtDate(v)},
+            {key:"tipo",        label:"Tipo",       sortable:true, render:v=><Badge color={v==="credito"?C.green:C.teal}>{v==="credito"?"Crédito":"Assistência"}</Badge>},
+            {key:"hora_inicio", label:"Início",     render:v=>v?v.slice(0,5):"—"},
+            {key:"hora_fim",    label:"Fim",        render:v=>v?v.slice(0,5):"—"},
+            {key:"creditos",    label:"Créditos",   sortable:true, render:v=><span style={{color:v>0?C.green:C.red,fontWeight:600,fontFamily:"'DM Mono',monospace"}}>{v>0?"+":""}{v}</span>},
             {key:"descritivo",  label:"Descritivo", render:v=><span style={{color:C.grey600,fontSize:13}}>{v}</span>},
-            {key:"profile_tecnico_id", label:"Técnico", render:v=>v?tecnicos.find(t=>t.id===v)?.nome:"—"},
-            {key:"local_id",    label:"Local",      render:v=>v?locais.find(l=>l.id===v)?.nome:"—"},
+            {key:"profile_tecnico_id", label:"Técnico", sortable:true, sortKey:"tecnico", render:v=>v?tecnicos.find(t=>t.id===v)?.nome:"—"},
+            {key:"local_id",    label:"Local",      sortable:true, sortKey:"local",   render:v=>v?locais.find(l=>l.id===v)?.nome:"—"},
             {key:"equipment_id",label:"Equipamento",render:v=>v?equipamentos.find(e=>e.id===v)?.descricao||"—":"—"},
           ]}
-          data={movimentos}
+          data={sortedMovimentos}
+          sortKey={sortKey}
+          sortDir={sortDir}
+          onSort={toggleSort}
           onEdit={openEdit}
           onDelete={delMov}
           extraActions={row=>row.tipo==="assistencia"?(
