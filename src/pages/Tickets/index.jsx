@@ -147,19 +147,19 @@ export const Tickets = ({ currentUserId }) => {
         {loading ? <Loading/> : (
           <div style={{ overflowX: 'auto' }}>
             <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}`}</style>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14, tableLayout: 'fixed' }}>
               <thead>
                 <tr style={{ borderBottom: `2px solid ${C.grey100}` }}>
                   {/* indicator dot — not sortable */}
-                  <th style={{ padding: '12px 16px', width: 20, background: C.white }}/>
+                  <th style={{ padding: '12px 16px', width: 28, background: C.white }}/>
                   {[
-                    { label: '#ID',            sk: 'id' },
-                    { label: 'Empresa / Pessoa', sk: 'empresa' },
-                    { label: 'Equipamento',    sk: null },
-                    { label: 'Técnico',        sk: 'tecnico' },
-                    { label: 'Criado em',      sk: 'created_at' },
-                    { label: 'Estado',         sk: 'estado' },
-                  ].map(({ label, sk }) => {
+                    { label: '#ID',             sk: 'id',         w: 72  },
+                    { label: 'Empresa / Pessoa', sk: 'empresa',    w: null },
+                    { label: 'Equipamento',      sk: null,         w: 180 },
+                    { label: 'Técnico',          sk: 'tecnico',    w: 140 },
+                    { label: 'Criado em',        sk: 'created_at', w: 110 },
+                    { label: 'Estado',           sk: 'estado',     w: 130 },
+                  ].map(({ label, sk, w }) => {
                     const isActive = sk && sortKey === sk;
                     return (
                       <th key={label}
@@ -167,6 +167,7 @@ export const Tickets = ({ currentUserId }) => {
                         style={{
                           padding: '12px 16px', textAlign: 'left', fontSize: 12, fontWeight: 600,
                           textTransform: 'uppercase', letterSpacing: '.5px', whiteSpace: 'nowrap',
+                          width: w || undefined,
                           color: isActive ? C.teal : C.grey400,
                           background: C.white,
                           cursor: sk ? 'pointer' : 'default',
