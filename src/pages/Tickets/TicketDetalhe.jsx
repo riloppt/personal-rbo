@@ -348,7 +348,8 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
   };
 
   const doAlterarEstado = async (estado, nota, descontar, creditos) => {
-    await sb.from('rbo_tickets').update({ estado }).eq('id', ticket.id);
+    const { error: updErr } = await sb.from('rbo_tickets').update({ estado }).eq('id', ticket.id);
+    if (updErr) { setSaveError('Erro ao atualizar estado: ' + updErr.message); setSaving(false); return; }
     await sb.from('rbo_ticket_historico').insert([{ ticket_id: ticket.id, estado_anterior: ticket.estado, estado_novo: estado, alterado_por_id: currentUserId || null, nota: nota || null }]);
     if (descontar && ticket.contrato_id) {
       const { data: localRilop } = await sb.from('rbo_locais').select('id').ilike('nome', '%rilop%').single();
