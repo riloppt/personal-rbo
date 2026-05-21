@@ -106,7 +106,7 @@ export const ClientesPage = () => {
         <Modal title="Novo cliente" onClose={()=>setNewModal(false)} wide>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
             <div style={{gridColumn:"1/-1"}}>
-              <Input label="Nome da Empresa" value={newForm.nome} onChange={v=>setNewForm(f=>({...f,nome:v}))} required/>
+              <Input label="Nome / Empresa" value={newForm.nome} onChange={v=>setNewForm(f=>({...f,nome:v}))} required/>
             </div>
             <div style={{gridColumn:"1/-1"}}>
               <Select label="Técnico" value={newForm.tecnico_id} onChange={v=>setNewForm(f=>({...f,tecnico_id:v}))} options={tecnicoOpts}/>
@@ -123,10 +123,10 @@ export const ClientesPage = () => {
             <Input label={newForm.consumidor_final ? "NIF (opcional)" : "NIF"} value={newForm.nif} onChange={v=>setNewForm(f=>({...f,nif:maskNif(v)}))} placeholder="XXX XXX XXX" required={!newForm.consumidor_final}/>
             <div/>
             <div style={{gridColumn:"1/-1"}}>
-              <Input label="Morada" value={newForm.morada} onChange={v=>setNewForm(f=>({...f,morada:v}))} required={!newForm.consumidor_final}/>
+              <Input label={newForm.consumidor_final ? "Morada (opcional)" : "Morada"} value={newForm.morada} onChange={v=>setNewForm(f=>({...f,morada:v}))} required={!newForm.consumidor_final}/>
             </div>
-            <Input label="Código Postal" value={newForm.cp}        onChange={v=>setNewForm(f=>({...f,cp:maskCP(v)}))}       placeholder="0000-000" required={!newForm.consumidor_final}/>
-            <Input label="Localidade"    value={newForm.localidade} onChange={v=>setNewForm(f=>({...f,localidade:v}))}       required={!newForm.consumidor_final}/>
+            <Input label={newForm.consumidor_final ? "Código Postal (opcional)" : "Código Postal"} value={newForm.cp}        onChange={v=>setNewForm(f=>({...f,cp:maskCP(v)}))}       placeholder="0000-000" required={!newForm.consumidor_final}/>
+            <Input label={newForm.consumidor_final ? "Localidade (opcional)"   : "Localidade"}    value={newForm.localidade} onChange={v=>setNewForm(f=>({...f,localidade:v}))}       required={!newForm.consumidor_final}/>
             <Input label="Email"     value={newForm.email}     onChange={v=>setNewForm(f=>({...f,email:v}))}               type="email" required/>
             <div/>
             <Input label="Telefone"  value={newForm.telefone}  onChange={v=>setNewForm(f=>({...f,telefone:maskPhone(v)}))}  placeholder="XXX XXX XXX"/>
