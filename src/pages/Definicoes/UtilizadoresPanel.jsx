@@ -85,7 +85,7 @@ export const UtilizadoresPanel = ({ currentUserId }) => {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <span style={{ fontSize: 13, color: C.grey400 }}>{users.length} utilizador{users.length !== 1 ? 'es' : ''}</span>
-        <Btn icon="userPlus" size="sm" onClick={() => { setForm({ email: '', nome: '', password: '', is_tecnico: false }); setErrMsg(null); setModal('new'); }}>Novo utilizador</Btn>
+        <Btn icon="plus" size="sm" onClick={() => { setForm({ email: '', nome: '', password: '', is_tecnico: false }); setErrMsg(null); setModal('new'); }}>Novo</Btn>
       </div>
 
       {errMsg && (
