@@ -9,6 +9,8 @@ import { CrudPage } from '../../components/shared/CrudPage';
 import { maskNif, maskPhone, maskCP } from '../../utils/formatters';
 import { ClienteDetalhe } from './ClienteDetalhe';
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export const ClientesPage = () => {
   const C = useTheme();
   const [detalhe,     setDetalhe]     = useState(null);
@@ -16,6 +18,7 @@ export const ClientesPage = () => {
   const [tecnicoOpts, setTecnicoOpts] = useState([]);
   const [newModal,    setNewModal]    = useState(false);
   const [newSaving,   setNewSaving]   = useState(false);
+  const [emailError,  setEmailError]  = useState('');
   const emptyNew = {nome:"",nif:"",consumidor_final:false,tecnico_id:"",morada:"",cp:"",localidade:"",email:"",telefone:"",telemovel:"",observacoes:""};
   const [newForm, setNewForm] = useState(emptyNew);
 
@@ -24,6 +27,13 @@ export const ClientesPage = () => {
       .then(({data})=>setTecnicoOpts((data||[]).map(t=>({value:t.id,label:t.nome||t.email}))));
   },[]);
 
+  const handleEmailBlur = () => {
+    const val = newForm.email.trim();
+    if (!val) { setEmailError(''); return; }
+    if (!EMAIL_RE.test(val)) setEmailError('Email inválido');
+    else setEmailError('');
+  };
+
   const saveNew = async () => {
     const cf = newForm.consumidor_final;
     if (!newForm.nome)                           return alert("Nome é obrigatório");
@@ -31,6 +41,7 @@ export const ClientesPage = () => {
     if (!cf && !newForm.cp)                      return alert("Código Postal é obrigatório");
     if (!cf && !newForm.localidade)              return alert("Localidade é obrigatória");
     if (!newForm.email)                          return alert("Email é obrigatório");
+    if (!EMAIL_RE.test(newForm.email.trim()))    { setEmailError('Email inválido'); return; }
     if (!newForm.telefone && !newForm.telemovel) return alert("Pelo menos telefone ou telemóvel é obrigatório");
     if (!cf && !newForm.nif)                     return alert("NIF é obrigatório para clientes empresariais");
     setNewSaving(true);
@@ -38,6 +49,7 @@ export const ClientesPage = () => {
     if (error) { alert("Erro: " + error.message); setNewSaving(false); return; }
     setNewModal(false);
     setNewForm(emptyNew);
+    setEmailError('');
     setReload(r=>r+1);
     setNewSaving(false);
   };
@@ -103,7 +115,7 @@ export const ClientesPage = () => {
       />
 
       {newModal && (
-        <Modal title="Novo cliente" onClose={()=>setNewModal(false)} wide>
+        <Modal title="Novo cliente" onClose={()=>{ setNewModal(false); setEmailError(''); }} wide>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
             <div style={{gridColumn:"1/-1"}}>
               <Input label="Nome / Empresa" value={newForm.nome} onChange={v=>setNewForm(f=>({...f,nome:v}))} required/>
@@ -127,7 +139,9 @@ export const ClientesPage = () => {
             </div>
             <Input label={newForm.consumidor_final ? "Código Postal (opcional)" : "Código Postal"} value={newForm.cp}        onChange={v=>setNewForm(f=>({...f,cp:maskCP(v)}))}       placeholder="0000-000" required={!newForm.consumidor_final}/>
             <Input label={newForm.consumidor_final ? "Localidade (opcional)"   : "Localidade"}    value={newForm.localidade} onChange={v=>setNewForm(f=>({...f,localidade:v}))}       required={!newForm.consumidor_final}/>
-            <Input label="Email"     value={newForm.email}     onChange={v=>setNewForm(f=>({...f,email:v}))}               type="email" required/>
+            <Input label="Email" value={newForm.email}
+              onChange={v=>{ setNewForm(f=>({...f,email:v})); if(emailError) setEmailError(''); }}
+              onBlur={handleEmailBlur} type="email" required error={emailError}/>
             <div/>
             <Input label="Telefone"  value={newForm.telefone}  onChange={v=>setNewForm(f=>({...f,telefone:maskPhone(v)}))}  placeholder="XXX XXX XXX"/>
             <Input label="Telemóvel" value={newForm.telemovel} onChange={v=>setNewForm(f=>({...f,telemovel:maskPhone(v)}))} placeholder="XXX XXX XXX"/>
