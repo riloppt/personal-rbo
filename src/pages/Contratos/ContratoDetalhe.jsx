@@ -14,6 +14,7 @@ import { fmtDate } from '../../utils/formatters';
 import { useSortable } from '../../hooks/useSortable';
 import { buildReportHtml } from '../../features/email/reportHtml';
 import { EmailReportBtn } from '../../features/email/EmailReportBtn';
+import { AssistenciaModal } from './AssistenciaModal';
 
 export const ContratoDetalhe = ({ contrato, onBack, onDelete }) => {
   const C = useTheme();
@@ -72,6 +73,17 @@ export const ContratoDetalhe = ({ contrato, onBack, onDelete }) => {
     if (!editingId) ({error:err} = await sb.from("rbo_movimentos").insert([payload]));
     else            ({error:err} = await sb.from("rbo_movimentos").update(payload).eq("id",editingId));
     if (err) alert("Erro: "+err.message);
+    else { await load(); setModal(null); }
+    setSaving(false);
+  };
+
+  const saveAssistencia = async (fields) => {
+    setSaving(true);
+    const payload = { contrato_id: contrato.id, tipo: 'assistencia', ...fields };
+    let err;
+    if (!editingId) ({ error: err } = await sb.from("rbo_movimentos").insert([payload]));
+    else            ({ error: err } = await sb.from("rbo_movimentos").update(payload).eq("id", editingId));
+    if (err) alert("Erro: " + err.message);
     else { await load(); setModal(null); }
     setSaving(false);
   };
@@ -177,18 +189,24 @@ export const ContratoDetalhe = ({ contrato, onBack, onDelete }) => {
         />
       </Card>
 
-      {modal==="mov"&&(
-        <Modal title={editingId?"Editar Movimento":(form.tipo==="credito"?"Adicionar Créditos":"Nova Assistência")} onClose={()=>setModal(null)} wide>
+      {modal==="mov" && form.tipo==="assistencia" && (
+        <AssistenciaModal
+          initialData={editingId ? form : null}
+          editingId={editingId}
+          tecnicos={tecnicos}
+          locais={locais}
+          equipamentos={equipamentos}
+          onClose={()=>setModal(null)}
+          onSave={saveAssistencia}
+          saving={saving}
+        />
+      )}
+
+      {modal==="mov" && form.tipo==="credito" && (
+        <Modal title={editingId?"Editar Movimento":"Adicionar Créditos"} onClose={()=>setModal(null)} wide>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
             <F k="data" label="Data" type="date"/>
-            <Input label="Créditos" value={String(form.creditos)} onChange={v=>setForm(f=>({...f,creditos:v}))} placeholder={form.tipo==="credito"?"ex: 50":"ex: -2"} required/>
-            {form.tipo==="assistencia"&&<>
-              <F k="hora_inicio" label="Hora de Início" type="time"/>
-              <F k="hora_fim"    label="Hora de Fim"    type="time"/>
-              <Select label="Técnico" value={form.profile_tecnico_id||""} onChange={v=>setForm(f=>({...f,profile_tecnico_id:v}))} options={tecnicos.map(t=>({value:t.id,label:t.nome}))}/>
-              <Select label="Local"   value={String(form.local_id  ||"")} onChange={v=>setForm(f=>({...f,local_id:v}))}   options={locais.map(l=>({value:String(l.id),label:l.nome}))}/>
-              {equipamentos.length>0&&<div style={{gridColumn:"1/-1"}}><Select label="Equipamento (opcional)" value={String(form.equipment_id||"")} onChange={v=>setForm(f=>({...f,equipment_id:v}))} options={equipamentos.map(e=>({value:String(e.id),label:e.descricao}))}/></div>}
-            </>}
+            <Input label="Créditos" value={String(form.creditos)} onChange={v=>setForm(f=>({...f,creditos:v}))} placeholder="ex: 50" required/>
             <div style={{gridColumn:"1/-1"}}><Input label="Descritivo" value={form.descritivo} onChange={v=>setForm(f=>({...f,descritivo:v}))} textarea rows={3} required/></div>
           </div>
           <div style={{display:"flex",gap:10,justifyContent:"flex-end",marginTop:20}}>
