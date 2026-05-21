@@ -222,16 +222,16 @@ export const Tickets = ({ currentUserId }) => {
                       {/* Empresa / Pessoa */}
                       <td style={{ padding: '13px 16px', color: C.grey800 }}>
                         <div style={{ fontWeight: 500 }}>{t.nome_empresa || t.cliente?.nome || '—'}</div>
-                        {t.nome_pessoa && <div style={{ fontSize: 12, color: C.grey400, marginTop: 2 }}>{t.nome_pessoa}</div>}
+                        <div style={{ fontSize: 12, color: C.grey400, marginTop: 2, visibility: t.nome_pessoa ? 'visible' : 'hidden' }}>
+                          {t.nome_pessoa || ' '}
+                        </div>
                       </td>
                       {/* Equipamento */}
                       <td style={{ padding: '13px 16px', color: C.grey600, fontSize: 13 }}>
-                        {t.equipamento ? (
-                          <div>
-                            <div>{t.equipamento.descricao}</div>
-                            {t.equipamento.num_serie && <div style={{ fontSize: 11, color: C.grey400, fontFamily: "'DM Mono', monospace" }}>S/N {t.equipamento.num_serie}</div>}
-                          </div>
-                        ) : '—'}
+                        <div>{t.equipamento?.descricao || '—'}</div>
+                        <div style={{ fontSize: 11, color: C.grey400, fontFamily: "'DM Mono', monospace", marginTop: 2, visibility: t.equipamento?.num_serie ? 'visible' : 'hidden' }}>
+                          {t.equipamento?.num_serie ? `S/N ${t.equipamento.num_serie}` : ' '}
+                        </div>
                       </td>
                       {/* Técnico */}
                       <td style={{ padding: '13px 16px', fontSize: 13 }}>
