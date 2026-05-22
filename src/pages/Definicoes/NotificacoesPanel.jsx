@@ -67,6 +67,14 @@ const NotificacaoCard = ({ config, onUpdate }) => {
     if (!error) onUpdate({ ...config, ativa: !config.ativa });
   };
 
+  const toggleEnviarCliente = async () => {
+    const { error } = await sb
+      .from('rbo_notificacoes_config')
+      .update({ enviar_cliente: !config.enviar_cliente })
+      .eq('id', config.id);
+    if (!error) onUpdate({ ...config, enviar_cliente: !config.enviar_cliente });
+  };
+
   const removeDestinatario = async (email) => {
     const novos = config.destinatarios.filter(e => e !== email);
     const { error } = await sb
@@ -103,17 +111,10 @@ const NotificacaoCard = ({ config, onUpdate }) => {
         <Toggle checked={!!config.ativa} onChange={toggleAtivo}/>
       </div>
 
-      {config.enviar_cliente && (
-        <div style={{ marginBottom: 14 }}>
-          <span style={{
-            display: 'inline-flex', alignItems: 'center', gap: 6,
-            background: C.tealXL, color: C.teal, borderRadius: 20,
-            padding: '3px 12px', fontSize: 12, fontWeight: 600,
-            border: `1px solid ${C.tealM}`,
-          }}>
-            <Icon name="mail" size={11} color={C.teal}/>
-            Notifica também o cliente
-          </span>
+      {config.enviar_cliente !== undefined && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+          <Toggle checked={!!config.enviar_cliente} onChange={toggleEnviarCliente}/>
+          <span style={{ fontSize: 13, color: C.grey600 }}>Notificar também o cliente</span>
         </div>
       )}
 
