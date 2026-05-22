@@ -177,19 +177,22 @@ export const TicketNovoModal = ({ onClose, onCreated, currentUserId }) => {
       alterado_por_id: currentUserId || null, nota: null,
     }]);
     // Notificação por email — falha silenciosa para não bloquear criação
-    sendEmailResend({
-      to: 'sergiohenriques@graficaideal.pt',
-      subject: `Novo pedido de assistência #${String(ticket.id).padStart(4, '0')}`,
-      html: buildNewTicketEmail({
-        id: ticket.id,
-        nome_empresa: clienteSeleccionado?.nome || null,
-        nome_pessoa: null,
-        email_cliente: null,
-        telefone_cliente: null,
-        descricao_problema: form3.descricao_problema.trim(),
-        created_at: ticket.created_at,
-      }),
-    }).catch(e => console.error('[email] novo ticket:', e?.message || e));
+    sb.from('rbo_notificacoes_config').select('ativa, destinatarios').eq('evento', 'ticket_novo').maybeSingle()
+      .then(({ data: notif }) => {
+        if (!notif?.ativa || !notif?.destinatarios?.length) return;
+        const subject = `Novo pedido de assistência #${String(ticket.id).padStart(4, '0')}`;
+        const html = buildNewTicketEmail({
+          id: ticket.id,
+          nome_empresa: clienteSeleccionado?.nome || null,
+          nome_pessoa: null,
+          email_cliente: null,
+          telefone_cliente: null,
+          descricao_problema: form3.descricao_problema.trim(),
+          created_at: ticket.created_at,
+        });
+        return Promise.all(notif.destinatarios.map(to => sendEmailResend({ to, subject, html })));
+      })
+      .catch(e => console.error('[email] novo ticket:', e?.message || e));
     setSaving(false);
     onCreated?.();
   };
