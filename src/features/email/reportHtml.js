@@ -139,7 +139,7 @@ body{font-family:'DM Sans',sans-serif;background:#f8fafb;color:#1e3236;}
 </div></body></html>`;
 };
 
-export const buildReportHtml = ({ mov, cliente, tipologia, tecnico, local, equipamento }) => {
+export const buildReportHtml = ({ mov, cliente, tipologia, tecnico, local, equipamento, forEmail = false }) => {
   const duracao = mov.hora_inicio && mov.hora_fim ? (() => {
     const [h1,m1]=mov.hora_inicio.split(":").map(Number);
     const [h2,m2]=mov.hora_fim.split(":").map(Number);
@@ -150,8 +150,8 @@ export const buildReportHtml = ({ mov, cliente, tipologia, tecnico, local, equip
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Relatório — ${cliente?.nome||""}</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
-*{box-sizing:border-box;margin:0;padding:0;}body{font-family:'DM Sans',sans-serif;background:#f8fafb;color:#1e3236;}
+${forEmail ? '' : "@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');"}
+*{box-sizing:border-box;margin:0;padding:0;}body{font-family:${forEmail ? "-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" : "'DM Sans',sans-serif"};background:#f8fafb;color:#1e3236;}
 .page{max-width:720px;margin:0 auto;background:#fff;min-height:100vh;box-shadow:0 0 40px #0d5e5e15;}
 .header{background:#0d5e5e;padding:36px 40px;display:flex;justify-content:space-between;align-items:flex-start;}
 .logo{font-size:26px;font-weight:700;color:#fff;}.logo-sub{font-size:12px;color:#b3e0e0;margin-top:3px;}
@@ -203,7 +203,7 @@ export const buildReportHtml = ({ mov, cliente, tipologia, tecnico, local, equip
 </div>
 <div class="footer">
   <div class="footer-brand"><strong>rilop</strong>Relatório gerado pelo RBO · ${new Date().toLocaleString("pt-PT")}</div>
-  <button class="btn-pdf" onclick="window.print()">⬇ Download PDF</button>
+  ${forEmail ? '' : '<button class="btn-pdf" onclick="window.print()">⬇ Download PDF</button>'}
 </div>
 </div></body></html>`;
 };

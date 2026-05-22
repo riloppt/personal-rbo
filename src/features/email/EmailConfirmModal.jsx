@@ -19,7 +19,7 @@ export const EmailConfirmModal = ({ mov, lookup, onSent, onClose }) => {
     if (!emailTo) return;
     setSending(true); setResult(null);
     try {
-      const html    = buildReportHtml({ mov, cliente, tipologia, tecnico, local, equipamento });
+      const html    = buildReportHtml({ mov, cliente, tipologia, tecnico, local, equipamento, forEmail: true });
       const subject = `Relatório de Assistência Técnica — ${cliente?.nome||""} — ${fmtDate(mov.data)}`;
       await sendEmailResend({ to: emailTo, subject, html });
       await onSent(mov.id);
