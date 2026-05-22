@@ -125,39 +125,43 @@ serve(async (req) => {
       try {
         const { data: notifConfig } = await sb
           .from('rbo_notificacoes_config')
-          .select('ativa, destinatarios')
+          .select('ativa, destinatario_principal, destinatarios')
           .eq('evento', 'ticket_novo')
           .maybeSingle();
 
         const ativa = notifConfig?.ativa ?? true;
+        const principal: string = notifConfig?.destinatario_principal ?? '';
         const destinatarios: string[] = notifConfig?.destinatarios ?? [];
 
-        if (ativa && destinatarios.length > 0) {
+        if (!ativa) {
+          console.log('[email] ticket_novo desativada — email não enviado');
+        } else if (!principal) {
+          console.log('[email] ticket_novo sem destinatário principal — email não enviado');
+        } else {
+          const cc = destinatarios.filter(e => e !== principal);
+          const emailBody: Record<string, unknown> = {
+            from: 'Rilop <noreply@rilop.pt>',
+            to: [principal],
+            subject: `Novo pedido de assistência #${String(ticket.id).padStart(4, '0')}`,
+            html: buildEmailHtml(
+              ticket.id,
+              nome_empresa?.trim() ?? '',
+              nome_pessoa?.trim() ?? '',
+              email_cliente?.trim() ?? '',
+              telefone_cliente?.trim() ?? '',
+              descricao_problema?.trim() ?? '',
+              ticket.created_at,
+            ),
+          };
+          if (cc.length) emailBody.cc = cc;
           const emailRes = await fetch('https://api.resend.com/emails', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${resendKey}` },
-            body: JSON.stringify({
-              from: 'Rilop <noreply@rilop.pt>',
-              to: destinatarios,
-              subject: `Novo pedido de assistência #${String(ticket.id).padStart(4, '0')}`,
-              html: buildEmailHtml(
-                ticket.id,
-                nome_empresa?.trim() ?? '',
-                nome_pessoa?.trim() ?? '',
-                email_cliente?.trim() ?? '',
-                telefone_cliente?.trim() ?? '',
-                descricao_problema?.trim() ?? '',
-                ticket.created_at,
-              ),
-            }),
+            body: JSON.stringify(emailBody),
           });
           const emailData = await emailRes.json();
           if (!emailRes.ok) console.error('[email] Resend error:', JSON.stringify(emailData));
-          else console.log('[email] sent:', emailData?.id);
-        } else if (ativa && destinatarios.length === 0) {
-          console.log('[email] ticket_novo ativa mas sem destinatários — email não enviado');
-        } else {
-          console.log('[email] ticket_novo desativada — email não enviado');
+          else console.log('[email] sent to:', principal, cc.length ? `cc: ${cc}` : '', emailData?.id);
         }
       } catch (emailErr) {
         console.error('[email] fetch error:', emailErr);
