@@ -30,7 +30,12 @@
       "Bash(where python *)",
       "Bash(where python3 *)",
       "Bash(where py *)",
-      "Bash(git *)"
+      "Bash(git *)",
+      "Bash(node fix_cells.js)",
+      "Bash(mv \"C:/Users/sergiohenriques/GitHub/personal-rbo/fix_cells.js\" \"C:/Users/sergiohenriques/GitHub/personal-rbo/fix_cells.cjs\")",
+      "Bash(node fix_cells.cjs)",
+      "Bash(supabase functions *)",
+      "Bash(npx supabase *)"
     ]
   }
 }

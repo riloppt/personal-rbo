@@ -251,7 +251,7 @@ export default function TicketPublico() {
     setErrorMsg(null);
     setStatus('submitting');
     try {
-      const { data, error } = await sb.functions.invoke('submit-ticket', {
+      const { data, error } = await sb.functions.invoke('public-ticket-form', {
         body: {
           ts_token:           tsToken,
           nome_empresa:       form.nome_empresa.trim(),

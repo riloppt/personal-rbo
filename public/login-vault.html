@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=1280, initial-scale=1" />
+<title>RBO · Login (Vault)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  html, body, #root { margin:0; padding:0; height:100%; width:100%; background:#061212; }
+  *, *::before, *::after { box-sizing: border-box; }
+  body { font-family: "Outfit", system-ui, sans-serif; color: #e8eef0; overflow-x:auto; }
+  #root { min-width: 1100px; min-height: 720px; }
+</style>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+/* ──────────────────────────────────────────────────────────────────────────
+   RBO · Login (Vault) — standalone test page
+   Drop this file in personal-rbo/public/ and visit /login-vault.html.
+   The Supabase client below uses the same credentials as .env.local so a
+   successful login here is a real session — open the network tab to verify.
+   ────────────────────────────────────────────────────────────────────────── */
+
+const SUPABASE_URL = "https://yomzbrhpmsbkanicpeav.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlvbXpicmhwbXNia2FuaWNwZWF2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzNDkxMzQsImV4cCI6MjA5NDkyNTEzNH0.DPpmkaK6sYyZcOfRYDM7MGsMwYOZK_kxZc3aLCXAoUo";
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const { useState, useEffect, useRef } = React;
+
+// Live clock.
+const useClock = () => {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
+  const pad = n => String(n).padStart(2, "0");
+  return {
+    hms: `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`,
+    iso: now.toISOString(),
+  };
+};
+
+const STYLES = `
+@keyframes v2-cursor { 50% { opacity: 0; } }
+@keyframes v2-scan {
+  0%   { transform: translateY(-100%); }
+  100% { transform: translateY(2000%); }
+}
+@keyframes v2-r-shimmer {
+  0%, 100% { opacity:.55; }
+  50%      { opacity:.95; }
+}
+@keyframes v2-marquee-h {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+@keyframes v2-spin { to { transform: rotate(360deg); } }
+.v2-cursor { animation: v2-cursor 1s steps(1) infinite; }
+.v2-scan   { animation: v2-scan 6s linear infinite; }
+.v2-r-back { animation: v2-r-shimmer 5s ease-in-out infinite; }
+.v2-marquee-h { animation: v2-marquee-h 35s linear infinite; }
+.v2-spin { animation: v2-spin .7s linear infinite; }
+.v2-input { caret-color:#7abfbf; }
+.v2-input:focus { border-color:#7abfbf !important; background:#0a1c1d !important; }
+.v2-btn { transition: all .15s; }
+.v2-btn:not(:disabled):hover { background:#7abfbf !important; color:#08484a !important; }
+.v2-btn:not(:disabled):hover .v2-arrow { transform: translateX(3px); }
+.v2-btn:disabled { opacity:.5; cursor:not-allowed; }
+`;
+
+const MarkR = ({ size = 22, fg = "#0d5e5e", strokeWidth = 3.2 }) => (
+  <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+    <path d="M7 26 V6 H17 a6 6 0 0 1 0 12 H11 l8 8" stroke={fg} strokeWidth={strokeWidth}
+          strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+    <circle cx="22" cy="9" r="2.2" fill={fg}/>
+  </svg>
+);
+
+const App = () => {
+  const clock = useClock();
+  const [email, setEmail] = useState("");
+  const [pw, setPw] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [session, setSession] = useState(null);
+  const sessionIdRef = useRef(
+    (Math.random()*0xffffff|0).toString(16).padStart(6,"0").toUpperCase()
+  );
+
+  // Bootstrap: pick up any existing session.
+  useEffect(() => {
+    sb.auth.getSession().then(({ data }) => setSession(data.session || null));
+    const { data: sub } = sb.auth.onAuthStateChange((_e, s) => setSession(s));
+    return () => sub.subscription.unsubscribe();
+  }, []);
+
+  const doLogin = async () => {
+    if (!email || !pw || loading) return;
+    setLoading(true); setError(null);
+    const { error } = await sb.auth.signInWithPassword({ email, password: pw });
+    if (error) {
+      setError(error.message === "Invalid login credentials"
+        ? "credenciais inválidas."
+        : error.message.toLowerCase());
+    }
+    setLoading(false);
+  };
+
+  const doLogout = async () => {
+    await sb.auth.signOut();
+    setEmail(""); setPw("");
+  };
+
+  const handleKey = e => { if (e.key === "Enter") doLogin(); };
+  const disabled = loading || !email || !pw;
+
+  return (
+    <>
+      <style>{STYLES}</style>
+      <div style={{
+        width:"100vw", height:"100vh", minWidth:1100, minHeight:720,
+        position:"relative", overflow:"hidden",
+        background:"#061212", color:"#cee4e4",
+        fontFamily:'"JetBrains Mono", monospace',
+      }}>
+        {/* Grid */}
+        <div style={{
+          position:"absolute", inset:0, pointerEvents:"none",
+          backgroundImage:`
+            linear-gradient(to right, rgba(122,191,191,0.06) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(122,191,191,0.06) 1px, transparent 1px)
+          `,
+          backgroundSize:"56px 56px",
+        }}/>
+        {/* Vignette */}
+        <div style={{
+          position:"absolute", inset:0, pointerEvents:"none",
+          background:"radial-gradient(60% 50% at 50% 45%, transparent 0%, rgba(0,0,0,0.55) 100%)",
+        }}/>
+        {/* Scan line */}
+        <div className="v2-scan" style={{
+          position:"absolute", left:0, right:0, height:1, pointerEvents:"none",
+          background:"linear-gradient(to right, transparent, rgba(122,191,191,0.4), transparent)",
+        }}/>
+
+        {/* Giant R */}
+        <div className="v2-r-back" style={{
+          position:"absolute", inset:0, display:"flex", alignItems:"center", justifyContent:"center",
+          pointerEvents:"none",
+        }}>
+          <svg width="640" height="640" viewBox="0 0 32 32" fill="none" style={{
+            filter:"drop-shadow(0 0 80px rgba(122,191,191,0.18))",
+          }}>
+            <path d="M7 26 V6 H17 a6 6 0 0 1 0 12 H11 l8 8" stroke="#7abfbf" strokeWidth="0.6"
+                  strokeLinecap="round" strokeLinejoin="round" fill="none" opacity="0.6"/>
+            <path d="M7 26 V6 H17 a6 6 0 0 1 0 12 H11 l8 8" stroke="#0d5e5e" strokeWidth="0.18"
+                  strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+            <circle cx="22" cy="9" r="0.6" fill="#d97757"/>
+          </svg>
+        </div>
+
+        {/* Top status bar */}
+        <div style={{
+          position:"absolute", top:0, left:0, right:0, height:32,
+          borderBottom:"1px solid rgba(122,191,191,0.15)", background:"rgba(6,18,18,0.85)",
+          display:"flex", alignItems:"center", justifyContent:"space-between",
+          padding:"0 18px", fontSize:10.5, color:"#7abfbf", letterSpacing:"0.04em", zIndex:5,
+        }}>
+          <div style={{ display:"flex", gap:18 }}>
+            <span style={{ color:"#e8eef0" }}>[RBO·CORE]</span>
+            <span>NODE.LIS-01</span>
+            <span>REGION.EU-WEST</span>
+            <span>UPTIME 99.97%</span>
+          </div>
+          <div style={{ display:"flex", gap:14 }}>
+            <span style={{ color: session ? "#7abfbf" : "#7abfbf" }}>● {session ? "AUTHENTICATED" : "ONLINE"}</span>
+            <span style={{ color:"#e8eef0" }}>{clock.iso.slice(0,19).replace("T"," ")}Z</span>
+          </div>
+        </div>
+
+        {/* Brand block (top-left) */}
+        <div style={{ position:"absolute", top:60, left:48, zIndex:5, maxWidth:480 }}>
+          <div style={{ fontSize:10.5, color:"#5f8585", letterSpacing:"0.2em" }}>// AUTHENTICATION</div>
+          <div style={{
+            fontFamily:'"Outfit", sans-serif', fontSize:88, fontWeight:800,
+            color:"#f4ece2", lineHeight:0.85, marginTop:14, letterSpacing:"-0.04em",
+          }}>
+            RILOP<br/><span style={{ color:"#7abfbf" }}>BACKOFFICE</span>
+          </div>
+          <div style={{
+            marginTop:18, maxWidth:380, fontSize:12, color:"#7abfbf",
+            lineHeight:1.65, letterSpacing:"0.01em",
+          }}>
+            Sistema interno · Acesso registado e auditado.<br/>
+            Cada sessão é assinada com um token único.
+          </div>
+
+          {/* Mini status pills */}
+          <div style={{ display:"flex", gap:8, marginTop:24, flexWrap:"wrap" }}>
+            {[
+              ["DB", "OK"],
+              ["AUTH", "OK"],
+              ["SSO", "OK"],
+              ["BUILD", "v2.4.1"],
+            ].map(([k,v],i) => (
+              <div key={i} style={{
+                fontSize:10, padding:"5px 10px", border:"1px solid rgba(122,191,191,0.25)",
+                borderRadius:4, color:"#7abfbf", display:"flex", gap:6,
+              }}>
+                <span style={{ color:"#5f8585" }}>{k}</span>
+                <span style={{ color:"#e8eef0" }}>{v}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Login card / Session card (bottom-right) */}
+        <div style={{
+          position:"absolute", right:48, bottom:64, zIndex:5,
+          width:420, padding:32,
+          background:"rgba(6,18,18,0.78)",
+          border:"1px solid rgba(122,191,191,0.25)",
+          backdropFilter:"blur(10px)",
+          WebkitBackdropFilter:"blur(10px)",
+          boxShadow:"0 30px 80px -20px rgba(0,0,0,0.6)",
+        }}>
+          {!session ? (
+            <>
+              {/* Card header */}
+              <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:6 }}>
+                <div style={{ display:"flex", alignItems:"center", gap:8, fontSize:10.5, color:"#7abfbf", letterSpacing:"0.18em" }}>
+                  <span style={{ width:6, height:6, background:"#7abfbf", borderRadius:1 }}/>
+                  <span>SESSION · NEW</span>
+                </div>
+                <div style={{ fontSize:10, color:"#5f8585" }}>0x{sessionIdRef.current}</div>
+              </div>
+
+              <div style={{
+                fontFamily:'"Outfit", sans-serif', fontSize:28, fontWeight:700, color:"#f4ece2",
+                marginTop:14, letterSpacing:"-0.02em",
+              }}>
+                $ login<span className="v2-cursor" style={{ color:"#7abfbf" }}>_</span>
+              </div>
+              <div style={{ fontSize:11.5, color:"#7abfbf", marginTop:8 }}>
+                // identifica-te com as credenciais Rilop.
+              </div>
+
+              <div style={{ marginTop:22, display:"flex", flexDirection:"column", gap:14 }}>
+                <div>
+                  <div style={{ fontSize:10, color:"#5f8585", letterSpacing:"0.18em", marginBottom:6 }}>--EMAIL</div>
+                  <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                    <span style={{ color:"#7abfbf" }}>&gt;</span>
+                    <input
+                      className="v2-input"
+                      type="email" value={email} autoComplete="email"
+                      onChange={e=>setEmail(e.target.value)} onKeyDown={handleKey}
+                      placeholder="alex@rilop.pt"
+                      style={{
+                        flex:1, padding:"9px 12px", background:"#0a1c1d",
+                        border:"1px solid rgba(122,191,191,0.2)", borderRadius:3,
+                        color:"#e8eef0", fontFamily:"inherit", fontSize:13,
+                        outline:"none", transition:"all .15s",
+                      }}/>
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize:10, color:"#5f8585", letterSpacing:"0.18em", marginBottom:6 }}>--PASSWORD</div>
+                  <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                    <span style={{ color:"#7abfbf" }}>&gt;</span>
+                    <input
+                      className="v2-input"
+                      type="password" value={pw} autoComplete="current-password"
+                      onChange={e=>setPw(e.target.value)} onKeyDown={handleKey}
+                      placeholder="••••••••••"
+                      style={{
+                        flex:1, padding:"9px 12px", background:"#0a1c1d",
+                        border:"1px solid rgba(122,191,191,0.2)", borderRadius:3,
+                        color:"#e8eef0", fontFamily:"inherit", fontSize:13,
+                        outline:"none", transition:"all .15s", letterSpacing:"0.1em",
+                      }}/>
+                  </div>
+                </div>
+              </div>
+
+              {/* Error */}
+              {error && (
+                <div style={{
+                  marginTop:14, padding:"9px 12px", background:"rgba(224,120,120,0.08)",
+                  border:"1px solid rgba(224,120,120,0.4)", borderRadius:3,
+                  color:"#e07878", fontSize:11, display:"flex", alignItems:"center", gap:8,
+                }}>
+                  <span style={{ color:"#e07878" }}>!</span>
+                  <span>ERR · {error}</span>
+                </div>
+              )}
+
+              <button onClick={doLogin} disabled={disabled} className="v2-btn" style={{
+                marginTop:18, width:"100%", padding:"13px 16px",
+                background:"#7abfbf18", color:"#7abfbf",
+                border:"1px solid #7abfbf", borderRadius:3, cursor:"pointer",
+                fontFamily:"inherit", fontSize:12.5, fontWeight:500, letterSpacing:"0.18em",
+                display:"flex", alignItems:"center", justifyContent:"space-between",
+              }}>
+                <span style={{ display:"flex", alignItems:"center", gap:10 }}>
+                  {loading && (
+                    <span className="v2-spin" style={{
+                      width:12, height:12, border:"1.5px solid currentColor",
+                      borderTopColor:"transparent", borderRadius:"50%", display:"inline-block",
+                    }}/>
+                  )}
+                  <span>[ {loading ? "AUTHENTICATING…" : "EXECUTE LOGIN"} ]</span>
+                </span>
+                <span className="v2-arrow" style={{ transition:"transform .15s" }}>→</span>
+              </button>
+
+              <div style={{ marginTop:14, paddingTop:14, borderTop:"1px dashed rgba(122,191,191,0.2)", display:"flex", justifyContent:"space-between", fontSize:10, color:"#5f8585", letterSpacing:"0.1em" }}>
+                <span>↵ enter para submeter</span>
+                <span>esc cancela</span>
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Authenticated state */}
+              <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:6 }}>
+                <div style={{ display:"flex", alignItems:"center", gap:8, fontSize:10.5, color:"#7abfbf", letterSpacing:"0.18em" }}>
+                  <span style={{ width:6, height:6, background:"#7abfbf", borderRadius:1 }}/>
+                  <span>SESSION · ACTIVE</span>
+                </div>
+                <div style={{ fontSize:10, color:"#5f8585" }}>0x{sessionIdRef.current}</div>
+              </div>
+
+              <div style={{
+                fontFamily:'"Outfit", sans-serif', fontSize:28, fontWeight:700, color:"#f4ece2",
+                marginTop:14, letterSpacing:"-0.02em",
+              }}>
+                ✓ authenticated
+              </div>
+              <div style={{ fontSize:11.5, color:"#7abfbf", marginTop:8, wordBreak:"break-all" }}>
+                // {session.user?.email}
+              </div>
+
+              <div style={{
+                marginTop:22, padding:14, border:"1px solid rgba(122,191,191,0.2)", borderRadius:3,
+                background:"#0a1c1d", fontSize:10.5, color:"#7abfbf", lineHeight:1.7,
+              }}>
+                <div><span style={{ color:"#5f8585" }}>user.id   </span>{session.user?.id?.slice(0,8)}…</div>
+                <div><span style={{ color:"#5f8585" }}>token.exp </span>{new Date(session.expires_at*1000).toISOString().slice(0,19)}Z</div>
+                <div><span style={{ color:"#5f8585" }}>provider  </span>{session.user?.app_metadata?.provider || "email"}</div>
+              </div>
+
+              <button onClick={doLogout} className="v2-btn" style={{
+                marginTop:18, width:"100%", padding:"13px 16px",
+                background:"transparent", color:"#e07878",
+                border:"1px solid #e07878", borderRadius:3, cursor:"pointer",
+                fontFamily:"inherit", fontSize:12.5, fontWeight:500, letterSpacing:"0.18em",
+                display:"flex", alignItems:"center", justifyContent:"space-between",
+              }}>
+                <span>[ END SESSION ]</span>
+                <span>×</span>
+              </button>
+
+              <div style={{ marginTop:14, paddingTop:14, borderTop:"1px dashed rgba(122,191,191,0.2)", fontSize:10, color:"#5f8585", letterSpacing:"0.1em", textAlign:"center" }}>
+                este ficheiro é apenas para testar · o app continua em /
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Bottom marquee */}
+        <div style={{
+          position:"absolute", bottom:0, left:0, right:0, height:32,
+          borderTop:"1px solid rgba(122,191,191,0.15)", background:"rgba(6,18,18,0.85)",
+          display:"flex", alignItems:"center", overflow:"hidden", zIndex:5,
+        }}>
+          <div style={{ flexShrink:0, padding:"0 16px", fontSize:10, color:"#08484a", background:"#7abfbf", height:"100%", display:"flex", alignItems:"center", letterSpacing:"0.18em", fontWeight:700 }}>
+            LIVE ·
+          </div>
+          <div style={{ overflow:"hidden", flex:1 }}>
+            <div className="v2-marquee-h" style={{ display:"flex", gap:38, whiteSpace:"nowrap", fontSize:10.5, color:"#7abfbf", letterSpacing:"0.12em" }}>
+              {[...Array(2)].flatMap((_,k) => [
+                "128 clientes ativos",
+                "42 contratos abertos",
+                "7 tickets por resolver",
+                "última sync · há 2 min",
+                "todas as transações encriptadas em trânsito",
+                "node.lis-01 ↗ saudável",
+                "build 2.4.1 · 21 mai 2026",
+              ].map((t,i) => (
+                <span key={`${k}-${i}`} style={{ display:"flex", alignItems:"center", gap:38 }}>
+                  {t}<span style={{ color:"#5f8585" }}>·</span>
+                </span>
+              )))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+};
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
