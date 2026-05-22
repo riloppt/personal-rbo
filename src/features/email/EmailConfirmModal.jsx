@@ -79,6 +79,11 @@ export const EmailConfirmModal = ({ mov, lookup, onSent, onClose }) => {
           )}
           <div style={{display:"flex",gap:10,justifyContent:"flex-end"}}>
             <Btn variant="secondary" onClick={onClose} disabled={sending}>Cancelar</Btn>
+            <Btn variant="secondary" icon="contracts" onClick={()=>{
+              const html = buildReportHtml({ mov, cliente, tipologia, tecnico, local, equipamento });
+              const w = window.open('', '_blank');
+              if (w) { w.document.write(html); w.document.close(); }
+            }} disabled={sending}>Download PDF</Btn>
             <Btn icon={sending?"loader":"mail"} onClick={doSend} disabled={sending||!emailTo}>{sending?"A enviar...":"Enviar Relatório"}</Btn>
           </div>
         </>
