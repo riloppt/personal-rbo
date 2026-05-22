@@ -134,7 +134,7 @@ export const EquipamentoDetalhe = ({ equipamentoId, onBack, navigate }) => {
                     onMouseEnter={e => e.currentTarget.style.background = C.grey50}
                     onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                     <td style={{ padding: '11px 16px', color: C.grey600, whiteSpace: 'nowrap', fontSize: 13 }}>
-                      {row._type === 'ticket' ? fmtDateTime(row._date) : fmtDate(row._date)}
+                      {fmtDate(row._date)}
                     </td>
                     <td style={{ padding: '11px 16px', color: C.grey800, maxWidth: 280 }}>
                       <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.descricao || '—'}</div>
