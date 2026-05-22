@@ -13,6 +13,7 @@ import { Icon } from '../../components/ui/Icon';
 import { fmtDate } from '../../utils/formatters';
 import { useSortable } from '../../hooks/useSortable';
 import { buildReportHtml, buildPeriodReportHtml } from '../../features/email/reportHtml';
+import { buildLowCreditsEmail } from '../../features/email/templates/lowCreditsEmail';
 import { sendEmailResend } from '../../lib/email';
 import { EmailReportBtn } from '../../features/email/EmailReportBtn';
 import { AssistenciaModal } from './AssistenciaModal';
@@ -37,6 +38,9 @@ export const ContratoDetalhe = ({ contrato, onBack, onDelete }) => {
   const [periodEmailTo,      setPeriodEmailTo]      = useState('');
   const [periodEmailSending, setPeriodEmailSending] = useState(false);
   const [periodEmailResult,  setPeriodEmailResult]  = useState(null);
+  const [lowCreditsModal,    setLowCreditsModal]    = useState(null);
+  const [lowCreditsSending,  setLowCreditsSending]  = useState(false);
+  const [lowCreditsResult,   setLowCreditsResult]   = useState(null);
 
   const load = useCallback(async()=>{
     setLoading(true);
@@ -63,6 +67,36 @@ export const ContratoDetalhe = ({ contrato, onBack, onDelete }) => {
   const openNew  = tipo => { setForm({...emptyMov,tipo}); setEditingId(null); setModal("mov"); };
   const openEdit = m   => { setForm({...m,profile_tecnico_id:m.profile_tecnico_id||"",local_id:m.local_id||"",hora_inicio:m.hora_inicio||"",hora_fim:m.hora_fim||"",equipment_id:m.equipment_id||""}); setEditingId(m.id); setModal("mov"); };
 
+  const checkAndShowLowCreditsModal = async (newSaldo) => {
+    const [limiarRes, notifRes] = await Promise.all([
+      sb.from('rbo_definicoes_globais').select('valor').eq('chave','creditos_limiar_alerta').maybeSingle(),
+      sb.from('rbo_notificacoes_config').select('*').eq('evento','creditos_baixos').maybeSingle(),
+    ]);
+    const limiar = Number(limiarRes.data?.valor || 0);
+    const notifAtiva = notifRes.data?.ativa && notifRes.data?.enviar_cliente;
+    if (limiar > 0 && newSaldo < limiar && notifAtiva) {
+      setLowCreditsModal({ saldo: newSaldo, limiar, notifConfig: notifRes.data });
+    }
+  };
+
+  const sendLowCreditsNotification = async () => {
+    if (!lowCreditsModal) return;
+    setLowCreditsSending(true); setLowCreditsResult(null);
+    try {
+      const html    = buildLowCreditsEmail({ cliente, contrato, tipologia, saldo: lowCreditsModal.saldo, limiar: lowCreditsModal.limiar });
+      const subject = `Aviso: créditos do contrato a terminar — ${cliente?.nome || ''}`;
+      const recipients = [];
+      if (cliente?.email) recipients.push(cliente.email);
+      (lowCreditsModal.notifConfig?.destinatarios || []).forEach(e => { if (e && !recipients.includes(e)) recipients.push(e); });
+      await Promise.all(recipients.map(to => sendEmailResend({ to, subject, html })));
+      setLowCreditsResult('ok');
+    } catch (err) {
+      setLowCreditsResult(err.message || 'Erro desconhecido');
+    } finally {
+      setLowCreditsSending(false);
+    }
+  };
+
   const saveMov = async () => {
     const cred = Number(form.creditos);
     if (!form.data||isNaN(cred)||!form.descritivo) return;
@@ -80,7 +114,11 @@ export const ContratoDetalhe = ({ contrato, onBack, onDelete }) => {
     if (!editingId) ({error:err} = await sb.from("rbo_movimentos").insert([payload]));
     else            ({error:err} = await sb.from("rbo_movimentos").update(payload).eq("id",editingId));
     if (err) alert("Erro: "+err.message);
-    else { await load(); setModal(null); }
+    else {
+      const newSaldo = saldo + Number(form.creditos);
+      await load(); setModal(null);
+      if (!editingId) await checkAndShowLowCreditsModal(newSaldo);
+    }
     setSaving(false);
   };
 
@@ -91,7 +129,11 @@ export const ContratoDetalhe = ({ contrato, onBack, onDelete }) => {
     if (!editingId) ({ error: err } = await sb.from("rbo_movimentos").insert([payload]));
     else            ({ error: err } = await sb.from("rbo_movimentos").update(payload).eq("id", editingId));
     if (err) alert("Erro: " + err.message);
-    else { await load(); setModal(null); }
+    else {
+      const newSaldo = saldo + Number(fields.creditos || 0);
+      await load(); setModal(null);
+      if (!editingId) await checkAndShowLowCreditsModal(newSaldo);
+    }
     setSaving(false);
   };
 
@@ -262,6 +304,48 @@ export const ContratoDetalhe = ({ contrato, onBack, onDelete }) => {
             <Btn variant="secondary" onClick={()=>setModal(null)}>Cancelar</Btn>
             <Btn onClick={saveMov} disabled={saving}>{saving?"A guardar...":"Guardar"}</Btn>
           </div>
+        </Modal>
+      )}
+
+      {lowCreditsModal && (
+        <Modal title="Créditos Baixos" onClose={()=>{ setLowCreditsModal(null); setLowCreditsResult(null); }}>
+          {lowCreditsResult === 'ok' ? (
+            <div style={{textAlign:"center",padding:"20px 0"}}>
+              <div style={{width:52,height:52,borderRadius:"50%",background:C.green+"18",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 14px"}}>
+                <Icon name="mailDone" size={26} color={C.green}/>
+              </div>
+              <div style={{fontSize:16,fontWeight:600,color:C.grey800,marginBottom:6}}>Notificação enviada!</div>
+              <div style={{fontSize:13,color:C.grey400,marginBottom:22}}>O cliente e os destinatários internos foram notificados.</div>
+              <Btn onClick={()=>{ setLowCreditsModal(null); setLowCreditsResult(null); }}>Fechar</Btn>
+            </div>
+          ) : (
+            <>
+              <div style={{display:"flex",alignItems:"center",gap:14,background:C.amber+"10",border:`1px solid ${C.amber}33`,borderRadius:10,padding:"16px 18px",marginBottom:20}}>
+                <div style={{width:44,height:44,borderRadius:"50%",background:C.amber+"20",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                  <Icon name="alert" size={22} color={C.amber}/>
+                </div>
+                <div>
+                  <div style={{fontSize:14,fontWeight:600,color:C.grey800,marginBottom:4}}>
+                    O saldo desceu para <span style={{color:C.amber,fontWeight:700}}>{lowCreditsModal.saldo} créditos</span>
+                  </div>
+                  <div style={{fontSize:13,color:C.grey600,lineHeight:1.5}}>
+                    Abaixo do limiar de alerta de <strong>{lowCreditsModal.limiar} créditos</strong>. Pretende notificar o cliente?
+                  </div>
+                </div>
+              </div>
+              {lowCreditsResult && lowCreditsResult !== 'ok' && (
+                <div style={{background:C.red+"10",border:`1px solid ${C.red}33`,borderRadius:8,padding:"10px 14px",marginBottom:14,fontSize:13,color:C.red,display:"flex",gap:8,alignItems:"center"}}>
+                  <Icon name="alert" size={14} color={C.red}/>{lowCreditsResult}
+                </div>
+              )}
+              <div style={{display:"flex",gap:10,justifyContent:"flex-end"}}>
+                <Btn variant="secondary" onClick={()=>{ setLowCreditsModal(null); setLowCreditsResult(null); }} disabled={lowCreditsSending}>Não</Btn>
+                <Btn icon={lowCreditsSending?"loader":"mail"} onClick={sendLowCreditsNotification} disabled={lowCreditsSending}>
+                  {lowCreditsSending?"A enviar...":"Sim, notificar"}
+                </Btn>
+              </div>
+            </>
+          )}
         </Modal>
       )}
 
