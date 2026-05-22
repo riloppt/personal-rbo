@@ -55,9 +55,12 @@ const RecipientBadge = ({ email, onRemove }) => {
 
 const NotificacaoCard = ({ config, onUpdate }) => {
   const C = useTheme();
-  const [inputEmail, setInputEmail] = useState('');
-  const [emailError, setEmailError] = useState('');
-  const [adding, setAdding] = useState(false);
+  const [inputEmail,     setInputEmail]     = useState('');
+  const [emailError,     setEmailError]     = useState('');
+  const [adding,         setAdding]         = useState(false);
+  const [principal,      setPrincipal]      = useState(config.destinatario_principal || '');
+  const [principalError, setPrincipalError] = useState('');
+  const [savingPrincipal, setSavingPrincipal] = useState(false);
 
   const toggleAtivo = async () => {
     const { error } = await sb
@@ -73,6 +76,18 @@ const NotificacaoCard = ({ config, onUpdate }) => {
       .update({ enviar_cliente: !config.enviar_cliente })
       .eq('id', config.id);
     if (!error) onUpdate({ ...config, enviar_cliente: !config.enviar_cliente });
+  };
+
+  const savePrincipal = async () => {
+    const email = principal.trim().toLowerCase();
+    if (email && !EMAIL_RE.test(email)) { setPrincipalError('Email inválido'); return; }
+    setSavingPrincipal(true); setPrincipalError('');
+    const { error } = await sb
+      .from('rbo_notificacoes_config')
+      .update({ destinatario_principal: email || null })
+      .eq('id', config.id);
+    if (!error) onUpdate({ ...config, destinatario_principal: email || null });
+    setSavingPrincipal(false);
   };
 
   const removeDestinatario = async (email) => {
@@ -118,37 +133,67 @@ const NotificacaoCard = ({ config, onUpdate }) => {
         </div>
       )}
 
-      {config.destinatarios.length > 0 && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 14 }}>
-          {config.destinatarios.map(email => (
-            <RecipientBadge key={email} email={email} onRemove={() => removeDestinatario(email)}/>
-          ))}
+      <div style={{ marginBottom: 14 }}>
+        <div style={{ fontSize: 11, fontWeight: 600, color: C.grey400, textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 6 }}>
+          Destinatário principal (Para:)
         </div>
-      )}
+        <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ flex: 1 }}>
+            <input
+              type="email"
+              value={principal}
+              onChange={e => { setPrincipal(e.target.value); setPrincipalError(''); }}
+              onKeyDown={e => { if (e.key === 'Enter') savePrincipal(); }}
+              placeholder="principal@email.pt"
+              style={{
+                width: '100%', boxSizing: 'border-box',
+                padding: '7px 12px', borderRadius: 8, fontSize: 13,
+                border: `1.5px solid ${principalError ? C.red : C.grey200}`,
+                background: C.white, color: C.grey800, fontFamily: "'DM Sans',sans-serif",
+                outline: 'none',
+              }}
+            />
+            {principalError && <div style={{ fontSize: 11, color: C.red, marginTop: 4 }}>{principalError}</div>}
+          </div>
+          <Btn size="sm" onClick={savePrincipal} disabled={savingPrincipal}>
+            {savingPrincipal ? 'A guardar…' : 'Guardar'}
+          </Btn>
+        </div>
+      </div>
 
-      <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-        <div style={{ flex: 1 }}>
-          <input
-            type="email"
-            value={inputEmail}
-            onChange={e => { setInputEmail(e.target.value); setEmailError(''); }}
-            onKeyDown={handleKey}
-            placeholder="novo@email.pt"
-            style={{
-              width: '100%', boxSizing: 'border-box',
-              padding: '7px 12px', borderRadius: 8, fontSize: 13,
-              border: `1.5px solid ${emailError ? C.red : C.grey200}`,
-              background: C.white, color: C.grey800, fontFamily: "'DM Sans',sans-serif",
-              outline: 'none',
-            }}
-          />
-          {emailError && (
-            <div style={{ fontSize: 11, color: C.red, marginTop: 4 }}>{emailError}</div>
-          )}
+      <div style={{ marginBottom: config.destinatarios.length > 0 ? 14 : 0 }}>
+        <div style={{ fontSize: 11, fontWeight: 600, color: C.grey400, textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 6 }}>
+          CC
         </div>
-        <Btn size="sm" onClick={addDestinatario} disabled={adding || !inputEmail}>
-          Adicionar
-        </Btn>
+        {config.destinatarios.length > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+            {config.destinatarios.map(email => (
+              <RecipientBadge key={email} email={email} onRemove={() => removeDestinatario(email)}/>
+            ))}
+          </div>
+        )}
+        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+          <div style={{ flex: 1 }}>
+            <input
+              type="email"
+              value={inputEmail}
+              onChange={e => { setInputEmail(e.target.value); setEmailError(''); }}
+              onKeyDown={handleKey}
+              placeholder="cc@email.pt"
+              style={{
+                width: '100%', boxSizing: 'border-box',
+                padding: '7px 12px', borderRadius: 8, fontSize: 13,
+                border: `1.5px solid ${emailError ? C.red : C.grey200}`,
+                background: C.white, color: C.grey800, fontFamily: "'DM Sans',sans-serif",
+                outline: 'none',
+              }}
+            />
+            {emailError && <div style={{ fontSize: 11, color: C.red, marginTop: 4 }}>{emailError}</div>}
+          </div>
+          <Btn size="sm" onClick={addDestinatario} disabled={adding || !inputEmail}>
+            Adicionar
+          </Btn>
+        </div>
       </div>
     </Card>
   );

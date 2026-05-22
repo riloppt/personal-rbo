@@ -85,10 +85,10 @@ export const ContratoDetalhe = ({ contrato, onBack, onDelete }) => {
     try {
       const html    = buildLowCreditsEmail({ cliente, contrato, tipologia, saldo: lowCreditsModal.saldo, limiar: lowCreditsModal.limiar });
       const subject = `Aviso: créditos do contrato a terminar — ${cliente?.nome || ''}`;
-      const recipients = [];
-      if (cliente?.email) recipients.push(cliente.email);
-      (lowCreditsModal.notifConfig?.destinatarios || []).forEach(e => { if (e && !recipients.includes(e)) recipients.push(e); });
-      await Promise.all(recipients.map(to => sendEmailResend({ to, subject, html })));
+      const to      = cliente?.email;
+      if (!to) throw new Error('O cliente não tem email registado');
+      const bcc = (lowCreditsModal.notifConfig?.destinatarios || []).filter(e => e && e !== to);
+      await sendEmailResend({ to, bcc, subject, html });
       setLowCreditsResult('ok');
     } catch (err) {
       setLowCreditsResult(err.message || 'Erro desconhecido');

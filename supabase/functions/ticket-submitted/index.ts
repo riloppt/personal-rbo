@@ -9,10 +9,19 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
 
   try {
-    const { to, subject, html } = await req.json();
+    const { to, cc, bcc, subject, html } = await req.json();
 
     const resendKey = Deno.env.get('RESEND_API_KEY');
     if (!resendKey) throw new Error('RESEND_API_KEY not configured');
+
+    const body: Record<string, unknown> = {
+      from: 'Rilop <noreply@rilop.pt>',
+      to: [to],
+      subject,
+      html,
+    };
+    if (cc?.length)  body.cc  = cc;
+    if (bcc?.length) body.bcc = bcc;
 
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -20,12 +29,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${resendKey}`,
       },
-      body: JSON.stringify({
-        from: 'Rilop <noreply@rilop.pt>',
-        to: [to],
-        subject,
-        html,
-      }),
+      body: JSON.stringify(body),
     });
 
     const data = await res.json();

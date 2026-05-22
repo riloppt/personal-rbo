@@ -177,9 +177,9 @@ export const TicketNovoModal = ({ onClose, onCreated, currentUserId }) => {
       alterado_por_id: currentUserId || null, nota: null,
     }]);
     // Notificação por email — falha silenciosa para não bloquear criação
-    sb.from('rbo_notificacoes_config').select('ativa, destinatarios').eq('evento', 'ticket_novo').maybeSingle()
+    sb.from('rbo_notificacoes_config').select('ativa, destinatario_principal, destinatarios').eq('evento', 'ticket_novo').maybeSingle()
       .then(({ data: notif }) => {
-        if (!notif?.ativa || !notif?.destinatarios?.length) return;
+        if (!notif?.ativa || !notif?.destinatario_principal) return;
         const subject = `Novo pedido de assistência #${String(ticket.id).padStart(4, '0')}`;
         const html = buildNewTicketEmail({
           id: ticket.id,
@@ -190,7 +190,8 @@ export const TicketNovoModal = ({ onClose, onCreated, currentUserId }) => {
           descricao_problema: form3.descricao_problema.trim(),
           created_at: ticket.created_at,
         });
-        return Promise.all(notif.destinatarios.map(to => sendEmailResend({ to, subject, html })));
+        const cc = (notif.destinatarios || []).filter(e => e !== notif.destinatario_principal);
+        return sendEmailResend({ to: notif.destinatario_principal, cc, subject, html });
       })
       .catch(e => console.error('[email] novo ticket:', e?.message || e));
     setSaving(false);
