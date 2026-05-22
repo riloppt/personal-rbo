@@ -177,8 +177,8 @@ export const ContratoDetalhe = ({ contrato, onBack, onDelete }) => {
 
   const generatePeriodReport = () => {
     if (!validatePeriod()) return;
-    const w = window.open('', '_blank');
-    if (w) { w.document.write(buildPeriodHtml()); w.document.close(); }
+    const blob = new Blob([buildPeriodHtml()], { type: 'text/html' });
+    window.open(URL.createObjectURL(blob), '_blank');
   };
 
   const sendPeriodReport = async () => {
@@ -310,8 +310,8 @@ export const ContratoDetalhe = ({ contrato, onBack, onDelete }) => {
               <button onClick={()=>{
                 const { cliente: cl, tipologia: tip, tecnico, local, equipamento } = lookup(row);
                 const html = buildReportHtml({ mov: row, cliente: cl, tipologia: tip, tecnico, local, equipamento });
-                const w = window.open('', '_blank');
-                if (w) { w.document.write(html); w.document.close(); }
+                const blob = new Blob([html], { type: 'text/html' });
+                window.open(URL.createObjectURL(blob), '_blank');
               }} title="Abrir relatório"
                 style={{background:"none",border:"none",cursor:"pointer",padding:"4px 6px",borderRadius:6,display:"flex",alignItems:"center",transition:"background .15s"}}
                 onMouseEnter={e=>e.currentTarget.style.background=C.grey100}
