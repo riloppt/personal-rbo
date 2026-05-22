@@ -77,10 +77,6 @@ export const EmailConfirmModal = ({ mov, lookup, onSent, onClose }) => {
               <Icon name="alert" size={15} color={C.red}/>{result}
             </div>
           )}
-          <div style={{background:C.amber+"12",border:`1px solid ${C.amber}33`,borderRadius:8,padding:"10px 14px",marginBottom:20,fontSize:12,color:C.grey600,display:"flex",gap:8,alignItems:"flex-start"}}>
-            <Icon name="alert" size={14} color={C.amber}/>
-            <span>Em ambiente StackBlitz o envio pode falhar por restrições de rede (CORS). Em produção ou com a Edge Function do Supabase funcionará normalmente.</span>
-          </div>
           <div style={{display:"flex",gap:10,justifyContent:"flex-end"}}>
             <Btn variant="secondary" onClick={onClose} disabled={sending}>Cancelar</Btn>
             <Btn icon={sending?"loader":"mail"} onClick={doSend} disabled={sending||!emailTo}>{sending?"A enviar...":"Enviar Relatório"}</Btn>
