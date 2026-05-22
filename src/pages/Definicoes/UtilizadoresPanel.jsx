@@ -106,7 +106,7 @@ export const UtilizadoresPanel = ({ currentUserId }) => {
     const { data, error } = await sb.auth.signUp({
       email: form.email,
       password: form.password,
-      options: { emailRedirectTo: null },
+      options: { emailRedirectTo: `${window.location.origin}/` },
     });
     if (error) { setErrMsg('Erro: ' + error.message); setSaving(false); return; }
     const uid = data?.user?.id;
