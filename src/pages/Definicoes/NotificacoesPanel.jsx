@@ -179,8 +179,8 @@ const NotificacaoCard = ({ config, onUpdate, limiar, setLimiar, saveLimiar, savi
             </div>
           )}
 
-          {/* Notificar cliente — apenas para créditos baixos */}
-          {config.evento === 'creditos_baixos' && (
+          {/* Notificar cliente — créditos baixos e mudança de estado */}
+          {(config.evento === 'creditos_baixos' || config.evento === 'ticket_estado') && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <Toggle checked={!!config.enviar_cliente} onChange={toggleEnviarCliente}/>
               <span style={{ fontSize: 13, color: C.grey600 }}>Notificar o cliente</span>

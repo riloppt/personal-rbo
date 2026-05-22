@@ -220,11 +220,11 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
     try {
       const { data: cfg } = await sb
         .from('rbo_notificacoes_config')
-        .select('ativa, destinatarios')
+        .select('ativa, destinatarios, enviar_cliente')
         .eq('evento', 'ticket_estado')
         .maybeSingle();
       if (!cfg?.ativa) return;
-      const clientEmail = ticket.email_cliente || ticket.cliente?.email || null;
+      const clientEmail = cfg.enviar_cliente ? (ticket.email_cliente || ticket.cliente?.email || null) : null;
       const ccList = (cfg.destinatarios || []).filter(Boolean);
       const to = clientEmail || (ccList.length ? ccList[0] : null);
       if (!to) return;
