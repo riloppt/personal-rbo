@@ -78,7 +78,7 @@ body{font-family:'DM Sans',sans-serif;background:#f8fafb;color:#1e3236;}
 </style></head><body><div class="page">
 <div class="header">
   <div>
-    <div class="logo">rilop</div><div class="logo-sub">Informática e Comunicação</div>
+    <div class="logo">RBO</div><div class="logo-sub">Rilop BackOffice</div>
     <div class="client-name">${cliente?.nome || '—'}</div>
     <span class="tag">${tipologia?.nome || '—'}</span>
   </div>
@@ -133,7 +133,7 @@ body{font-family:'DM Sans',sans-serif;background:#f8fafb;color:#1e3236;}
   </div>
 </div>
 <div class="footer">
-  <div class="footer-brand"><strong>rilop</strong>Relatório gerado pelo RBO · ${new Date().toLocaleString('pt-PT')}</div>
+  <div class="footer-brand"><strong>Rilop - Informática e Comunicação, Lda</strong>Relatório gerado pelo RBO · ${new Date().toLocaleString('pt-PT')}</div>
   <button class="btn-pdf" onclick="window.print()">⬇ Download PDF</button>
 </div>
 </div></body></html>`;
@@ -171,7 +171,7 @@ ${forEmail ? '' : "@import url('https://fonts.googleapis.com/css2?family=DM+Sans
 @media print{.btn-pdf{display:none!important;}.page{box-shadow:none;}}
 </style></head><body><div class="page">
 <div class="header">
-  <div><div class="logo">rilop</div><div class="logo-sub">Informática e Comunicação</div>
+  <div><div class="logo">RBO</div><div class="logo-sub">Rilop BackOffice</div>
   <div class="client-name">${cliente?.nome||"—"}</div><span class="tag">${tipologia?.nome||"—"}</span></div>
   <div class="ref"><div class="ref-num">#${mov.id}</div><div>${fmtDate(mov.data)}</div>${mov.hora_inicio?`<div>${mov.hora_inicio}${mov.hora_fim?" → "+mov.hora_fim:""}</div>`:""}</div>
 </div>
@@ -202,7 +202,7 @@ ${forEmail ? '' : "@import url('https://fonts.googleapis.com/css2?family=DM+Sans
   </div>
 </div>
 <div class="footer">
-  <div class="footer-brand"><strong>rilop</strong>Relatório gerado pelo RBO · ${new Date().toLocaleString("pt-PT")}</div>
+  <div class="footer-brand"><strong>Rilop - Informática e Comunicação, Lda</strong>Relatório gerado pelo RBO · ${new Date().toLocaleString("pt-PT")}</div>
   ${forEmail ? '' : '<button class="btn-pdf" onclick="window.print()">⬇ Download PDF</button>'}
 </div>
 </div></body></html>`;
