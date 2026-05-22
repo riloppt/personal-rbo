@@ -111,12 +111,10 @@ export const UtilizadoresPanel = ({ currentUserId }) => {
     if (error) { setErrMsg('Erro: ' + error.message); setSaving(false); return; }
     const uid = data?.user?.id;
     if (uid) {
-      await sb.from('rbo_profiles').upsert({
-        id: uid, email: form.email,
-        nome: form.nome || null,
-        ativo: true,
-        is_tecnico: form.is_tecnico,
+      const { error: fnErr } = await sb.functions.invoke('create-user', {
+        body: { uid, email: form.email, nome: form.nome || null, is_tecnico: form.is_tecnico },
       });
+      if (fnErr) { setErrMsg('Utilizador criado mas erro ao guardar perfil: ' + fnErr.message); setSaving(false); return; }
     }
     await load();
     setSaving(false);
