@@ -249,10 +249,26 @@ export const ContratoDetalhe = ({ contrato, onBack, onDelete }) => {
             )}
           </div>
         </div>
-        <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
-          <Btn variant="secondary" size="sm" icon="contracts" onClick={()=>{ setPeriodModal(true); setPeriodError(''); setPeriodEmailTo(cliente?.email||''); setPeriodEmailResult(null); }}>Relatório de Período</Btn>
-          <Btn variant="secondary" size="sm" icon="mail" onClick={openLowCreditsManual}>Notificar cliente</Btn>
-          <Btn variant="secondary" size="sm" icon="credit" onClick={()=>openNew("credito")}>Adicionar Créditos</Btn>
+        <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
+          {/* Ações secundárias — ícone com tooltip */}
+          {[
+            { icon:"contracts", title:"Relatório de Período", onClick:()=>{ setPeriodModal(true); setPeriodError(''); setPeriodEmailTo(cliente?.email||''); setPeriodEmailResult(null); } },
+            { icon: notifEnviadaEm ? "mailDone" : "mail",    title:"Notificar cliente",      onClick: openLowCreditsManual, dot: !notifEnviadaEm },
+            { icon:"credit",    title:"Adicionar Créditos",  onClick:()=>openNew("credito") },
+          ].map(({ icon, title, onClick, dot }) => (
+            <button key={title} onClick={onClick} title={title} style={{
+              position:"relative", display:"flex", alignItems:"center", justifyContent:"center",
+              width:34, height:34, borderRadius:8, border:`1px solid ${C.grey200}`,
+              background:C.white, cursor:"pointer", flexShrink:0, transition:"background .15s, border-color .15s",
+            }}
+              onMouseEnter={e=>{ e.currentTarget.style.background=C.grey50; e.currentTarget.style.borderColor=C.grey300; }}
+              onMouseLeave={e=>{ e.currentTarget.style.background=C.white; e.currentTarget.style.borderColor=C.grey200; }}>
+              <Icon name={icon} size={16} color={notifEnviadaEm && icon==="mailDone" ? C.green : C.grey600}/>
+              {dot && <span style={{position:"absolute",top:5,right:5,width:7,height:7,borderRadius:"50%",background:C.amber,border:`1.5px solid ${C.white}`}}/>}
+            </button>
+          ))}
+          {/* Separador */}
+          <div style={{width:1,height:24,background:C.grey200,margin:"0 2px"}}/>
           <Btn size="sm" icon="plus" onClick={()=>openNew("assistencia")}>Nova Assistência</Btn>
           {onDelete && <Btn variant="danger" size="sm" icon="trash" onClick={onDelete}>Eliminar contrato</Btn>}
         </div>
