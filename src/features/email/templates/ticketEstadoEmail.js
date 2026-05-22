@@ -35,8 +35,8 @@ export const buildTicketEstadoEmail = ({ ticket, estadoNovo, estadoAnterior, tec
 
         <!-- Header -->
         <tr><td style="background:#0d3d3d;padding:28px 32px;">
-          <div style="font-size:22px;font-weight:700;color:#ffffff;letter-spacing:-0.3px;">Rilop</div>
-          <div style="font-size:13px;color:#4d9898;margin-top:2px;">BackOffice de Assistência</div>
+          <div style="font-size:22px;font-weight:700;color:#ffffff;letter-spacing:-0.3px;">RBO</div>
+          <div style="font-size:13px;color:#4d9898;margin-top:2px;">Rilop BackOffice</div>
         </td></tr>
 
         <!-- Ticket ID + Estado -->
@@ -84,10 +84,13 @@ export const buildTicketEstadoEmail = ({ ticket, estadoNovo, estadoAnterior, tec
 
         <!-- Footer -->
         <tr><td style="background:#0d3d3d;padding:18px 32px;">
-          <table width="100%" cellpadding="0" cellspacing="0"><tr>
-            <td style="font-size:12px;color:#4d9898;">Rilop · noreply@rilop.pt</td>
-            <td align="right" style="font-size:11px;color:#336666;">${dataHoje}</td>
-          </tr></table>
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="font-size:12px;color:#4d9898;font-weight:500;">Rilop - Informática e Comunicação, Lda</td>
+              <td align="right" style="font-size:11px;color:#ffffff;">${dataHoje}</td>
+            </tr>
+            <tr><td colspan="2" style="font-size:11px;color:#336666;padding-top:6px;">Por favor não responda a este email — esta é uma mensagem automática.</td></tr>
+          </table>
         </td></tr>
 
       </table>

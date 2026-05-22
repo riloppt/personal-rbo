@@ -18,8 +18,8 @@ export const buildLowCreditsEmail = ({ cliente, contrato, tipologia, saldo, limi
       <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border-radius:12px;box-shadow:0 2px 16px rgba(0,0,0,0.08);overflow:hidden;">
 
         <tr><td style="background:#0d3d3d;padding:28px 32px;">
-          <div style="font-size:22px;font-weight:700;color:#ffffff;letter-spacing:-0.3px;">Rilop</div>
-          <div style="font-size:13px;color:#4d9898;margin-top:2px;">BackOffice de Assistência</div>
+          <div style="font-size:22px;font-weight:700;color:#ffffff;letter-spacing:-0.3px;">RBO</div>
+          <div style="font-size:13px;color:#4d9898;margin-top:2px;">Rilop BackOffice</div>
         </td></tr>
 
         <tr><td style="padding:28px 32px 20px;">
@@ -80,8 +80,14 @@ export const buildLowCreditsEmail = ({ cliente, contrato, tipologia, saldo, limi
           </div>
         </td></tr>
 
-        <tr><td style="background:#0d3d3d;padding:18px 32px;text-align:center;">
-          <div style="font-size:12px;color:#4d9898;">Rilop · noreply@rilop.pt</div>
+        <tr><td style="background:#0d3d3d;padding:18px 32px;">
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="font-size:12px;color:#4d9898;font-weight:500;">Rilop - Informática e Comunicação, Lda</td>
+              <td align="right" style="font-size:11px;color:#ffffff;">${new Date().toLocaleString('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
+            </tr>
+            <tr><td colspan="2" style="font-size:11px;color:#336666;padding-top:6px;">Por favor não responda a este email — esta é uma mensagem automática.</td></tr>
+          </table>
         </td></tr>
 
       </table>
