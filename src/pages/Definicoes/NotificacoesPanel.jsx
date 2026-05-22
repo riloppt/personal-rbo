@@ -126,7 +126,7 @@ const NotificacaoCard = ({ config, onUpdate }) => {
         <Toggle checked={!!config.ativa} onChange={toggleAtivo}/>
       </div>
 
-      {config.enviar_cliente !== undefined && (
+      {config.evento === 'creditos_baixos' && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
           <Toggle checked={!!config.enviar_cliente} onChange={toggleEnviarCliente}/>
           <span style={{ fontSize: 13, color: C.grey600 }}>Notificar também o cliente</span>

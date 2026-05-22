@@ -79,13 +79,13 @@ export const Definicoes = ({ currentUserId, accent, onAccentChange }) => {
   const [tab, setTab] = useState('gerais');
 
   const tabs = [
-    { id: 'gerais',       label: 'Gerais',               icon: 'settings'  },
-    { id: 'utilizadores', label: 'Utilizadores',          icon: 'user'      },
-    { id: 'tipologias',   label: 'Tipologias',            icon: 'types'     },
-    { id: 'locais',       label: 'Locais de Assistência', icon: 'locations' },
-    { id: 'categorias',   label: 'Categorias',            icon: 'key'       },
-    { id: 'equipamentos',   label: 'Tipos de Equipamento',  icon: 'wrench'    },
+    { id: 'gerais',         label: 'Gerais',               icon: 'settings'  },
     { id: 'notificacoes',   label: 'Notificações',          icon: 'mail'      },
+    { id: 'utilizadores',   label: 'Utilizadores',          icon: 'user'      },
+    { id: 'tipologias',     label: 'Tipologias',            icon: 'types'     },
+    { id: 'locais',         label: 'Locais de Assistência', icon: 'locations' },
+    { id: 'categorias',     label: 'Categorias',            icon: 'key'       },
+    { id: 'equipamentos',   label: 'Tipos de Equipamento',  icon: 'wrench'    },
   ];
 
   return (
