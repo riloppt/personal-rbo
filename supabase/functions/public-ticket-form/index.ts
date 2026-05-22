@@ -1,10 +1,18 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const CORS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+const ALLOWED_ORIGINS = (Deno.env.get('ALLOWED_ORIGINS') ?? '')
+  .split(',').map(s => s.trim()).filter(Boolean);
+
+function corsHeaders(req: Request): Record<string, string> {
+  const origin = req.headers.get('origin') ?? '';
+  const base: Record<string, string> = {
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  };
+  if (ALLOWED_ORIGINS.includes(origin)) base['Access-Control-Allow-Origin'] = origin;
+  return base;
+}
 
 const buildEmailHtml = (id: number, nome_empresa: string, nome_pessoa: string, email_cliente: string, telefone_cliente: string, descricao_problema: string, created_at: string) => {
   const idPadded = String(id).padStart(4, '0');
@@ -79,7 +87,7 @@ const buildEmailHtml = (id: number, nome_empresa: string, nome_pessoa: string, e
 };
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders(req) });
 
   try {
     const { ts_token, nome_empresa, nome_pessoa, email_cliente, telefone_cliente, descricao_problema } = await req.json();
@@ -94,7 +102,7 @@ serve(async (req) => {
 
     if (!tsData.success) {
       return new Response(JSON.stringify({ error: 'Verificação falhou. Tente novamente.' }), {
-        status: 400, headers: { ...CORS, 'Content-Type': 'application/json' },
+        status: 400, headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
       });
     }
 
@@ -169,12 +177,12 @@ serve(async (req) => {
     }
 
     return new Response(JSON.stringify({ id: ticket.id }), {
-      status: 200, headers: { ...CORS, 'Content-Type': 'application/json' },
+      status: 200, headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
     });
   } catch (err) {
     console.error(err);
     return new Response(JSON.stringify({ error: 'Erro interno. Tente novamente.' }), {
-      status: 500, headers: { ...CORS, 'Content-Type': 'application/json' },
+      status: 500, headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
     });
   }
 });
