@@ -187,8 +187,8 @@ const NotificacaoCard = ({ config, onUpdate, limiar, setLimiar, saveLimiar, savi
             </div>
           )}
 
-          {/* Destinatário principal — não mostrar para créditos baixos */}
-          {config.evento !== 'creditos_baixos' && (
+          {/* Destinatário principal — não mostrar para creditos_baixos nem ticket_estado (o cliente vem do ticket) */}
+          {config.evento !== 'creditos_baixos' && config.evento !== 'ticket_estado' && (
             <div>
               <div style={{ fontSize: 11, fontWeight: 600, color: C.grey400, textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 6 }}>
                 Destinatário principal (Para:)

@@ -10,6 +10,8 @@ import { Modal } from '../../components/ui/Modal';
 import { Loading } from '../../components/ui/Loading';
 import { fmtDate, fmtDateTime } from '../../utils/formatters';
 import { estadoLabel, estadoCor, TRANSICOES, transicaoLabel } from './helpers';
+import { buildTicketEstadoEmail } from '../../features/email/templates/ticketEstadoEmail';
+import { sendEmailResend } from '../../lib/email';
 
 // ── Pure helpers ──────────────────────────────────────────────────────────────
 
@@ -132,7 +134,7 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
     const [tkR, histR, tecR, cliR, tipEqR, tipR] = await Promise.all([
       sb.from('rbo_tickets').select('*').eq('id', initialTicket.id).single(),
       sb.from('rbo_ticket_historico').select('*').eq('ticket_id', initialTicket.id).order('created_at', { ascending: false }),
-      sb.from('rbo_profiles').select('id,nome,is_tecnico').neq('ativo', false).order('nome'),
+      sb.from('rbo_profiles').select('id,nome,is_tecnico,email').neq('ativo', false).order('nome'),
       sb.from('rbo_clientes').select('id,nome,nif,email,telefone').order('nome'),
       sb.from('rbo_equipment_types').select('id,nome').order('nome'),
       sb.from('rbo_tipologias').select('id,nome').order('nome'),
@@ -209,6 +211,32 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
   };
 
   const cancelEdit = () => { setEditSection(null); setNumSerieError(''); setSaveError(''); };
+
+  // ── Notificação de mudança de estado ─────────────────────────────────────────
+  const ESTADOS_NOTIFICAR = new Set(['atribuido', 'em_curso', 'aguarda_cliente', 'reaberto', 'concluido', 'cancelado']);
+
+  const sendEstadoNotification = async (estadoNovo, estadoAnterior, tecnicoOverride) => {
+    if (!ESTADOS_NOTIFICAR.has(estadoNovo)) return;
+    try {
+      const { data: cfg } = await sb
+        .from('rbo_notificacoes_config')
+        .select('ativa, destinatarios')
+        .eq('evento', 'ticket_estado')
+        .maybeSingle();
+      if (!cfg?.ativa) return;
+      const clientEmail = ticket.email_cliente || ticket.cliente?.email || null;
+      const ccList = (cfg.destinatarios || []).filter(Boolean);
+      const to = clientEmail || (ccList.length ? ccList[0] : null);
+      if (!to) return;
+      const cc = clientEmail ? ccList : ccList.slice(1);
+      const tec = tecnicoOverride ?? (ticket.tecnico_id ? tecnicos.find(t => t.id === ticket.tecnico_id) : null);
+      const html = buildTicketEstadoEmail({ ticket, estadoNovo, estadoAnterior, tecnico: tec });
+      const subject = `Pedido #${String(ticket.id).padStart(4, '0')} — ${estadoLabel(estadoNovo)}`;
+      await sendEmailResend({ to, cc: cc.length ? cc : undefined, subject, html });
+    } catch (err) {
+      console.error('[ticket_estado email]', err);
+    }
+  };
 
   // ── Triage helper: insert historico entry when submetido → pendente ──
   const registarTriagem = async () => {
@@ -304,6 +332,7 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
         nota:            'Técnico atribuído',
       }]);
       await sb.from('rbo_tickets').update({ tecnico_id: novoTecnicoId, estado: 'atribuido' }).eq('id', ticket.id);
+      sendEstadoNotification('atribuido', estadoAnterior, tecnico);
     } else {
       await sb.from('rbo_tickets').update({ tecnico_id: novoTecnicoId }).eq('id', ticket.id);
     }
@@ -348,9 +377,10 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
   };
 
   const doAlterarEstado = async (estado, nota, descontar, creditos) => {
+    const estadoAnterior = ticket.estado;
     const { error: updErr } = await sb.from('rbo_tickets').update({ estado }).eq('id', ticket.id);
     if (updErr) { setSaveError('Erro ao atualizar estado: ' + updErr.message); setSaving(false); return; }
-    await sb.from('rbo_ticket_historico').insert([{ ticket_id: ticket.id, estado_anterior: ticket.estado, estado_novo: estado, alterado_por_id: currentUserId || null, nota: nota || null }]);
+    await sb.from('rbo_ticket_historico').insert([{ ticket_id: ticket.id, estado_anterior: estadoAnterior, estado_novo: estado, alterado_por_id: currentUserId || null, nota: nota || null }]);
     if (descontar && ticket.contrato_id) {
       const { data: localRilop } = await sb.from('rbo_locais').select('id').ilike('nome', '%rilop%').single();
       const payload = {
@@ -369,6 +399,7 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
       if (movErr) { setSaveError('Erro ao registar movimento: ' + movErr.message); return; }
       if (mov) await sb.from('rbo_tickets').update({ movimento_id: mov.id }).eq('id', ticket.id);
     }
+    sendEstadoNotification(estado, estadoAnterior);
     await load();
     setNovoEstado(''); setNotaEstado('');
     setShowModalConcluir(false);
