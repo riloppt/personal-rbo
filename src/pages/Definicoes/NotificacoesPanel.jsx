@@ -133,7 +133,7 @@ const NotificacaoCard = ({ config, onUpdate }) => {
         </div>
       )}
 
-      <div style={{ marginBottom: 14 }}>
+      {config.evento !== 'creditos_baixos' && <div style={{ marginBottom: 14 }}>
         <div style={{ fontSize: 11, fontWeight: 600, color: C.grey400, textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 6 }}>
           Destinatário principal (Para:)
         </div>
@@ -159,7 +159,7 @@ const NotificacaoCard = ({ config, onUpdate }) => {
             {savingPrincipal ? 'A guardar…' : 'Guardar'}
           </Btn>
         </div>
-      </div>
+      </div>}
 
       <div style={{ marginBottom: config.destinatarios.length > 0 ? 14 : 0 }}>
         <div style={{ fontSize: 11, fontWeight: 600, color: C.grey400, textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 6 }}>
