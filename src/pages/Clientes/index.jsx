@@ -86,7 +86,7 @@ export const ClientesPage = () => {
   return (
     <>
       <CrudPage key={reload} title="Clientes" table="rbo_clientes"
-        hasAtivo
+        hasAtivo noAtivoToggle
         sortableKeys={["nome","nif","localidade"]}
         cols={[
           {key:"nome", label:"Nome", render:(v,row)=>(
