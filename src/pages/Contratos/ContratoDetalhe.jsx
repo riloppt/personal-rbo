@@ -38,9 +38,10 @@ export const ContratoDetalhe = ({ contrato, onBack, onDelete }) => {
   const [periodEmailTo,      setPeriodEmailTo]      = useState('');
   const [periodEmailSending, setPeriodEmailSending] = useState(false);
   const [periodEmailResult,  setPeriodEmailResult]  = useState(null);
-  const [lowCreditsModal,    setLowCreditsModal]    = useState(null);
-  const [lowCreditsSending,  setLowCreditsSending]  = useState(false);
-  const [lowCreditsResult,   setLowCreditsResult]   = useState(null);
+  const [lowCreditsModal,        setLowCreditsModal]        = useState(null);
+  const [lowCreditsSending,      setLowCreditsSending]      = useState(false);
+  const [lowCreditsResult,       setLowCreditsResult]       = useState(null);
+  const [notifEnviadaEm,         setNotifEnviadaEm]         = useState(contrato.notificacao_creditos_enviada_em || null);
 
   const load = useCallback(async()=>{
     setLoading(true);
@@ -89,12 +90,25 @@ export const ContratoDetalhe = ({ contrato, onBack, onDelete }) => {
       if (!to) throw new Error('O cliente não tem email registado');
       const bcc = (lowCreditsModal.notifConfig?.destinatarios || []).filter(e => e && e !== to);
       await sendEmailResend({ to, bcc, subject, html });
+      const ts = new Date().toISOString();
+      await sb.from('rbo_contratos').update({ notificacao_creditos_enviada_em: ts }).eq('id', contrato.id);
+      setNotifEnviadaEm(ts);
       setLowCreditsResult('ok');
     } catch (err) {
       setLowCreditsResult(err.message || 'Erro desconhecido');
     } finally {
       setLowCreditsSending(false);
     }
+  };
+
+  const openLowCreditsManual = async () => {
+    const [limiarRes, notifRes] = await Promise.all([
+      sb.from('rbo_definicoes_globais').select('valor').eq('chave','creditos_limiar_alerta').maybeSingle(),
+      sb.from('rbo_notificacoes_config').select('*').eq('evento','creditos_baixos').maybeSingle(),
+    ]);
+    if (!notifRes.data?.ativa) return;
+    setLowCreditsResult(null);
+    setLowCreditsModal({ saldo, limiar: Number(limiarRes.data?.valor || 0), notifConfig: notifRes.data });
   };
 
   const saveMov = async () => {
@@ -117,7 +131,13 @@ export const ContratoDetalhe = ({ contrato, onBack, onDelete }) => {
     else {
       const newSaldo = saldo + Number(form.creditos);
       await load(); setModal(null);
-      if (!editingId) await checkAndShowLowCreditsModal(newSaldo);
+      if (!editingId) {
+        if (form.tipo === 'credito') {
+          await sb.from('rbo_contratos').update({ notificacao_creditos_enviada_em: null }).eq('id', contrato.id);
+          setNotifEnviadaEm(null);
+        }
+        await checkAndShowLowCreditsModal(newSaldo);
+      }
     }
     setSaving(false);
   };
@@ -215,14 +235,23 @@ export const ContratoDetalhe = ({ contrato, onBack, onDelete }) => {
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:12,marginBottom:20}}>
         <div>
           <h1 style={{fontSize:22,fontWeight:700,color:C.grey800}}>{cliente?.nome}</h1>
-          <div style={{display:"flex",gap:8,marginTop:6,flexWrap:"wrap"}}>
+          <div style={{display:"flex",gap:8,marginTop:6,flexWrap:"wrap",alignItems:"center"}}>
             <Badge>{tipologia?.nome}</Badge>
             <Badge color={C.grey400}>Desde {fmtDate(contrato.data_contrato)}</Badge>
             <Badge color={saldo>10?C.green:saldo>0?C.amber:C.red}>{saldo} créditos</Badge>
+            {notifEnviadaEm && (
+              <Badge color={C.green}>
+                <span style={{display:"flex",alignItems:"center",gap:4}}>
+                  <Icon name="mailDone" size={11} color={C.green}/>
+                  Notificado {fmtDate(notifEnviadaEm.slice(0,10))}
+                </span>
+              </Badge>
+            )}
           </div>
         </div>
         <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
           <Btn variant="secondary" size="sm" icon="contracts" onClick={()=>{ setPeriodModal(true); setPeriodError(''); setPeriodEmailTo(cliente?.email||''); setPeriodEmailResult(null); }}>Relatório de Período</Btn>
+          <Btn variant="secondary" size="sm" icon="mail" onClick={openLowCreditsManual}>Notificar cliente</Btn>
           <Btn variant="secondary" size="sm" icon="credit" onClick={()=>openNew("credito")}>Adicionar Créditos</Btn>
           <Btn size="sm" icon="plus" onClick={()=>openNew("assistencia")}>Nova Assistência</Btn>
           {onDelete && <Btn variant="danger" size="sm" icon="trash" onClick={onDelete}>Eliminar contrato</Btn>}

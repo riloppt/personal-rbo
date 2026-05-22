@@ -6,6 +6,7 @@ import { StatCard } from '../components/ui/StatCard';
 import { Badge } from '../components/ui/Badge';
 import { Card } from '../components/ui/Card';
 import { Loading } from '../components/ui/Loading';
+import { Icon } from '../components/ui/Icon';
 import { fmtDate } from '../utils/formatters';
 import { ESTADOS, estadoCor, estadoLabel } from './Tickets/helpers';
 
@@ -23,7 +24,7 @@ export const Dashboard = () => {
     (async () => {
       const [cliRes, conRes, movRes, tipRes, tkRes] = await Promise.all([
         sb.from("rbo_clientes").select("id", { count: "exact", head: true }),
-        sb.from("rbo_contratos").select("id,ativo,tipologia_id,cliente_id,cliente:rbo_clientes(id,nome)"),
+        sb.from("rbo_contratos").select("id,ativo,tipologia_id,cliente_id,notificacao_creditos_enviada_em,cliente:rbo_clientes(id,nome)"),
         sb.from("rbo_movimentos").select("id,creditos,tipo,data,contrato_id,profile_tecnico_id").order("data", { ascending: false }),
         sb.from("rbo_tipologias").select("id,nome"),
         sb.from("rbo_tickets").select("id,estado,created_at,tecnico_id").order("created_at", { ascending: false }),
@@ -164,7 +165,19 @@ export const Dashboard = () => {
               creditosBaixos.map(c => (
                 <div key={c.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: `1px solid ${C.grey100}` }}>
                   <span style={{ fontSize: 14, color: C.grey800 }}>{c.cliente?.nome || "—"}</span>
-                  <Badge color={c.saldo <= 0 ? C.red : C.amber}>{c.saldo} cr</Badge>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    {c.notificacao_creditos_enviada_em ? (
+                      <span title={`Notificado em ${fmtDate(c.notificacao_creditos_enviada_em.slice(0,10))}`} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: C.green, fontWeight: 600 }}>
+                        <Icon name="mailDone" size={13} color={C.green}/>
+                        {fmtDate(c.notificacao_creditos_enviada_em.slice(0,10))}
+                      </span>
+                    ) : (
+                      <span title="Não notificado" style={{ display: "flex", alignItems: "center" }}>
+                        <Icon name="mail" size={13} color={C.grey300}/>
+                      </span>
+                    )}
+                    <Badge color={c.saldo <= 0 ? C.red : C.amber}>{c.saldo} cr</Badge>
+                  </div>
                 </div>
               ))
             )}
