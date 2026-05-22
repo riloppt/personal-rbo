@@ -75,7 +75,7 @@ export const buildLowCreditsEmail = ({ cliente, contrato, tipologia, saldo, limi
             <div style="font-size:11px;font-weight:600;color:#888888;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:8px;">Contactos Rilop</div>
             <div style="font-size:13px;color:#444444;line-height:1.7;">
               Email: <a href="mailto:aveiro@rilop.pt" style="color:#0d6e6e;text-decoration:none;">aveiro@rilop.pt</a><br>
-              Web: <a href="https://rilop.pt" style="color:#0d6e6e;text-decoration:none;">rilop.pt</a>
+              Telefone: 234 422 848
             </div>
           </div>
         </td></tr>
