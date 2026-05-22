@@ -23,7 +23,7 @@ export const Dashboard = () => {
   useEffect(() => {
     (async () => {
       const [cliRes, conRes, movRes, tipRes, tkRes] = await Promise.all([
-        sb.from("rbo_clientes").select("id", { count: "exact", head: true }),
+        sb.from("rbo_clientes").select("id", { count: "exact", head: true }).neq("ativo", false),
         sb.from("rbo_contratos").select("id,ativo,tipologia_id,cliente_id,notificacao_creditos_enviada_em,cliente:rbo_clientes(id,nome)"),
         sb.from("rbo_movimentos").select("id,creditos,tipo,data,contrato_id,profile_tecnico_id").order("data", { ascending: false }),
         sb.from("rbo_tipologias").select("id,nome"),
