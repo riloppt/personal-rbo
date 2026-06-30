@@ -35,7 +35,9 @@
       "Bash(mv \"C:/Users/sergiohenriques/GitHub/personal-rbo/fix_cells.js\" \"C:/Users/sergiohenriques/GitHub/personal-rbo/fix_cells.cjs\")",
       "Bash(node fix_cells.cjs)",
       "Bash(supabase functions *)",
-      "Bash(npx supabase *)"
+      "Bash(npx supabase *)",
+      "PowerShell(Get-Content graphify-out\\\\.graphify_uncached.txt | Where-Object { $_ -match '\\\\.\\(md|txt|rst|doc\\)$' } | Select-Object -First 20)",
+      "PowerShell(Get-Content graphify-out\\\\.graphify_uncached.txt | Where-Object { $_ -notmatch '\\\\.\\(py|ts|js|jsx|tsx|go|rs|java|cpp|c|rb|swift|kt|cs|scala|php|cc|cxx|hpp|h|kts|lua|toc\\)$' })"
     ]
   }
 }

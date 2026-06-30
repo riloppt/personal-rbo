@@ -1,0 +1,322 @@
+{
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\package.json": {
+    "mtime": 1779178703.6528444,
+    "ast_hash": "74ab5231a2c84b2961c562413c5d6ccc",
+    "semantic_hash": "74ab5231a2c84b2961c562413c5d6ccc"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\vercel.json": {
+    "mtime": 1779461970.1576269,
+    "ast_hash": "75d54814e2798d69a131c3628092c1dc",
+    "semantic_hash": "75d54814e2798d69a131c3628092c1dc"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\vite.config.js": {
+    "mtime": 1779179285.4686658,
+    "ast_hash": "9b21407f5f23a423113fe2f7916297ae",
+    "semantic_hash": "9b21407f5f23a423113fe2f7916297ae"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\src\\App.jsx": {
+    "mtime": 1779393355.3551574,
+    "ast_hash": "75be780c85655b0b9945480c70ea9d73",
+    "semantic_hash": "75be780c85655b0b9945480c70ea9d73"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\src\\main.jsx": {
+    "mtime": 1779179284.8826528,
+    "ast_hash": "fa657181aad560bc9417058ed8a233e8",
+    "semantic_hash": "fa657181aad560bc9417058ed8a233e8"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\src\\components\\layout\\BottomNav.jsx": {
+    "mtime": 1779375197.5240135,
+    "ast_hash": "af8528e592122ec9c8ed256f79976ec7",
+    "semantic_hash": "af8528e592122ec9c8ed256f79976ec7"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\src\\components\\layout\\Sidebar.jsx": {
+    "mtime": 1779375954.2633922,
+    "ast_hash": "c64780d0fbd12544782a7ebe155f713e",
+    "semantic_hash": "c64780d0fbd12544782a7ebe155f713e"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\src\\components\\shared\\CrudPage.jsx": {
+    "mtime": 1779465633.969949,
+    "ast_hash": "1586aac10e5032a7f3f3d45a5355421c",
+    "semantic_hash": "1586aac10e5032a7f3f3d45a5355421c"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\src\\components\\ui\\Badge.jsx": {
+    "mtime": 1779119140.8105469,
+    "ast_hash": "fd176714b59d072bb1410dd8e6a982ed",
+    "semantic_hash": "fd176714b59d072bb1410dd8e6a982ed"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\src\\components\\ui\\Btn.jsx": {
+    "mtime": 1779119148.6295333,
+    "ast_hash": "ff520d75bccd33c3845867d2d26b1c32",
+    "semantic_hash": "ff520d75bccd33c3845867d2d26b1c32"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\src\\components\\ui\\Card.jsx": {
+    "mtime": 1779119174.8483303,
+    "ast_hash": "751eb4c0243ab64964b629f17958aee8",
+    "semantic_hash": "751eb4c0243ab64964b629f17958aee8"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\src\\components\\ui\\CopyBtn.jsx": {
+    "mtime": 1779119216.5899897,
+    "ast_hash": "d36ecd13893af6aadbc08725b5dedab9",
+    "semantic_hash": "d36ecd13893af6aadbc08725b5dedab9"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\src\\components\\ui\\ErrMsg.jsx": {
+    "mtime": 1779119192.9855745,
+    "ast_hash": "b16f7ccaf20d69cff9a645b7a3d76acf",
+    "semantic_hash": "b16f7ccaf20d69cff9a645b7a3d76acf"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\src\\components\\ui\\Icon.jsx": {
+    "mtime": 1779362845.34615,
+    "ast_hash": "e84ace46740b235e49259e1dadc2005d",
+    "semantic_hash": "e84ace46740b235e49259e1dadc2005d"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\src\\components\\ui\\Input.jsx": {
+    "mtime": 1779351982.0152194,
+    "ast_hash": "b3c1b046bb033f368440d945914d2b7c",
+    "semantic_hash": "b3c1b046bb033f368440d945914d2b7c"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\src\\components\\ui\\Loading.jsx": {
+    "mtime": 1779119184.3315752,
+    "ast_hash": "442d7ad737882d2532c62f6bed75e6bc",
+    "semantic_hash": "442d7ad737882d2532c62f6bed75e6bc"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\src\\components\\ui\\Modal.jsx": {
+    "mtime": 1779119168.2155478,
+    "ast_hash": "63ce48a71b13713b1946e1438e76d7e1",
+    "semantic_hash": "63ce48a71b13713b1946e1438e76d7e1"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\src\\components\\ui\\PageHeader.jsx": {
+    "mtime": 1779119207.9810455,
+    "ast_hash": "90c88728f1142d0e3e084017a5e50b49",
+    "semantic_hash": "90c88728f1142d0e3e084017a5e50b49"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\src\\components\\ui\\Select.jsx": {
+    "mtime": 1779119159.6242256,
+    "ast_hash": "07dbdef316921447afb378844451f948",
+    "semantic_hash": "07dbdef316921447afb378844451f948"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\src\\components\\ui\\StatCard.jsx": {
+    "mtime": 1779119179.723597,
+    "ast_hash": "6d314e89947a264d5da98c5706c61b3e",
+    "semantic_hash": "6d314e89947a264d5da98c5706c61b3e"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\src\\components\\ui\\Table.jsx": {
+    "mtime": 1779351413.390326,
+    "ast_hash": "49c130410f3d98369eea5c5f5884b641",
+    "semantic_hash": "49c130410f3d98369eea5c5f5884b641"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\src\\features\\email\\EmailConfirmModal.jsx": {
+    "mtime": 1779461585.2525449,
+    "ast_hash": "99f21adcb2252e956f3e11613443d866",
+    "semantic_hash": "99f21adcb2252e956f3e11613443d866"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\src\\features\\email\\EmailReportBtn.jsx": {
+    "mtime": 1779441907.5916357,
+    "ast_hash": "3a7f3b866313f4204348092fdfb909f3",
+    "semantic_hash": "3a7f3b866313f4204348092fdfb909f3"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\src\\features\\email\\reportHtml.js": {
+    "mtime": 1779461329.1640809,
+    "ast_hash": "5d43a4fcdb9435bfac27c518e326a2ef",
+    "semantic_hash": "5d43a4fcdb9435bfac27c518e326a2ef"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\src\\features\\email\\templates\\lowCreditsEmail.js": {
+    "mtime": 1779460892.1196473,
+    "ast_hash": "2aae89d8175fd4afcd34d118cdaf70ed",
+    "semantic_hash": "2aae89d8175fd4afcd34d118cdaf70ed"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\src\\features\\email\\templates\\newTicketEmail.js": {
+    "mtime": 1779460888.8643293,
+    "ast_hash": "9df7ce40e82881aa662fe94e289ea569",
+    "semantic_hash": "9df7ce40e82881aa662fe94e289ea569"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\src\\features\\email\\templates\\ticketEstadoEmail.js": {
+    "mtime": 1779460903.1099808,
+    "ast_hash": "3de579924692c0beede64aad7f05cc11",
+    "semantic_hash": "3de579924692c0beede64aad7f05cc11"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\src\\hooks\\useSortable.js": {
+    "mtime": 1779351748.4674122,
+    "ast_hash": "ca7067311e895e8789846c3710675ab1",
+    "semantic_hash": "ca7067311e895e8789846c3710675ab1"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\src\\lib\\email.js": {
+    "mtime": 1779438681.9164257,
+    "ast_hash": "e31037d1a146c5641272b08992090ad2",
+    "semantic_hash": "e31037d1a146c5641272b08992090ad2"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\src\\lib\\supabase.js": {
+    "mtime": 1779119072.0774798,
+    "ast_hash": "3a6b8b23d46e53750ef38b0b705b72f1",
+    "semantic_hash": "3a6b8b23d46e53750ef38b0b705b72f1"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\src\\pages\\Dashboard.jsx": {
+    "mtime": 1779465361.0136726,
+    "ast_hash": "21093b6d6a39f02e4abaee957a7e9cc9",
+    "semantic_hash": "21093b6d6a39f02e4abaee957a7e9cc9"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\src\\pages\\auth\\AccessDenied.jsx": {
+    "mtime": 1779119389.7978244,
+    "ast_hash": "f2c088b994ba031afcaaae348e68372d",
+    "semantic_hash": "f2c088b994ba031afcaaae348e68372d"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\src\\pages\\auth\\LoginScreen.jsx": {
+    "mtime": 1779288575.372687,
+    "ast_hash": "9c89cf04b931ee53d047fcd16afe4fef",
+    "semantic_hash": "9c89cf04b931ee53d047fcd16afe4fef"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\src\\pages\\Clientes\\ClienteDetalhe.jsx": {
+    "mtime": 1779374225.2023,
+    "ast_hash": "5b6f17f2efd4d7b2e605a25f3caceb9c",
+    "semantic_hash": "5b6f17f2efd4d7b2e605a25f3caceb9c"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\src\\pages\\Clientes\\ContactosPanel.jsx": {
+    "mtime": 1779288041.082567,
+    "ast_hash": "6a129a2cb94cc1a75abda8e02fa87c1e",
+    "semantic_hash": "6a129a2cb94cc1a75abda8e02fa87c1e"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\src\\pages\\Clientes\\CredenciaisPanel.jsx": {
+    "mtime": 1779119579.1201866,
+    "ast_hash": "c6da9c2d1376f8455ca821d358bd696d",
+    "semantic_hash": "c6da9c2d1376f8455ca821d358bd696d"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\src\\pages\\Clientes\\EquipamentosPanel.jsx": {
+    "mtime": 1779119538.118132,
+    "ast_hash": "4a37de2ac288c0cbfdaae665bee7b31f",
+    "semantic_hash": "4a37de2ac288c0cbfdaae665bee7b31f"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\src\\pages\\Clientes\\index.jsx": {
+    "mtime": 1779465637.9151404,
+    "ast_hash": "e971bb52130d84aa6175d020c09e6738",
+    "semantic_hash": "e971bb52130d84aa6175d020c09e6738"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\src\\pages\\Contratos\\AssistenciaModal.jsx": {
+    "mtime": 1779352614.4181888,
+    "ast_hash": "87f9b83971e06218ef942438119d496a",
+    "semantic_hash": "87f9b83971e06218ef942438119d496a"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\src\\pages\\Contratos\\ContratoDetalhe.jsx": {
+    "mtime": 1779461576.0083158,
+    "ast_hash": "277a2a96f50efc990ca01ea45e32d9a2",
+    "semantic_hash": "277a2a96f50efc990ca01ea45e32d9a2"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\src\\pages\\Contratos\\index.jsx": {
+    "mtime": 1779351473.0355887,
+    "ast_hash": "1347eb88ff1aa6bc6fbf51616b7083a1",
+    "semantic_hash": "1347eb88ff1aa6bc6fbf51616b7083a1"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\src\\pages\\Definicoes\\CategoriasCredenciaisPanel.jsx": {
+    "mtime": 1779287256.2979114,
+    "ast_hash": "175033cdc5eb718ec073838c8555a902",
+    "semantic_hash": "175033cdc5eb718ec073838c8555a902"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\src\\pages\\Definicoes\\DefinicaoPanel.jsx": {
+    "mtime": 1779361694.775797,
+    "ast_hash": "1c4fc010f8991744aacee56e559424d9",
+    "semantic_hash": "1c4fc010f8991744aacee56e559424d9"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\src\\pages\\Definicoes\\index.jsx": {
+    "mtime": 1779437769.6686413,
+    "ast_hash": "54b2df2cb6b14a1f7fbf14b05049cac4",
+    "semantic_hash": "54b2df2cb6b14a1f7fbf14b05049cac4"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\src\\pages\\Definicoes\\NotificacoesPanel.jsx": {
+    "mtime": 1779460445.0996192,
+    "ast_hash": "bead6ce4d99f662d5260e2dc678bfa42",
+    "semantic_hash": "bead6ce4d99f662d5260e2dc678bfa42"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\src\\pages\\Definicoes\\UtilizadoresPanel.jsx": {
+    "mtime": 1779444185.3134685,
+    "ast_hash": "f9c2b32e67cb104684c1b97f0406fadb",
+    "semantic_hash": "f9c2b32e67cb104684c1b97f0406fadb"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\src\\pages\\Equipamentos\\EquipamentoDetalhe.jsx": {
+    "mtime": 1779439612.2500186,
+    "ast_hash": "fff186eb8baf22541a56d798bf323c79",
+    "semantic_hash": "fff186eb8baf22541a56d798bf323c79"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\src\\pages\\Equipamentos\\index.jsx": {
+    "mtime": 1779372568.5003703,
+    "ast_hash": "ee67a88ebee034ab7ad039958e09ac88",
+    "semantic_hash": "ee67a88ebee034ab7ad039958e09ac88"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\src\\pages\\TicketPublico\\index.jsx": {
+    "mtime": 1779438688.023126,
+    "ast_hash": "6db895cd2811075aa92267041d4812a2",
+    "semantic_hash": "6db895cd2811075aa92267041d4812a2"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\src\\pages\\Tickets\\helpers.js": {
+    "mtime": 1779373050.045624,
+    "ast_hash": "98551da4a059fdc7c5d79933ca7b2c14",
+    "semantic_hash": "98551da4a059fdc7c5d79933ca7b2c14"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\src\\pages\\Tickets\\index.jsx": {
+    "mtime": 1779395012.8756976,
+    "ast_hash": "7d9296e3c988362ae79515e3d1e661b5",
+    "semantic_hash": "7d9296e3c988362ae79515e3d1e661b5"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\src\\pages\\Tickets\\TicketDetalhe.jsx": {
+    "mtime": 1779460451.5392532,
+    "ast_hash": "c8bb5e672b2cae912be25a169661460e",
+    "semantic_hash": "c8bb5e672b2cae912be25a169661460e"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\src\\pages\\Tickets\\TicketNovoModal.jsx": {
+    "mtime": 1779437385.024311,
+    "ast_hash": "15285e3ef3668edfabdd5655871db069",
+    "semantic_hash": "15285e3ef3668edfabdd5655871db069"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\src\\theme\\globalStyle.js": {
+    "mtime": 1779119092.8657134,
+    "ast_hash": "c898bc5bf8cb79c642b87692070a9e7a",
+    "semantic_hash": "c898bc5bf8cb79c642b87692070a9e7a"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\src\\theme\\index.js": {
+    "mtime": 1779375143.3705833,
+    "ast_hash": "2efe1895c48c261250bbbedce62e8bff",
+    "semantic_hash": "2efe1895c48c261250bbbedce62e8bff"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\src\\utils\\formatters.js": {
+    "mtime": 1779119099.0651014,
+    "ast_hash": "a1b2c7f3a5cfba0b00f0f62a26712014",
+    "semantic_hash": "a1b2c7f3a5cfba0b00f0f62a26712014"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\src\\utils\\helpers.js": {
+    "mtime": 1779119102.5399501,
+    "ast_hash": "a358417a3e4db16e3f8133c8d2038133",
+    "semantic_hash": "a358417a3e4db16e3f8133c8d2038133"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\supabase\\functions\\create-user\\index.ts": {
+    "mtime": 1779444174.7389944,
+    "ast_hash": "79b7bda166347e8269b9e2bd98efa6bd",
+    "semantic_hash": "79b7bda166347e8269b9e2bd98efa6bd"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\supabase\\functions\\public-ticket-form\\index.ts": {
+    "mtime": 1779460913.7622502,
+    "ast_hash": "98e568c76e2f72d01648039e138fa907",
+    "semantic_hash": "98e568c76e2f72d01648039e138fa907"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\supabase\\functions\\send-email\\index.ts": {
+    "mtime": 1779440569.7001126,
+    "ast_hash": "6540775f1a5b13b1039a21153aa91790",
+    "semantic_hash": "6540775f1a5b13b1039a21153aa91790"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\index.html": {
+    "mtime": 1779290673.0017152,
+    "ast_hash": "5edbbd7396c908878ac11cb904e2cb26",
+    "semantic_hash": "5edbbd7396c908878ac11cb904e2cb26"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\README.md": {
+    "mtime": 1773416208.5915215,
+    "ast_hash": "c8b596509cc7db5a1d1c47db57d27e98",
+    "semantic_hash": "c8b596509cc7db5a1d1c47db57d27e98"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\public\\login-vault.html": {
+    "mtime": 1779376364.6156151,
+    "ast_hash": "0d7b7cfbc9b7190a6e9c4a8463615cfe",
+    "semantic_hash": "0d7b7cfbc9b7190a6e9c4a8463615cfe"
+  },
+  "C:\\Users\\sergiohenriques\\GitHub\\personal-rbo\\supabase\\email-templates\\confirm-signup.html": {
+    "mtime": 1779460923.6213496,
+    "ast_hash": "928fdf2b3bd2e08e3d82d2a654092d0a",
+    "semantic_hash": "928fdf2b3bd2e08e3d82d2a654092d0a"
+  }
+}
