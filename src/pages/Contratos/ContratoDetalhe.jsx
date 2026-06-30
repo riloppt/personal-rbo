@@ -42,6 +42,18 @@ export const ContratoDetalhe = ({ contrato, onBack, onDelete }) => {
   const [lowCreditsSending,      setLowCreditsSending]      = useState(false);
   const [lowCreditsResult,       setLowCreditsResult]       = useState(null);
   const [notifEnviadaEm,         setNotifEnviadaEm]         = useState(contrato.notificacao_creditos_enviada_em || null);
+  const [contratoData,   setContratoData]   = useState(contrato.data_contrato);
+  const [editDateModal,  setEditDateModal]  = useState(false);
+  const [editDateValue,  setEditDateValue]  = useState('');
+
+  const saveDataContrato = async () => {
+    if (!editDateValue) return;
+    setSaving(true);
+    const { error } = await sb.from('rbo_contratos').update({ data_contrato: editDateValue }).eq('id', contrato.id);
+    if (error) alert('Erro: ' + error.message);
+    else { setContratoData(editDateValue); setEditDateModal(false); }
+    setSaving(false);
+  };
 
   const load = useCallback(async()=>{
     setLoading(true);
@@ -237,7 +249,10 @@ export const ContratoDetalhe = ({ contrato, onBack, onDelete }) => {
           <h1 style={{fontSize:22,fontWeight:700,color:C.grey800}}>{cliente?.nome}</h1>
           <div style={{display:"flex",gap:8,marginTop:6,flexWrap:"wrap",alignItems:"center"}}>
             <Badge>{tipologia?.nome}</Badge>
-            <Badge color={C.grey400}>Desde {fmtDate(contrato.data_contrato)}</Badge>
+            <Badge color={C.grey400}>Desde {fmtDate(contratoData)}</Badge>
+            <button onClick={()=>{ setEditDateValue(contratoData); setEditDateModal(true); }} title="Editar data do contrato" style={{background:"none",border:"none",cursor:"pointer",padding:"2px 4px",display:"flex",alignItems:"center"}}>
+              <Icon name="edit" size={13} color={C.grey400}/>
+            </button>
             <Badge color={saldo>10?C.green:saldo>0?C.amber:C.red}>{saldo} créditos</Badge>
             {notifEnviadaEm && (
               <Badge color={C.green}>
@@ -436,6 +451,16 @@ export const ContratoDetalhe = ({ contrato, onBack, onDelete }) => {
               {periodEmailSending?"A enviar...":"Enviar por Email"}
             </Btn>
             <Btn icon="contracts" onClick={generatePeriodReport}>Gerar Relatório</Btn>
+          </div>
+        </Modal>
+      )}
+
+      {editDateModal && (
+        <Modal title="Editar Data do Contrato" onClose={()=>setEditDateModal(false)}>
+          <Input label="Data do contrato" value={editDateValue} onChange={v=>setEditDateValue(v)} type="date"/>
+          <div style={{display:"flex",gap:10,justifyContent:"flex-end",marginTop:20}}>
+            <Btn variant="secondary" onClick={()=>setEditDateModal(false)}>Cancelar</Btn>
+            <Btn onClick={saveDataContrato} disabled={saving}>{saving?"A guardar...":"Guardar"}</Btn>
           </div>
         </Modal>
       )}
