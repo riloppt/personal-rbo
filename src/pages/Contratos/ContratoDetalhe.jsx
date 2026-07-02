@@ -267,7 +267,11 @@ export const ContratoDetalhe = ({ contrato, onBack, onDelete }) => {
         <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
           {/* Ações secundárias — ícone com tooltip */}
           {[
-            { icon:"contracts", title:"Relatório de Período", onClick:()=>{ setPeriodModal(true); setPeriodError(''); setPeriodEmailTo(cliente?.email||''); setPeriodEmailResult(null); } },
+            { icon:"contracts", title:"Relatório de Período", onClick:()=>{
+              const hoje = new Date().toISOString().split("T")[0];
+              setPeriodDates({ inicio: hoje, fim: hoje });
+              setPeriodModal(true); setPeriodError(''); setPeriodEmailTo(cliente?.email||''); setPeriodEmailResult(null);
+            } },
             { icon: notifEnviadaEm ? "mailDone" : "mail",    title:"Notificar cliente",      onClick: openLowCreditsManual, dot: !notifEnviadaEm },
             { icon:"credit",    title:"Adicionar Créditos",  onClick:()=>openNew("credito") },
           ].map(({ icon, title, onClick, dot }) => (
