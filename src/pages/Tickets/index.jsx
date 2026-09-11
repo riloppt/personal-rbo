@@ -6,6 +6,7 @@ import { PageHeader } from '../../components/ui/PageHeader';
 import { Btn } from '../../components/ui/Btn';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
+import { Icon } from '../../components/ui/Icon';
 import { Loading } from '../../components/ui/Loading';
 import { Select } from '../../components/ui/Select';
 import { fmtDate } from '../../utils/formatters';
@@ -145,8 +146,9 @@ export const Tickets = ({ currentUserId }) => {
         </div>
 
         {loading ? <Loading/> : (
-          <div style={{ overflowX: 'auto' }}>
-            <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}`}</style>
+          <>
+          <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}@media(max-width:768px){.rbo-tbl-desktop{display:none!important}.rbo-tbl-mobile{display:block!important}}`}</style>
+          <div className="rbo-tbl-desktop" style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14, tableLayout: 'fixed' }}>
               <thead>
                 <tr style={{ borderBottom: `2px solid ${C.grey100}` }}>
@@ -262,6 +264,40 @@ export const Tickets = ({ currentUserId }) => {
               </tbody>
             </table>
           </div>
+          <div className="rbo-tbl-mobile" style={{ display: 'none' }}>
+            {filtered.length === 0 ? (
+              <div style={{ padding: '32px 16px', textAlign: 'center', color: C.grey400, fontSize: 13 }}>
+                {tickets.length === 0 ? 'Sem tickets. Crie o primeiro ticket ou aguarde submissões pelo formulário público.' : 'Nenhum ticket corresponde aos filtros.'}
+              </div>
+            ) : sorted.map((t, i) => {
+              const isSubmetido = t.estado === 'submetido';
+              return (
+                <div key={t.id} onClick={() => setDetalhe(t)}
+                  style={{ padding: '14px 20px', borderBottom: i < sorted.length - 1 ? `1px solid ${C.grey100}` : 'none', background: isSubmetido ? '#e8a83a08' : 'transparent', cursor: 'pointer' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      {isSubmetido && (
+                        <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#e8a83a', boxShadow: '0 0 6px #e8a83a', animation: 'pulse 2s infinite', flexShrink: 0 }}/>
+                      )}
+                      <span style={{ fontSize: 14, fontWeight: 700, color: C.grey800, fontFamily: "'DM Mono', monospace" }}>#{String(t.id).padStart(4, '0')}</span>
+                    </div>
+                    <Badge color={estadoCor(t.estado)}>{estadoLabel(t.estado)}</Badge>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                    <span style={{ fontSize: 14, fontWeight: 500, color: C.grey800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, minWidth: 0 }}>
+                      {t.nome_empresa || t.cliente?.nome || '—'}
+                    </span>
+                    <Icon name="chevronR" size={16} color={C.grey300}/>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12, color: C.grey500 }}>
+                    <span style={{ color: t.tecnico?.nome ? C.grey500 : C.amber }}>{t.tecnico?.nome || 'Sem técnico'}</span>
+                    <span>{fmtDate(t.created_at?.split('T')[0])}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          </>
         )}
       </Card>
 

@@ -14,7 +14,7 @@ import { Input } from '../ui/Input';
 import { Icon } from '../ui/Icon';
 import { Badge } from '../ui/Badge';
 
-export const CrudPage = ({ title, table, cols, formFields, emptyForm, compact, hasAtivo, noAtivoToggle, fieldOptions, onView, onNew, noInlineEdit, viewIcon, newLabel = 'Novo', preDeleteCheck, searchPlaceholder, noListDelete, sortableKeys, orderBy = 'id' }) => {
+export const CrudPage = ({ title, table, cols, formFields, emptyForm, compact, hasAtivo, noAtivoToggle, fieldOptions, onView, onNew, noInlineEdit, viewIcon, newLabel = 'Novo', preDeleteCheck, searchPlaceholder, noListDelete, sortableKeys, orderBy = 'id', mobileCard }) => {
   const C = useTheme();
   const [rows,      setRows]      = useState([]);
   const [loading,   setLoading]   = useState(true);
@@ -138,6 +138,7 @@ export const CrudPage = ({ title, table, cols, formFields, emptyForm, compact, h
           viewIcon={viewIcon}
           onEdit={noInlineEdit ? undefined : openEdit}
           onDelete={noListDelete ? undefined : del}
+          mobileCard={mobileCard}
           extraActions={hasAtivo && !noAtivoToggle ? row=>(
             <button onClick={()=>toggleAtivo(row)} title={row.ativo===false?"Ativar":"Inativar"}
               style={{background:"none",border:"none",cursor:"pointer",padding:"4px 6px",borderRadius:6,display:"flex",alignItems:"center",transition:"background .15s"}}

@@ -25,12 +25,17 @@ export const Table = ({
   cols, data, onEdit, onDelete, onView, viewIcon = "eye",
   extraActions, emptyMsg = "Sem registos",
   sortKey, sortDir, onSort,
+  mobileCard,
 }) => {
   const C = useTheme();
   const [hoveredCol, setHoveredCol] = useState(null);
 
   return (
-    <div style={{ overflowX:"auto" }}>
+    <>
+    {mobileCard && (
+      <style>{`@media(max-width:768px){.rbo-tbl-desktop{display:none!important}.rbo-tbl-mobile{display:block!important}}`}</style>
+    )}
+    <div className={mobileCard ? "rbo-tbl-desktop" : undefined} style={{ overflowX:"auto" }}>
       <table style={{ width:"100%", borderCollapse:"collapse", fontSize:14 }}>
         <thead>
           <tr style={{ borderBottom:`2px solid ${C.grey100}` }}>
@@ -104,5 +109,15 @@ export const Table = ({
         </tbody>
       </table>
     </div>
+    {mobileCard && (
+      <div className="rbo-tbl-mobile" style={{ display:"none" }}>
+        {data.length === 0 ? (
+          <div style={{ padding:"32px 16px", textAlign:"center", color:C.grey400, fontSize:13 }}>{emptyMsg}</div>
+        ) : data.map((row, i) => (
+          <React.Fragment key={row.id ?? i}>{mobileCard(row)}</React.Fragment>
+        ))}
+      </div>
+    )}
+    </>
   );
 };

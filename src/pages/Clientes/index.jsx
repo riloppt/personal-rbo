@@ -6,6 +6,7 @@ import { Btn } from '../../components/ui/Btn';
 import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
 import { CrudPage } from '../../components/shared/CrudPage';
+import { Icon } from '../../components/ui/Icon';
 import { maskNif, maskPhone, maskCP } from '../../utils/formatters';
 import { ClienteDetalhe } from './ClienteDetalhe';
 
@@ -113,6 +114,25 @@ export const ClientesPage = () => {
         onView={r=>setDetalhe(r)}
         noInlineEdit
         noListDelete
+        mobileCard={r=>(
+          <div onClick={()=>setDetalhe(r)}
+            style={{padding:"14px 20px",borderBottom:`1px solid ${C.grey100}`,display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,cursor:"pointer"}}>
+            <div style={{minWidth:0,flex:1}}>
+              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
+                <span style={{fontSize:15,fontWeight:600,color:C.grey800,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.nome}</span>
+                {r.consumidor_final && (
+                  <span style={{fontSize:10,fontWeight:700,color:C.teal,background:C.teal+"18",borderRadius:4,padding:"1px 7px",letterSpacing:".5px",flexShrink:0}}>CF</span>
+                )}
+              </div>
+              <div style={{fontSize:12,color:C.grey500,display:"flex",flexDirection:"column",gap:2}}>
+                <span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{tecnicoOpts.find(t=>t.value===r.tecnico_resp_id)?.label || "—"}</span>
+                <span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.localidade || "—"}</span>
+                <span>{r.telefone || r.telemovel || "—"}</span>
+              </div>
+            </div>
+            <Icon name="chevronR" size={16} color={C.grey300}/>
+          </div>
+        )}
       />
 
       {newModal && (

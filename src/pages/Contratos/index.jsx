@@ -11,6 +11,7 @@ import { Table } from '../../components/ui/Table';
 import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
 import { Badge } from '../../components/ui/Badge';
+import { Icon } from '../../components/ui/Icon';
 import { fmtDate } from '../../utils/formatters';
 import { ContratoDetalhe } from './ContratoDetalhe';
 
@@ -109,6 +110,29 @@ export const Contratos = () => {
           onSort={toggleSort}
           onView={r=>setDetalhe(r)}
           emptyMsg="Sem contratos. Crie o primeiro contrato."
+          mobileCard={r=>{
+            const cli = clientes.find(x=>x.id===r.cliente_id);
+            const tip = tipologias.find(x=>x.id===r.tipologia_id);
+            const cr  = movStats[r.id]?.creditos || 0;
+            const crColor = cr>10?C.green:cr>0?C.amber:C.red;
+            return (
+              <div onClick={()=>setDetalhe(r)}
+                style={{padding:"14px 20px",borderBottom:`1px solid ${C.grey100}`,display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,cursor:"pointer"}}>
+                <div style={{minWidth:0,flex:1}}>
+                  <div style={{fontSize:15,fontWeight:600,color:C.grey800,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",marginBottom:6}}>{cli?.nome||"—"}</div>
+                  <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginBottom:6}}>
+                    <Badge>{tip?.nome||"—"}</Badge>
+                    <Badge color={r.ativo?C.green:C.grey400}>{r.ativo?"Ativo":"Inativo"}</Badge>
+                  </div>
+                  <div style={{display:"flex",alignItems:"center",gap:10,fontSize:12,color:C.grey500}}>
+                    <span>{fmtDate(r.data_contrato)}</span>
+                    <span style={{fontFamily:"'DM Mono',monospace",fontWeight:600,color:crColor}}>{cr} cr</span>
+                  </div>
+                </div>
+                <Icon name="chevronR" size={16} color={C.grey300}/>
+              </div>
+            );
+          }}
         />}
       </Card>
       {modal&&(
