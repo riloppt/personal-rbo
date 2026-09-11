@@ -16,7 +16,7 @@ export const buildPeriodReportHtml = ({ contrato, cliente, tipologia, inicio, fi
   const rowsHtml = movimentos.length === 0
     ? `<tr><td colspan="${colCount}" style="text-align:center;padding:40px 20px;color:#8fa6ab;font-size:14px;font-style:italic">Sem movimentos no período selecionado</td></tr>`
     : movimentos.map(m => {
-        const tecNome  = m.profile_tecnico_id ? (tecnicos.find(t => t.id === m.profile_tecnico_id)?.nome    || '—') : '—';
+        const tecNome  = m.tecnico_id ? (tecnicos.find(t => t.id === m.tecnico_id)?.nome    || '—') : '—';
         const locNome  = m.local_id           ? (locais.find(l => l.id === m.local_id)?.nome               || '—') : '—';
         const eqNome   = m.equipment_id       ? (equipamentos.find(e => e.id === m.equipment_id)?.descricao || '—') : '';
         const isPos    = m.creditos > 0;

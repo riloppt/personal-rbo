@@ -25,7 +25,7 @@ export const Dashboard = () => {
       const [cliRes, conRes, movRes, tipRes, tkRes] = await Promise.all([
         sb.from("rbo_clientes").select("id", { count: "exact", head: true }).neq("ativo", false),
         sb.from("rbo_contratos").select("id,ativo,tipologia_id,cliente_id,notificacao_creditos_enviada_em,cliente:rbo_clientes(id,nome)"),
-        sb.from("rbo_movimentos").select("id,creditos,tipo,data,contrato_id,profile_tecnico_id").order("data", { ascending: false }),
+        sb.from("rbo_movimentos").select("id,creditos,tipo,data,contrato_id,tecnico_id").order("data", { ascending: false }),
         sb.from("rbo_tipologias").select("id,nome"),
         sb.from("rbo_tickets").select("id,estado,created_at,tecnico_id").order("created_at", { ascending: false }),
       ]);
@@ -49,10 +49,10 @@ export const Dashboard = () => {
 
       const recentAssis = assis.slice(0, 5);
       if (recentAssis.length) {
-        const { data: tecRec } = await sb.from("rbo_profiles").select("id,nome").eq("is_tecnico", true);
+        const { data: tecRec } = await sb.from("rbo_tecnicos").select("id,nome").eq("ativo", true);
         setRecentes(recentAssis.map(m => {
           const con = cons.find(c => c.id === m.contrato_id);
-          const tec = m.profile_tecnico_id ? (tecRec || []).find(t => t.id === m.profile_tecnico_id) : null;
+          const tec = m.tecnico_id ? (tecRec || []).find(t => t.id === m.tecnico_id) : null;
           return { ...m, clienteNome: con?.cliente?.nome, tecnicoNome: tec?.nome };
         }));
       }

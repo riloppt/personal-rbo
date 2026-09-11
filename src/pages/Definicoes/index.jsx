@@ -7,6 +7,7 @@ import { Icon } from '../../components/ui/Icon';
 import { Card } from '../../components/ui/Card';
 import { DefinicaoPanel } from './DefinicaoPanel';
 import { UtilizadoresPanel } from './UtilizadoresPanel';
+import { TecnicosPanel } from './TecnicosPanel';
 import { NotificacoesPanel } from './NotificacoesPanel';
 
 const checkTipologia = async id => {
@@ -82,6 +83,7 @@ export const Definicoes = ({ currentUserId, accent, onAccentChange }) => {
     { id: 'gerais',         label: 'Gerais',               icon: 'settings'  },
     { id: 'notificacoes',   label: 'Notificações',          icon: 'mail'      },
     { id: 'utilizadores',   label: 'Utilizadores',          icon: 'user'      },
+    { id: 'tecnicos',       label: 'Técnicos',              icon: 'technicians' },
     { id: 'tipologias',     label: 'Tipologias',            icon: 'types'     },
     { id: 'locais',         label: 'Locais de Assistência', icon: 'locations' },
     { id: 'categorias',     label: 'Categorias',            icon: 'key'       },
@@ -110,6 +112,7 @@ export const Definicoes = ({ currentUserId, accent, onAccentChange }) => {
       {tab === 'categorias'  && <DefinicaoPanel tabela="rbo_credential_categories" nomeLabel="Nome"  verificarUso={checkCategoria}/>}
       {tab === 'equipamentos'&& <DefinicaoPanel tabela="rbo_equipment_types"       nomeLabel="Tipo"  verificarUso={checkTipoEquipamento}/>}
       {tab === 'utilizadores'  && <UtilizadoresPanel currentUserId={currentUserId}/>}
+      {tab === 'tecnicos'      && <TecnicosPanel/>}
       {tab === 'notificacoes'  && <NotificacoesPanel/>}
     </div>
   );

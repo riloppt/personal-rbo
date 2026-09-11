@@ -7,6 +7,7 @@ import { Loading } from '../../components/ui/Loading';
 import { Icon } from '../../components/ui/Icon';
 import { estadoLabel, estadoCor } from '../Tickets/helpers';
 import { fmtDate, fmtDateTime } from '../../utils/formatters';
+import { EquipmentCredenciaisPanel } from './EquipmentCredenciaisPanel';
 
 const Field = ({ label, value }) => {
   const C = useTheme();
@@ -36,7 +37,7 @@ export const EquipamentoDetalhe = ({ equipamentoId, onBack, navigate }) => {
         .eq('equipamento_id', equipamentoId)
         .order('created_at', { ascending: false }),
       sb.from('rbo_movimentos')
-        .select('id,data,descritivo,creditos,tecnico:rbo_profiles!profile_tecnico_id(id,nome)')
+        .select('id,data,descritivo,creditos,tecnico:rbo_tecnicos!tecnico_id(id,nome)')
         .eq('equipment_id', equipamentoId)
         .order('data', { ascending: false }),
     ]);
@@ -110,7 +111,9 @@ export const EquipamentoDetalhe = ({ equipamentoId, onBack, navigate }) => {
         </div>
       </Card>
 
-      <Card style={{ padding: 0, overflow: 'hidden' }}>
+      <EquipmentCredenciaisPanel equipmentId={equipamentoId} />
+
+      <Card style={{ padding: 0, overflow: 'hidden', marginTop: 20 }}>
         <div style={{ padding: '16px 20px', borderBottom: `1px solid ${C.grey100}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span style={{ fontSize: 14, fontWeight: 600, color: C.grey800 }}>Histórico de Intervenções</span>
           <span style={{ fontSize: 12, color: C.grey400 }}>{history.length} registo{history.length !== 1 ? 's' : ''}</span>

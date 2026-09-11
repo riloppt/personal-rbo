@@ -19,11 +19,11 @@ export const ClientesPage = () => {
   const [newModal,    setNewModal]    = useState(false);
   const [newSaving,   setNewSaving]   = useState(false);
   const [emailError,  setEmailError]  = useState('');
-  const emptyNew = {nome:"",nif:"",consumidor_final:false,tecnico_id:"",morada:"",cp:"",localidade:"",email:"",telefone:"",telemovel:"",observacoes:"",ativo:true};
+  const emptyNew = {nome:"",nif:"",consumidor_final:false,tecnico_resp_id:"",morada:"",cp:"",localidade:"",email:"",telefone:"",telemovel:"",observacoes:"",ativo:true};
   const [newForm, setNewForm] = useState(emptyNew);
 
   useEffect(()=>{
-    sb.from("rbo_profiles").select("id,nome").eq("is_tecnico",true).neq("ativo",false).order("nome")
+    sb.from("rbo_tecnicos").select("id,nome").eq("ativo",true).order("nome")
       .then(({data})=>setTecnicoOpts((data||[]).map(t=>({value:t.id,label:t.nome||t.email}))));
   },[]);
 
@@ -45,7 +45,7 @@ export const ClientesPage = () => {
     if (!newForm.telefone && !newForm.telemovel) return alert("Pelo menos telefone ou telemóvel é obrigatório");
     if (!cf && !newForm.nif)                     return alert("NIF é obrigatório para clientes empresariais");
     setNewSaving(true);
-    const { error } = await sb.from("rbo_clientes").insert([{ ...newForm, tecnico_id: newForm.tecnico_id || null }]);
+    const { error } = await sb.from("rbo_clientes").insert([{ ...newForm, tecnico_resp_id: newForm.tecnico_resp_id || null }]);
     if (error) { alert("Erro: " + error.message); setNewSaving(false); return; }
     setNewModal(false);
     setNewForm(emptyNew);
@@ -98,13 +98,13 @@ export const ClientesPage = () => {
             </div>
           )},
           {key:"nif",        label:"NIF"},
-          {key:"tecnico_id", label:"Técnico", render:(v)=>tecnicoOpts.find(t=>t.value===v)?.label||"—"},
+          {key:"tecnico_resp_id", label:"Técnico", render:(v)=>tecnicoOpts.find(t=>t.value===v)?.label||"—"},
           {key:"localidade", label:"Localidade"},
           {key:"telefone",   label:"Telefone"},
           {key:"email",      label:"Email"},
         ]}
         emptyForm={emptyNew}
-        fieldOptions={{tecnico_id: tecnicoOpts}}
+        fieldOptions={{tecnico_resp_id: tecnicoOpts}}
         formFields={[]}
         onNew={()=>{ setNewForm(emptyNew); setNewModal(true); }}
         newLabel="Novo Cliente"
@@ -122,7 +122,7 @@ export const ClientesPage = () => {
               <Input label="Nome / Empresa" value={newForm.nome} onChange={v=>setNewForm(f=>({...f,nome:v}))} required/>
             </div>
             <div style={{gridColumn:"1/-1"}}>
-              <Select label="Técnico" value={newForm.tecnico_id} onChange={v=>setNewForm(f=>({...f,tecnico_id:v}))} options={tecnicoOpts}/>
+              <Select label="Técnico" value={newForm.tecnico_resp_id} onChange={v=>setNewForm(f=>({...f,tecnico_resp_id:v}))} options={tecnicoOpts}/>
             </div>
             {/* Consumidor Final */}
             <div style={{gridColumn:"1/-1"}}>

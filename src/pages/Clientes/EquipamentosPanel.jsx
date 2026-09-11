@@ -9,6 +9,7 @@ import { Loading } from '../../components/ui/Loading';
 import { Modal } from '../../components/ui/Modal';
 import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
+import { EquipmentCredenciaisPanel } from '../Equipamentos/EquipmentCredenciaisPanel';
 
 export const EquipamentosPanel = ({ clienteId }) => {
   const C = useTheme();
@@ -19,7 +20,7 @@ export const EquipamentosPanel = ({ clienteId }) => {
   const [saving,        setSaving]        = useState(false);
   const [editId,        setEditId]        = useState(null);
   const [showInativos,  setShowInativos]  = useState(false);
-  const empty = {descricao:"",tipo_id:"",num_serie:"",localizacao:""};
+  const empty = {descricao:"",tipo_id:"",num_serie:"",localizacao:"",notas:""};
   const [form, setForm] = useState(empty);
 
   const load = useCallback(async () => {
@@ -36,18 +37,25 @@ export const EquipamentosPanel = ({ clienteId }) => {
   useEffect(() => { load(); }, [load]);
 
   const openNew  = ()  => { setForm(empty); setEditId(null); setModal(true); };
-  const openEdit = e   => { setForm({descricao:e.descricao,tipo_id:String(e.tipo_id||""),num_serie:e.num_serie||"",localizacao:e.localizacao||""}); setEditId(e.id); setModal(true); };
+  const openEdit = e   => { setForm({descricao:e.descricao,tipo_id:String(e.tipo_id||""),num_serie:e.num_serie||"",localizacao:e.localizacao||"",notas:e.notas||""}); setEditId(e.id); setModal(true); };
 
   const save = async () => {
     if (!form.descricao) return alert("Descrição é obrigatória");
     if (!form.tipo_id)   return alert("Tipo é obrigatório");
     setSaving(true);
-    const payload = {descricao:form.descricao,tipo_id:Number(form.tipo_id),num_serie:form.num_serie||null,localizacao:form.localizacao||null};
-    let err;
-    if (!editId) ({ error: err } = await sb.from("rbo_client_equipment").insert([{...payload,cliente_id:clienteId,ativo:true}]));
-    else         ({ error: err } = await sb.from("rbo_client_equipment").update(payload).eq("id",editId));
-    if (err) alert("Erro: " + err.message);
-    else { await load(); setModal(false); }
+    const payload = {descricao:form.descricao,tipo_id:Number(form.tipo_id),num_serie:form.num_serie||null,localizacao:form.localizacao||null,notas:form.notas||null};
+    if (!editId) {
+      const { data, error: err } = await sb.from("rbo_client_equipment").insert([{...payload,cliente_id:clienteId,ativo:true}]).select().single();
+      if (err) { alert("Erro: " + err.message); setSaving(false); return; }
+      await load();
+      setEditId(data.id);
+      setForm({descricao:data.descricao,tipo_id:String(data.tipo_id||""),num_serie:data.num_serie||"",localizacao:data.localizacao||"",notas:data.notas||""});
+    } else {
+      const { error: err } = await sb.from("rbo_client_equipment").update(payload).eq("id",editId);
+      if (err) { alert("Erro: " + err.message); setSaving(false); return; }
+      await load();
+      setModal(false);
+    }
     setSaving(false);
   };
 
@@ -119,13 +127,15 @@ export const EquipamentosPanel = ({ clienteId }) => {
         </div>
       )}
       {modal&&(
-        <Modal title={editId?"Editar equipamento":"Novo equipamento"} onClose={()=>setModal(false)}>
+        <Modal title={editId?"Editar equipamento":"Novo equipamento"} onClose={()=>setModal(false)} wide={!!editId}>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
             <div style={{gridColumn:"1/-1"}}><Input label="Descrição" value={form.descricao} onChange={v=>setForm(f=>({...f,descricao:v}))} required/></div>
             <div style={{gridColumn:"1/-1"}}><Select label="Tipo" value={form.tipo_id} onChange={v=>setForm(f=>({...f,tipo_id:v}))} options={tipoOpts} required/></div>
             <Input label="Número de Série" value={form.num_serie}   onChange={v=>setForm(f=>({...f,num_serie:v}))}   placeholder="ex: SN-123456"/>
             <Input label="Localização"     value={form.localizacao} onChange={v=>setForm(f=>({...f,localizacao:v}))} placeholder="ex: Sala de servidores"/>
+            <div style={{gridColumn:"1/-1"}}><Input label="Notas" value={form.notas} onChange={v=>setForm(f=>({...f,notas:v}))} textarea rows={3} placeholder="Informações adicionais..."/></div>
           </div>
+          {editId && <EquipmentCredenciaisPanel equipmentId={editId} />}
           <div style={{display:"flex",gap:10,justifyContent:"flex-end",marginTop:20}}>
             <Btn variant="secondary" onClick={()=>setModal(false)}>Cancelar</Btn>
             <Btn onClick={save} disabled={saving}>{saving?"A guardar...":"Guardar"}</Btn>

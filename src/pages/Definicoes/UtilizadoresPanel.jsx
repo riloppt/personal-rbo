@@ -57,6 +57,16 @@ export const UtilizadoresPanel = ({ currentUserId }) => {
 
   useEffect(() => { load(); }, [load]);
 
+  const syncTecnicoRecord = async (profileId, nome, email, isTecnico) => {
+    const { data: existing } = await sb.from('rbo_tecnicos').select('id').eq('profile_id', profileId).maybeSingle();
+    if (isTecnico) {
+      if (existing) await sb.from('rbo_tecnicos').update({ nome: nome || null, email, ativo: true }).eq('id', existing.id);
+      else await sb.from('rbo_tecnicos').insert([{ nome: nome || null, email, profile_id: profileId, ativo: true }]);
+    } else if (existing) {
+      await sb.from('rbo_tecnicos').update({ ativo: false }).eq('id', existing.id);
+    }
+  };
+
   const toggleAtivo = async user => {
     if (user.id === currentUserId) { setErrMsg('Não podes desativar a tua própria conta.'); return; }
     await sb.from('rbo_profiles').update({ ativo: !user.ativo }).eq('id', user.id);
@@ -91,6 +101,7 @@ export const UtilizadoresPanel = ({ currentUserId }) => {
       .update({ nome: form.nome || null, is_tecnico: form.is_tecnico, avatar_url: form.avatar_url || null })
       .eq('id', form.id);
     if (profErr) { setErrMsg('Erro ao guardar: ' + profErr.message); setSaving(false); return; }
+    await syncTecnicoRecord(form.id, form.nome, form.email, form.is_tecnico);
     if (form.password && form.id === currentUserId) {
       const { error: passErr } = await sb.auth.updateUser({ password: form.password });
       if (passErr) { setErrMsg('Perfil guardado mas erro na password: ' + passErr.message); setSaving(false); await load(); return; }
@@ -115,6 +126,7 @@ export const UtilizadoresPanel = ({ currentUserId }) => {
         body: { uid, email: form.email, nome: form.nome || null, is_tecnico: form.is_tecnico },
       });
       if (fnErr) { setErrMsg('Utilizador criado mas erro ao guardar perfil: ' + fnErr.message); setSaving(false); return; }
+      await syncTecnicoRecord(uid, form.nome, form.email, form.is_tecnico);
     }
     await load();
     setSaving(false);

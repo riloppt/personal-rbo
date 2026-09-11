@@ -382,7 +382,10 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
     if (updErr) { setSaveError('Erro ao atualizar estado: ' + updErr.message); setSaving(false); return; }
     await sb.from('rbo_ticket_historico').insert([{ ticket_id: ticket.id, estado_anterior: estadoAnterior, estado_novo: estado, alterado_por_id: currentUserId || null, nota: nota || null }]);
     if (descontar && ticket.contrato_id) {
-      const { data: localRilop } = await sb.from('rbo_locais').select('id').ilike('nome', '%rilop%').single();
+      const [{ data: localRilop }, { data: tecRec }] = await Promise.all([
+        sb.from('rbo_locais').select('id').ilike('nome', '%rilop%').single(),
+        ticket.tecnico_id ? sb.from('rbo_tecnicos').select('id').eq('profile_id', ticket.tecnico_id).maybeSingle() : Promise.resolve({ data: null }),
+      ]);
       const payload = {
         contrato_id:        ticket.contrato_id,
         data:               ticket.data_fim || new Date().toISOString().split('T')[0],
@@ -390,7 +393,7 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
         hora_fim:           ticket.hora_fim            || null,
         creditos:           Number(creditos),
         descritivo:         `Ticket #${String(ticket.id).padStart(4, '0')} — ${(ticket.descricao_problema || '').slice(0, 150)}`,
-        profile_tecnico_id: ticket.tecnico_id          || null,
+        tecnico_id:         tecRec?.id                 || null,
         tipo:               'assistencia',
         equipment_id:       ticket.equipamento_id      || null,
         local_id:           localRilop?.id             || null,

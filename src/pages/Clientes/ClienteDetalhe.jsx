@@ -39,7 +39,8 @@ export const ClienteDetalhe = ({ cliente: clienteInicial, tecnicoOpts, onBack, o
     if (!cf && !form.nif)                    return alert("NIF é obrigatório para clientes empresariais");
     setSaving(true);
     const { id: _id, created_at: _ca, ...rest } = form;
-    const { data, error } = await sb.from("rbo_clientes").update(rest).eq("id", cliente.id).select().single();
+    const payload = { ...rest, tecnico_resp_id: rest.tecnico_resp_id || null };
+    const { data, error } = await sb.from("rbo_clientes").update(payload).eq("id", cliente.id).select().single();
     if (error) { alert("Erro: " + error.message); setSaving(false); return; }
     setCliente(data);
     setForm({...data});
@@ -49,7 +50,7 @@ export const ClienteDetalhe = ({ cliente: clienteInicial, tecnicoOpts, onBack, o
 
   const cancelEdit = () => { setForm({...cliente}); setEditingDados(false); };
 
-  const tecNome = tecnicoOpts.find(t => t.value === cliente.tecnico_id)?.label || "—";
+  const tecNome = tecnicoOpts.find(t => t.value === cliente.tecnico_resp_id)?.label || "—";
 
   const tabs = [
     {id:"dados",        label:"Dados",        icon:"user"},
@@ -177,7 +178,7 @@ export const ClienteDetalhe = ({ cliente: clienteInicial, tecnicoOpts, onBack, o
                   <Input label="Nome da Empresa" value={form.nome||""} onChange={v=>setForm(f=>({...f,nome:v}))} required/>
                 </div>
                 <div style={{gridColumn:"1/-1"}}>
-                  <Select label="Técnico" value={form.tecnico_id||""} onChange={v=>setForm(f=>({...f,tecnico_id:v}))} options={tecnicoOpts}/>
+                  <Select label="Técnico" value={form.tecnico_resp_id||""} onChange={v=>setForm(f=>({...f,tecnico_resp_id:v}))} options={tecnicoOpts}/>
                 </div>
                 {/* Consumidor Final */}
                 <div style={{gridColumn:"1/-1"}}>

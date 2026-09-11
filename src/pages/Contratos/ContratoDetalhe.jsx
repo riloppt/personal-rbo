@@ -30,7 +30,7 @@ export const ContratoDetalhe = ({ contrato, onBack, onDelete }) => {
   const [modal,      setModal]      = useState(null);
   const [saving,     setSaving]     = useState(false);
   const [editingId,  setEditingId]  = useState(null);
-  const emptyMov = {data:new Date().toISOString().split("T")[0],hora_inicio:"",hora_fim:"",creditos:"",descritivo:"",profile_tecnico_id:"",local_id:"",equipment_id:"",tipo:"assistencia"};
+  const emptyMov = {data:new Date().toISOString().split("T")[0],hora_inicio:"",hora_fim:"",creditos:"",descritivo:"",tecnico_id:"",local_id:"",equipment_id:"",tipo:"assistencia"};
   const [form, setForm] = useState(emptyMov);
   const [periodModal,        setPeriodModal]        = useState(false);
   const [periodDates,        setPeriodDates]        = useState({ inicio: '', fim: '' });
@@ -59,7 +59,7 @@ export const ContratoDetalhe = ({ contrato, onBack, onDelete }) => {
     setLoading(true);
     const [movRes,tecRes,locRes,cliRes,tipRes,eqRes] = await Promise.all([
       sb.from("rbo_movimentos").select("*").eq("contrato_id",contrato.id).order("data",{ascending:false}),
-      sb.from("rbo_profiles").select("id,nome,email").eq("is_tecnico",true).order("nome"),
+      sb.from("rbo_tecnicos").select("id,nome,email").eq("ativo",true).order("nome"),
       sb.from("rbo_locais").select("*").order("nome"),
       sb.from("rbo_clientes").select("*").eq("id",contrato.cliente_id).single(),
       sb.from("rbo_tipologias").select("*").eq("id",contrato.tipologia_id).single(),
@@ -78,7 +78,7 @@ export const ContratoDetalhe = ({ contrato, onBack, onDelete }) => {
 
   const saldo = movimentos.reduce((s,m)=>s+m.creditos,0);
   const openNew  = tipo => { setForm({...emptyMov,tipo}); setEditingId(null); setModal("mov"); };
-  const openEdit = m   => { setForm({...m,profile_tecnico_id:m.profile_tecnico_id||"",local_id:m.local_id||"",hora_inicio:m.hora_inicio||"",hora_fim:m.hora_fim||"",equipment_id:m.equipment_id||""}); setEditingId(m.id); setModal("mov"); };
+  const openEdit = m   => { setForm({...m,tecnico_id:m.tecnico_id||"",local_id:m.local_id||"",hora_inicio:m.hora_inicio||"",hora_fim:m.hora_fim||"",equipment_id:m.equipment_id||""}); setEditingId(m.id); setModal("mov"); };
 
   const checkAndShowLowCreditsModal = async (newSaldo) => {
     const [limiarRes, notifRes] = await Promise.all([
@@ -131,7 +131,7 @@ export const ContratoDetalhe = ({ contrato, onBack, onDelete }) => {
       contrato_id:contrato.id, data:form.data,
       hora_inicio:form.hora_inicio||null, hora_fim:form.hora_fim||null,
       creditos:cred, descritivo:form.descritivo,
-      profile_tecnico_id:form.profile_tecnico_id||null,
+      tecnico_id:form.tecnico_id||null,
       local_id:form.local_id?Number(form.local_id):null,
       equipment_id:form.equipment_id?Number(form.equipment_id):null,
       tipo:form.tipo,
@@ -222,13 +222,13 @@ export const ContratoDetalhe = ({ contrato, onBack, onDelete }) => {
 
   const lookup = mov => ({
     cliente, tipologia,
-    tecnico:     mov.profile_tecnico_id ? tecnicos.find(t=>t.id===mov.profile_tecnico_id)  : null,
+    tecnico:     mov.tecnico_id ? tecnicos.find(t=>t.id===mov.tecnico_id)  : null,
     local:       mov.local_id           ? locais.find(l=>l.id===mov.local_id)              : null,
     equipamento: mov.equipment_id       ? equipamentos.find(e=>e.id===mov.equipment_id)    : null,
   });
 
   const getMovVal = useCallback((key, row) => {
-    if (key === 'tecnico') return tecnicos.find(t=>t.id===row.profile_tecnico_id)?.nome ?? '';
+    if (key === 'tecnico') return tecnicos.find(t=>t.id===row.tecnico_id)?.nome ?? '';
     if (key === 'local')   return locais.find(l=>l.id===row.local_id)?.nome ?? '';
     return row[key] ?? '';
   }, [tecnicos, locais]);
@@ -314,7 +314,7 @@ export const ContratoDetalhe = ({ contrato, onBack, onDelete }) => {
             {key:"hora_fim",    label:"Fim",        render:v=>v?v.slice(0,5):"—"},
             {key:"creditos",    label:"Créditos",   sortable:true, render:v=><span style={{color:v>0?C.green:C.red,fontWeight:600,fontFamily:"'DM Mono',monospace"}}>{v>0?"+":""}{v}</span>},
             {key:"descritivo",  label:"Descritivo", render:v=><span style={{color:C.grey600,fontSize:13}}>{v}</span>},
-            {key:"profile_tecnico_id", label:"Técnico", sortable:true, sortKey:"tecnico", render:v=>v?tecnicos.find(t=>t.id===v)?.nome:"—"},
+            {key:"tecnico_id", label:"Técnico", sortable:true, sortKey:"tecnico", render:v=>v?tecnicos.find(t=>t.id===v)?.nome:"—"},
             {key:"local_id",    label:"Local",      sortable:true, sortKey:"local",   render:v=>v?locais.find(l=>l.id===v)?.nome:"—"},
             {key:"equipment_id",label:"Equipamento",render:v=>v?equipamentos.find(e=>e.id===v)?.descricao||"—":"—"},
           ]}

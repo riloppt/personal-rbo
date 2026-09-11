@@ -31,7 +31,7 @@ export const AssistenciaModal = ({ initialData, editingId, tecnicos, locais, equ
   const today = new Date().toISOString().split('T')[0];
 
   const [form, setForm] = useState(() => {
-    const base = { data: today, hora_inicio: '', hora_fim: '', creditos: '', descritivo: '', profile_tecnico_id: '', local_id: '', equipment_id: '' };
+    const base = { data: today, hora_inicio: '', hora_fim: '', creditos: '', descritivo: '', tecnico_id: '', local_id: '', equipment_id: '' };
     if (!initialData) return base;
     return {
       ...base, ...initialData,
@@ -40,7 +40,7 @@ export const AssistenciaModal = ({ initialData, editingId, tecnicos, locais, equ
       hora_fim:           initialData.hora_fim       || '',
       local_id:           initialData.local_id       != null ? String(initialData.local_id)       : '',
       equipment_id:       initialData.equipment_id   != null ? String(initialData.equipment_id)   : '',
-      profile_tecnico_id: initialData.profile_tecnico_id ?? '',
+      tecnico_id: initialData.tecnico_id ?? '',
     };
   });
 
@@ -89,7 +89,7 @@ export const AssistenciaModal = ({ initialData, editingId, tecnicos, locais, equ
       hora_fim:           form.hora_fim          || null,
       creditos:           isNaN(cred) ? 0 : cred,
       descritivo:         form.descritivo.trim(),
-      profile_tecnico_id: form.profile_tecnico_id || null,
+      tecnico_id: form.tecnico_id || null,
       local_id:           form.local_id           ? Number(form.local_id)       : null,
       equipment_id:       form.equipment_id       ? Number(form.equipment_id)   : null,
     });
@@ -225,8 +225,8 @@ export const AssistenciaModal = ({ initialData, editingId, tecnicos, locais, equ
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
             <Input label="Data" value={form.data} onChange={v => set('data', v)} type="date" required/>
             <Select label="Técnico"
-              value={form.profile_tecnico_id || ''}
-              onChange={v => set('profile_tecnico_id', v)}
+              value={form.tecnico_id || ''}
+              onChange={v => set('tecnico_id', v)}
               options={tecnicos.map(t => ({ value: t.id, label: t.nome }))}/>
             <Select label="Local"
               value={String(form.local_id || '')}
