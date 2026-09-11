@@ -1,25 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useTheme } from '../../theme';
 import { Icon } from './Icon';
 
 export const CopyBtn = ({ value, isPassword }) => {
   const C = useTheme();
   const [state, setState] = useState("idle"); // idle | copied | clearing
+  const timers = useRef([]);
+
+  const clearTimers = () => { timers.current.forEach(clearTimeout); timers.current = []; };
+
+  useEffect(() => clearTimers, []);
 
   const copy = async () => {
     if (!value) return;
+    clearTimers();
     try {
       await navigator.clipboard.writeText(value);
       setState("copied");
       if (isPassword) {
         // Clear clipboard after 15s
-        setTimeout(async () => {
+        timers.current.push(setTimeout(async () => {
           setState("clearing");
           try { await navigator.clipboard.writeText(""); } catch(_) {}
-          setTimeout(() => setState("idle"), 800);
-        }, 15000);
+          timers.current.push(setTimeout(() => setState("idle"), 800));
+        }, 15000));
       } else {
-        setTimeout(() => setState("idle"), 2000);
+        timers.current.push(setTimeout(() => setState("idle"), 2000));
       }
     } catch(_) { setState("idle"); }
   };

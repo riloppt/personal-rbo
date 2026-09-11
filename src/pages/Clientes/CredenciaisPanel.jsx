@@ -85,13 +85,19 @@ export const CredenciaisPanel = ({ clienteId }) => {
     ));
   };
 
+  const sameGroup = (idA, idB) => {
+    const a = creds.find(c => c.id === idA);
+    const b = creds.find(c => c.id === idB);
+    return (a?.categoria || "") === (b?.categoria || "");
+  };
+
   // Desktop DnD
   const onDragStart = (e, id) => { setDragging(id); e.dataTransfer.effectAllowed = "move"; };
-  const onDragOver  = (e, id) => { e.preventDefault(); if (id !== dragging) setDragOver(id); };
+  const onDragOver  = (e, id) => { e.preventDefault(); if (id !== dragging && sameGroup(dragging, id)) setDragOver(id); };
   const onDragEnd   = ()      => { setDragging(null); setDragOver(null); };
   const onDrop      = async (e, id) => {
     e.preventDefault();
-    if (dragging && dragging !== id) await saveOrder(reorderList(dragging, id));
+    if (dragging && dragging !== id && sameGroup(dragging, id)) await saveOrder(reorderList(dragging, id));
     setDragging(null); setDragOver(null);
   };
 
@@ -103,14 +109,24 @@ export const CredenciaisPanel = ({ clienteId }) => {
     const el = document.elementFromPoint(t.clientX, t.clientY);
     const credEl = el?.closest("[data-cred-id]");
     const overId = credEl ? Number(credEl.getAttribute("data-cred-id")) : null;
-    if (overId && overId !== touchRef.current) setDragOver(overId);
+    if (overId && overId !== touchRef.current && sameGroup(touchRef.current, overId)) setDragOver(overId);
   };
   const onTouchEnd = async () => {
-    if (touchRef.current && dragOver && touchRef.current !== dragOver) {
+    if (touchRef.current && dragOver && touchRef.current !== dragOver && sameGroup(touchRef.current, dragOver)) {
       await saveOrder(reorderList(touchRef.current, dragOver));
     }
     setDragging(null); setDragOver(null); touchRef.current = null;
   };
+
+  const groups = (() => {
+    const map = new Map();
+    creds.forEach(c => {
+      const key = c.categoria || "";
+      if (!map.has(key)) map.set(key, []);
+      map.get(key).push(c);
+    });
+    return Array.from(map.entries()).sort((a, b) => (a[0] === "" ? 1 : 0) - (b[0] === "" ? 1 : 0));
+  })();
 
   return (
     <Card style={{padding:0,overflow:"hidden",marginTop:16}}>
@@ -128,89 +144,91 @@ export const CredenciaisPanel = ({ clienteId }) => {
         </div>
       ) : (
         <div>
-          {creds.map((c, i) => (
-            <div
-              key={c.id}
-              data-cred-id={c.id}
-              draggable
-              onDragStart={e=>onDragStart(e,c.id)}
-              onDragOver={e=>onDragOver(e,c.id)}
-              onDragEnd={onDragEnd}
-              onDrop={e=>onDrop(e,c.id)}
-              style={{
-                padding:"14px 20px",
-                borderBottom:i<creds.length-1?`1px solid ${C.grey100}`:"none",
-                opacity: dragging===c.id ? 0.35 : 1,
-                background: dragOver===c.id ? C.teal+"12" : "transparent",
-                borderLeft: dragOver===c.id ? `3px solid ${C.teal}` : "3px solid transparent",
-                transition:"opacity .15s, background .1s, border .1s",
-              }}>
-              {/* Header row */}
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10}}>
-                <div style={{display:"flex",alignItems:"center",gap:8}}>
-                  {/* Grip handle */}
-                  <div
-                    title="Arrastar para reordenar"
-                    style={{cursor:"grab",padding:"4px 2px",color:C.grey400,flexShrink:0,touchAction:"none"}}
-                    onTouchStart={e=>onTouchStart(e,c.id)}
-                    onTouchMove={onTouchMove}
-                    onTouchEnd={onTouchEnd}>
-                    <Icon name="grip" size={14} color={C.grey400}/>
-                  </div>
-                  {c.categoria && (
-                    <span style={{fontSize:13,fontWeight:700,color:C.teal,background:C.teal+"15",borderRadius:6,padding:"2px 10px"}}>{c.categoria}</span>
-                  )}
-                  {c.url_ip && (
-                    <span style={{fontSize:12,color:C.grey600,fontFamily:"'DM Mono',monospace"}}>{c.url_ip}</span>
-                  )}
-                </div>
-                <div style={{display:"flex",gap:2}}>
-                  <Btn variant="ghost" size="sm" icon="edit"  onClick={()=>openEdit(c)}/>
-                  <Btn variant="ghost" size="sm" icon="trash" onClick={()=>del(c.id)}/>
-                </div>
+          {groups.map(([catName, items], gi) => (
+            <div key={catName || "__sem_categoria__"}>
+              <div style={{display:"flex",alignItems:"center",gap:10,padding:gi===0?"14px 20px 8px":"30px 20px 8px"}}>
+                <span style={{fontSize:12,fontWeight:800,color:C.teal,textTransform:"uppercase",letterSpacing:".7px",whiteSpace:"nowrap"}}>
+                  {catName || "Sem categoria"}
+                </span>
+                <div style={{flex:1,height:1,background:C.grey200}}/>
               </div>
-
-              {/* Credentials grid */}
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-                {/* Utilizador */}
-                {c.utilizador && (
-                  <div style={{background:C.grey50,borderRadius:8,padding:"8px 12px",border:`1px solid ${C.grey100}`}}>
-                    <div style={{fontSize:10,fontWeight:600,color:C.grey400,textTransform:"uppercase",letterSpacing:".5px",marginBottom:4}}>Utilizador</div>
-                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:6}}>
-                      <span style={{fontSize:13,color:C.grey800,fontFamily:"'DM Mono',monospace",wordBreak:"break-all"}}>{c.utilizador}</span>
-                      <CopyBtn value={c.utilizador} isPassword={false}/>
+              {items.map((c, i) => (
+                <div
+                  key={c.id}
+                  data-cred-id={c.id}
+                  onDragOver={e=>onDragOver(e,c.id)}
+                  onDrop={e=>onDrop(e,c.id)}
+                  style={{
+                    borderBottom:i<items.length-1?`1px solid ${C.grey100}`:"none",
+                    opacity: dragging===c.id ? 0.35 : 1,
+                    background: dragOver===c.id ? C.teal+"12" : "transparent",
+                    borderLeft: dragOver===c.id ? `3px solid ${C.teal}` : "3px solid transparent",
+                    transition:"opacity .15s, background .1s, border .1s",
+                  }}>
+                  {/* URL/IP — discreet subtitle, kept out of the data line */}
+                  {c.url_ip && (
+                    <div style={{padding:"6px 20px 0",fontSize:11,color:C.grey400,fontFamily:"'DM Mono',monospace",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                      {c.url_ip}
                     </div>
-                  </div>
-                )}
+                  )}
+                  <div style={{display:"flex",alignItems:"center",gap:10,padding:"4px 20px"}}>
+                    {/* Grip handle — the only draggable area */}
+                    <div
+                      title="Arrastar para reordenar"
+                      draggable
+                      onDragStart={e=>onDragStart(e,c.id)}
+                      onDragEnd={onDragEnd}
+                      onTouchStart={e=>onTouchStart(e,c.id)}
+                      onTouchMove={onTouchMove}
+                      onTouchEnd={onTouchEnd}
+                      style={{cursor:"grab",padding:"6px 2px",color:C.grey400,flexShrink:0,touchAction:"none",display:"flex",alignItems:"center"}}>
+                      <Icon name="grip" size={14} color={C.grey400}/>
+                    </div>
 
-                {/* Password */}
-                {c.password && (
-                  <div style={{background:C.grey50,borderRadius:8,padding:"8px 12px",border:`1px solid ${C.grey100}`}}>
-                    <div style={{fontSize:10,fontWeight:600,color:C.grey400,textTransform:"uppercase",letterSpacing:".5px",marginBottom:4}}>Password</div>
-                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:6}}>
-                      <span style={{fontSize:13,color:C.grey800,fontFamily:"'DM Mono',monospace",wordBreak:"break-all",flex:1}}>
-                        {showPwd[c.id] ? c.password : "••••••••"}
-                      </span>
-                      <div style={{display:"flex",gap:2,flexShrink:0}}>
-                        <button onClick={()=>togglePwd(c.id)} title={showPwd[c.id]?"Ocultar":"Mostrar"}
-                          style={{background:"none",border:"none",cursor:"pointer",padding:"3px 5px",borderRadius:5,display:"flex",alignItems:"center"}}
-                          onMouseEnter={e=>e.currentTarget.style.background=C.grey100}
-                          onMouseLeave={e=>e.currentTarget.style.background="none"}>
-                          <Icon name={showPwd[c.id]?"eyeOff":"eye"} size={13} color={C.grey400}/>
-                        </button>
-                        <CopyBtn value={c.password} isPassword={true}/>
+                    {/* Fixed 50/50 grid — password column always starts at the same x */}
+                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,flex:1,minWidth:0}}>
+                      <div style={{display:"flex",alignItems:"center",gap:4,minWidth:0}}>
+                        {c.utilizador && (
+                          <>
+                            <span style={{fontSize:13,color:C.grey800,fontFamily:"'DM Mono',monospace",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{c.utilizador}</span>
+                            <CopyBtn value={c.utilizador} isPassword={false}/>
+                          </>
+                        )}
+                      </div>
+                      <div style={{display:"flex",alignItems:"center",gap:4,minWidth:0}}>
+                        {c.password && (
+                          <>
+                            <span style={{fontSize:13,color:C.grey800,fontFamily:"'DM Mono',monospace",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                              {showPwd[c.id] ? c.password : "••••••••"}
+                            </span>
+                            <button onClick={()=>togglePwd(c.id)} title={showPwd[c.id]?"Ocultar":"Mostrar"}
+                              style={{background:"none",border:"none",cursor:"pointer",padding:"3px",borderRadius:5,display:"flex",alignItems:"center",flexShrink:0}}
+                              onMouseEnter={e=>e.currentTarget.style.background=C.grey100}
+                              onMouseLeave={e=>e.currentTarget.style.background="none"}>
+                              <Icon name={showPwd[c.id]?"eyeOff":"eye"} size={13} color={C.grey400}/>
+                            </button>
+                            <CopyBtn value={c.password} isPassword={true}/>
+                          </>
+                        )}
                       </div>
                     </div>
-                  </div>
-                )}
-              </div>
 
-              {/* Notas */}
-              {c.notas && (
-                <div style={{marginTop:8,fontSize:12,color:C.grey600,lineHeight:1.6,whiteSpace:"pre-wrap",background:C.grey50,borderRadius:6,padding:"6px 10px",border:`1px solid ${C.grey100}`}}>
-                  {c.notas}
+                    {/* Notas indicator — fixed-width slot so it never shifts the actions column */}
+                    <div style={{width:16,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                      {c.notas && (
+                        <span title={c.notas} style={{display:"flex"}}>
+                          <Icon name="note" size={13} color={C.grey300}/>
+                        </span>
+                      )}
+                    </div>
+
+                    <div style={{display:"flex",gap:0,flexShrink:0}}>
+                      <Btn variant="ghost" size="sm" icon="edit"  onClick={()=>openEdit(c)}/>
+                      <Btn variant="ghost" size="sm" icon="trash" onClick={()=>del(c.id)}/>
+                    </div>
+                  </div>
                 </div>
-              )}
+              ))}
             </div>
           ))}
         </div>
