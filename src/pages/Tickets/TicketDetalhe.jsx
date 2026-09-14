@@ -10,6 +10,7 @@ import { Modal } from '../../components/ui/Modal';
 import { Loading } from '../../components/ui/Loading';
 import { fmtDate, fmtDateTime } from '../../utils/formatters';
 import { estadoLabel, estadoCor, TRANSICOES, transicaoLabel } from './helpers';
+import { buildTicketPrintHtml } from './ticketPrintHtml';
 import { buildTicketEstadoEmail } from '../../features/email/templates/ticketEstadoEmail';
 import { sendEmailResend } from '../../lib/email';
 
@@ -211,6 +212,14 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
   };
 
   const cancelEdit = () => { setEditSection(null); setNumSerieError(''); setSaveError(''); };
+
+  const imprimirTicket = () => {
+    const w = window.open('', '_blank');
+    if (!w) return;
+    w.document.write(buildTicketPrintHtml(ticket));
+    w.document.close();
+    w.onload = () => w.print();
+  };
 
   // ── Notificação de mudança de estado ─────────────────────────────────────────
   const ESTADOS_NOTIFICAR = new Set(['atribuido', 'em_curso', 'aguarda_cliente', 'reaberto', 'concluido', 'cancelado']);
@@ -484,7 +493,10 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
           <div style={{ fontSize: 12, color: C.grey400 }}>Criado: {fmtDateTime(ticket.created_at)}</div>
-          <Btn variant="danger" size="sm" icon="trash" onClick={eliminarTicket} disabled={saving}>Eliminar ticket</Btn>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <Btn variant="secondary" size="sm" icon="print" onClick={imprimirTicket}>Imprimir</Btn>
+            <Btn variant="danger" size="sm" icon="trash" onClick={eliminarTicket} disabled={saving}>Eliminar ticket</Btn>
+          </div>
         </div>
       </div>
 
