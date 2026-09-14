@@ -20,6 +20,7 @@ export const CredenciaisPanel = ({ clienteId }) => {
   const [showPwd,    setShowPwd]    = useState({});
   const [dragging,   setDragging]   = useState(null);
   const [dragOver,   setDragOver]   = useState(null);
+  const [search,     setSearch]     = useState("");
   const touchRef = useRef(null);
   const empty = {categoria:"",url_ip:"",utilizador:"",password:"",notas:""};
   const [form, setForm] = useState(empty);
@@ -118,9 +119,16 @@ export const CredenciaisPanel = ({ clienteId }) => {
     setDragging(null); setDragOver(null); touchRef.current = null;
   };
 
+  const q = search.trim().toLowerCase();
+  const filteredCreds = q === "" ? creds : creds.filter(c =>
+    (c.categoria || "").toLowerCase().includes(q) ||
+    (c.url_ip || "").toLowerCase().includes(q) ||
+    (c.utilizador || "").toLowerCase().includes(q)
+  );
+
   const groups = (() => {
     const map = new Map();
-    creds.forEach(c => {
+    filteredCreds.forEach(c => {
       const key = c.categoria || "";
       if (!map.has(key)) map.set(key, []);
       map.get(key).push(c);
@@ -138,9 +146,20 @@ export const CredenciaisPanel = ({ clienteId }) => {
         <Btn size="sm" icon="plus" onClick={openNew}>Nova</Btn>
       </div>
 
+      {creds.length > 0 && (
+        <div style={{padding:"12px 20px",borderBottom:`1px solid ${C.grey100}`}}>
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Pesquisar por categoria, URL/IP ou utilizador..."
+            style={{width:"100%",maxWidth:320,border:`1.5px solid ${C.grey200}`,borderRadius:8,padding:"7px 12px",fontSize:13,outline:"none",background:C.white,color:C.grey800}}/>
+        </div>
+      )}
+
       {loading ? <Loading/> : creds.length === 0 ? (
         <div style={{padding:"24px 20px",textAlign:"center",color:C.grey400,fontSize:13}}>
           Sem credenciais registadas
+        </div>
+      ) : groups.length === 0 ? (
+        <div style={{padding:"24px 20px",textAlign:"center",color:C.grey400,fontSize:13}}>
+          Sem resultados para "{search}"
         </div>
       ) : (
         <div>
