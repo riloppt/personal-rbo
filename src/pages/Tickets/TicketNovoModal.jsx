@@ -40,7 +40,7 @@ export const TicketNovoModal = ({ onClose, onCreated, currentUserId }) => {
   // Step 3 — Detalhes
   const [contratos,  setContratos]  = useState([]);
   const [movStats,   setMovStats]   = useState({});
-  const [form3,      setForm3]      = useState({ contrato_id: '', profile_tecnico_id: '', descricao_problema: '', notas_internas: '' });
+  const [form3,      setForm3]      = useState({ contrato_id: '', profile_tecnico_id: '', descricao_problema: '', notas_internas: '', solicitado_backup: false });
 
   const [saving,  setSaving]  = useState(false);
   const [error,   setError]   = useState('');
@@ -170,6 +170,7 @@ export const TicketNovoModal = ({ onClose, onCreated, currentUserId }) => {
       tecnico_id:          form3.profile_tecnico_id || null,
       descricao_problema:  form3.descricao_problema.trim(),
       notas_internas:      form3.notas_internas.trim() || null,
+      solicitado_backup:   form3.solicitado_backup,
     }]).select().single();
     if (err) { setError('Erro ao criar ticket: ' + err.message); setSaving(false); return; }
     await sb.from('rbo_ticket_historico').insert([{
@@ -404,6 +405,12 @@ export const TicketNovoModal = ({ onClose, onCreated, currentUserId }) => {
             />
             <Input label="Descrição do Problema" value={form3.descricao_problema} onChange={v => setForm3(f => ({ ...f, descricao_problema: v }))} textarea rows={4} required/>
             <Input label="Notas Internas (não visível para o cliente)" value={form3.notas_internas} onChange={v => setForm3(f => ({ ...f, notas_internas: v }))} textarea rows={3}/>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', userSelect: 'none' }}>
+              <input type="checkbox" checked={!!form3.solicitado_backup}
+                onChange={e => setForm3(f => ({ ...f, solicitado_backup: e.target.checked }))}
+                style={{ accentColor: C.teal, width: 15, height: 15, cursor: 'pointer' }}/>
+              <span style={{ fontSize: 14, color: C.grey700 }}>Solicitado Backup?</span>
+            </label>
           </div>
 
           {error && <div style={{ marginTop: 12, padding: '10px 14px', background: '#e05a5a15', borderRadius: 8, fontSize: 13, color: '#e05a5a', border: '1px solid #e05a5a33' }}>{error}</div>}

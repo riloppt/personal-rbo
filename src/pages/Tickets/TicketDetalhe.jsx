@@ -204,7 +204,7 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
       setAssocForm({ cliente_id: cid, equipamento_id: ticket.equipamento_id ? String(ticket.equipamento_id) : '', contrato_id: ticket.contrato_id ? String(ticket.contrato_id) : '', tecnico_id: ticket.tecnico_id || '' });
       setClienteSearch(ticket.cliente?.nome || '');
     } else if (section === 'descricao') {
-      setDescForm({ descricao_problema: ticket.descricao_problema || '', notas_internas: ticket.notas_internas || '' });
+      setDescForm({ descricao_problema: ticket.descricao_problema || '', notas_internas: ticket.notas_internas || '', solicitado_backup: !!ticket.solicitado_backup });
     } else if (section === 'tempo') {
       setTempoForm({ data_inicio: ticket.data_inicio || '', hora_inicio: ticket.hora_inicio || '', data_fim: ticket.data_fim || '', hora_fim: ticket.hora_fim || '', duracao_minutos: ticket.duracao_minutos != null ? String(ticket.duracao_minutos) : '' });
     }
@@ -288,6 +288,7 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
     await sb.from('rbo_tickets').update({
       descricao_problema: descForm.descricao_problema || null,
       notas_internas:     descForm.notas_internas     || null,
+      solicitado_backup:  !!descForm.solicitado_backup,
       estado:             estadoFinal,
     }).eq('id', ticket.id);
     if (estadoFinal !== ticket.estado) await registarTriagem();
@@ -473,6 +474,7 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
             <Badge color={estadoCor(ticket.estado)}>{estadoLabel(ticket.estado)}</Badge>
             <Badge color={C.grey400}>{ticket.tipo === 'publico' ? 'Público' : 'Manual'}</Badge>
             {ticket.movimento_id && <Badge color={C.green}>Crédito descontado</Badge>}
+            {ticket.solicitado_backup && <Badge color={C.green}>Backup solicitado</Badge>}
           </div>
           <div style={{ fontSize: 14, color: C.grey600 }}>
             {ticket.nome_empresa && <span style={{ fontWeight: 500 }}>{ticket.nome_empresa}</span>}
@@ -598,6 +600,12 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
                 <Input label="Notas Internas" value={descForm.notas_internas} onChange={v => setDescForm(f => ({ ...f, notas_internas: v }))} textarea rows={3}/>
                 <div style={{ fontSize: 11, color: C.grey400, marginTop: 4 }}>Não visível para o cliente</div>
               </div>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', userSelect: 'none' }}>
+                <input type="checkbox" checked={!!descForm.solicitado_backup}
+                  onChange={e => setDescForm(f => ({ ...f, solicitado_backup: e.target.checked }))}
+                  style={{ accentColor: C.teal, width: 15, height: 15, cursor: 'pointer' }}/>
+                <span style={{ fontSize: 14, color: C.grey700 }}>Solicitado Backup?</span>
+              </label>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
