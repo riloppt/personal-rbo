@@ -155,12 +155,13 @@ export const Tickets = ({ currentUserId }) => {
                   {/* indicator dot — not sortable */}
                   <th style={{ padding: '12px 16px', width: 28, background: C.white }}/>
                   {[
-                    { label: '#ID',             sk: 'id',         w: 72  },
-                    { label: 'Empresa / Pessoa', sk: 'empresa',    w: null },
-                    { label: 'Equipamento',      sk: null,         w: 180 },
-                    { label: 'Técnico',          sk: 'tecnico',    w: 140 },
-                    { label: 'Criado em',        sk: 'created_at', w: 110 },
-                    { label: 'Estado',           sk: 'estado',     w: 130 },
+                    { label: '#ID',        sk: 'id',         w: 72  },
+                    { label: 'Cliente',    sk: 'empresa',    w: 170 },
+                    { label: 'Assunto',    sk: null,         w: null },
+                    { label: 'Equipamento', sk: null,        w: 160 },
+                    { label: 'Técnico',    sk: 'tecnico',    w: 130 },
+                    { label: 'Criado em',  sk: 'created_at', w: 100 },
+                    { label: 'Estado',     sk: 'estado',     w: 120 },
                   ].map(({ label, sk, w }) => {
                     const isActive = sk && sortKey === sk;
                     return (
@@ -200,7 +201,7 @@ export const Tickets = ({ currentUserId }) => {
               </thead>
               <tbody>
                 {filtered.length === 0 && (
-                  <tr><td colSpan={8} style={{ padding: '32px 16px', textAlign: 'center', color: C.grey400, fontSize: 13 }}>
+                  <tr><td colSpan={9} style={{ padding: '32px 16px', textAlign: 'center', color: C.grey400, fontSize: 13 }}>
                     {tickets.length === 0 ? 'Sem tickets. Crie o primeiro ticket ou aguarde submissões pelo formulário público.' : 'Nenhum ticket corresponde aos filtros.'}
                   </td></tr>
                 )}
@@ -219,39 +220,34 @@ export const Tickets = ({ currentUserId }) => {
                         )}
                       </td>
                       {/* ID */}
-                      <td style={{ padding: '13px 16px', color: C.grey400, fontFamily: "'DM Mono', monospace", fontSize: 13, whiteSpace: 'nowrap' }}>
+                      <td style={{ padding: '10px 16px', color: C.grey400, fontFamily: "'DM Mono', monospace", fontSize: 13, whiteSpace: 'nowrap' }}>
                         #{String(t.id).padStart(4, '0')}
                       </td>
-                      {/* Empresa / Pessoa */}
-                      <td style={{ padding: '13px 16px', color: C.grey800 }}>
-                        <div style={{ fontWeight: 500 }}>{t.nome_empresa || t.cliente?.nome || '—'}</div>
-                        <div style={{ fontSize: 12, color: C.grey400, marginTop: 2, visibility: t.nome_pessoa ? 'visible' : 'hidden' }}>
-                          {t.nome_pessoa || ' '}
-                        </div>
-                        <div style={{ fontSize: 11, visibility: 'hidden' }}>&nbsp;</div>
+                      {/* Cliente */}
+                      <td style={{ padding: '10px 16px', color: C.grey800, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {t.nome_empresa || t.cliente?.nome || '—'}
+                      </td>
+                      {/* Assunto */}
+                      <td style={{ padding: '10px 16px', color: C.grey700, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {t.descricao_problema || '—'}
                       </td>
                       {/* Equipamento */}
-                      <td style={{ padding: '13px 16px', color: C.grey600, fontSize: 13 }}>
-                        <div style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                          {t.equipamento?.descricao || '—'}
-                        </div>
-                        <div style={{ fontSize: 11, color: C.grey400, fontFamily: "'DM Mono', monospace", marginTop: 2, visibility: t.equipamento?.num_serie ? 'visible' : 'hidden' }}>
-                          {t.equipamento?.num_serie ? `S/N ${t.equipamento.num_serie}` : ' '}
-                        </div>
+                      <td style={{ padding: '10px 16px', color: C.grey600, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {t.equipamento?.descricao || '—'}
                       </td>
                       {/* Técnico */}
-                      <td style={{ padding: '13px 16px', fontSize: 13 }}>
+                      <td style={{ padding: '10px 16px', fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {t.tecnico?.nome
                           ? <span style={{ color: C.grey800 }}>{t.tecnico.nome}</span>
                           : <span style={{ color: C.amber, fontSize: 12 }}>Sem técnico</span>
                         }
                       </td>
                       {/* Criado em */}
-                      <td style={{ padding: '13px 16px', color: C.grey400, fontSize: 12, whiteSpace: 'nowrap' }}>
+                      <td style={{ padding: '10px 16px', color: C.grey400, fontSize: 12, whiteSpace: 'nowrap' }}>
                         {fmtDate(t.created_at?.split('T')[0])}
                       </td>
                       {/* Estado */}
-                      <td style={{ padding: '13px 16px' }}>
+                      <td style={{ padding: '10px 16px' }}>
                         <Badge color={estadoCor(t.estado)}>{estadoLabel(t.estado)}</Badge>
                       </td>
                       {/* Ação */}
