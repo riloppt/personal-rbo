@@ -21,6 +21,7 @@ export const CredenciaisPanel = ({ clienteId }) => {
   const [dragging,   setDragging]   = useState(null);
   const [dragOver,   setDragOver]   = useState(null);
   const [search,     setSearch]     = useState("");
+  const [openNotes,  setOpenNotes]  = useState({});
   const touchRef = useRef(null);
   const empty = {categoria:"",url_ip:"",utilizador:"",password:"",notas:""};
   const [form, setForm] = useState(empty);
@@ -69,6 +70,7 @@ export const CredenciaisPanel = ({ clienteId }) => {
   };
 
   const togglePwd = id => setShowPwd(s => ({...s, [id]: !s[id]}));
+  const toggleNotes = id => setOpenNotes(s => ({...s, [id]: !s[id]}));
 
   const reorderList = (fromId, toId) => {
     const from = creds.find(c => c.id === fromId);
@@ -235,9 +237,10 @@ export const CredenciaisPanel = ({ clienteId }) => {
                     {/* Notas indicator — fixed-width slot so it never shifts the actions column */}
                     <div style={{width:16,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
                       {c.notas && (
-                        <span title={c.notas} style={{display:"flex"}}>
-                          <Icon name="note" size={13} color={C.grey300}/>
-                        </span>
+                        <button onClick={()=>toggleNotes(c.id)} title={openNotes[c.id]?"Ocultar notas":"Ver notas"}
+                          style={{background:"none",border:"none",cursor:"pointer",padding:0,display:"flex"}}>
+                          <Icon name="note" size={14} color={C.amber}/>
+                        </button>
                       )}
                     </div>
 
@@ -246,6 +249,12 @@ export const CredenciaisPanel = ({ clienteId }) => {
                       <Btn variant="ghost" size="sm" icon="trash" onClick={()=>del(c.id)}/>
                     </div>
                   </div>
+
+                  {c.notas && openNotes[c.id] && (
+                    <div style={{margin:"0 20px 10px",padding:"10px 12px",background:C.amber+"12",border:`1px solid ${C.amber}33`,borderRadius:8,fontSize:13,color:C.grey700,whiteSpace:"pre-wrap"}}>
+                      {c.notas}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
