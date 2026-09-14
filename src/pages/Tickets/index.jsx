@@ -155,13 +155,13 @@ export const Tickets = ({ currentUserId }) => {
                   {/* indicator dot — not sortable */}
                   <th style={{ padding: '12px 16px', width: 28, background: C.white }}/>
                   {[
-                    { label: '#ID',        sk: 'id',         w: 72  },
-                    { label: 'Cliente',    sk: 'empresa',    w: 170 },
-                    { label: 'Assunto',    sk: null,         w: null },
-                    { label: 'Equipamento', sk: null,        w: 160 },
-                    { label: 'Técnico',    sk: 'tecnico',    w: 130 },
-                    { label: 'Criado em',  sk: 'created_at', w: 100 },
-                    { label: 'Estado',     sk: 'estado',     w: 120 },
+                    { label: '#ID',        sk: 'id',         w: 60    },
+                    { label: 'Cliente',    sk: 'empresa',    w: '15%' },
+                    { label: 'Assunto',    sk: null,         w: '25%' },
+                    { label: 'Equipamento', sk: null,        w: '18%' },
+                    { label: 'Técnico',    sk: 'tecnico',    w: '12%' },
+                    { label: 'Criado em',  sk: 'created_at', w: 100   },
+                    { label: 'Estado',     sk: 'estado',     w: 130   },
                   ].map(({ label, sk, w }) => {
                     const isActive = sk && sortKey === sk;
                     return (
@@ -196,7 +196,7 @@ export const Tickets = ({ currentUserId }) => {
                     );
                   })}
                   {/* actions column */}
-                  <th style={{ padding: '12px 16px', background: C.white }}/>
+                  <th style={{ padding: '12px 16px', width: 60, background: C.white }}/>
                 </tr>
               </thead>
               <tbody>
@@ -220,7 +220,7 @@ export const Tickets = ({ currentUserId }) => {
                         )}
                       </td>
                       {/* ID */}
-                      <td style={{ padding: '10px 16px', color: C.grey400, fontFamily: "'DM Mono', monospace", fontSize: 13, whiteSpace: 'nowrap' }}>
+                      <td style={{ padding: '10px 16px', color: C.grey400, fontFamily: "'DM Mono', monospace", fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         #{String(t.id).padStart(4, '0')}
                       </td>
                       {/* Cliente */}
@@ -228,7 +228,7 @@ export const Tickets = ({ currentUserId }) => {
                         {t.nome_empresa || t.cliente?.nome || '—'}
                       </td>
                       {/* Assunto */}
-                      <td style={{ padding: '10px 16px', color: C.grey700, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <td style={{ padding: '10px 16px', color: C.grey700, fontSize: 13, textTransform: 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {t.descricao_problema || '—'}
                       </td>
                       {/* Equipamento */}
@@ -243,15 +243,15 @@ export const Tickets = ({ currentUserId }) => {
                         }
                       </td>
                       {/* Criado em */}
-                      <td style={{ padding: '10px 16px', color: C.grey400, fontSize: 12, whiteSpace: 'nowrap' }}>
+                      <td style={{ padding: '10px 16px', color: C.grey400, fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {fmtDate(t.created_at?.split('T')[0])}
                       </td>
                       {/* Estado */}
-                      <td style={{ padding: '10px 16px' }}>
+                      <td style={{ padding: '10px 16px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         <Badge color={estadoCor(t.estado)}>{estadoLabel(t.estado)}</Badge>
                       </td>
                       {/* Ação */}
-                      <td style={{ padding: '8px 16px' }}>
+                      <td style={{ padding: '8px 16px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         <Btn variant="ghost" size="sm" icon="eye" onClick={() => setDetalhe(t)}/>
                       </td>
                     </tr>
