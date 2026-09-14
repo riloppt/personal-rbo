@@ -9,6 +9,8 @@ import { DefinicaoPanel } from './DefinicaoPanel';
 import { UtilizadoresPanel } from './UtilizadoresPanel';
 import { TecnicosPanel } from './TecnicosPanel';
 import { NotificacoesPanel } from './NotificacoesPanel';
+import { PermissoesPanel } from './PermissoesPanel';
+import { canManagePermissoes } from '../../lib/permissions';
 
 const checkTipologia = async id => {
   const { count } = await sb.from('rbo_contratos').select('id', { count: 'exact', head: true }).eq('tipologia_id', id);
@@ -75,15 +77,17 @@ const GeraisPanel = ({ accent, onAccentChange }) => {
   );
 };
 
-export const Definicoes = ({ currentUserId, accent, onAccentChange }) => {
+export const Definicoes = ({ currentUserId, profile, accent, onAccentChange }) => {
   const C = useTheme();
   const [tab, setTab] = useState('gerais');
+  const podeGerirPermissoes = canManagePermissoes(profile);
 
   const tabs = [
     { id: 'gerais',         label: 'Gerais',               icon: 'settings'  },
     { id: 'notificacoes',   label: 'Notificações',          icon: 'mail'      },
     { id: 'utilizadores',   label: 'Utilizadores',          icon: 'user'      },
     { id: 'tecnicos',       label: 'Técnicos',              icon: 'technicians' },
+    ...(podeGerirPermissoes ? [{ id: 'permissoes', label: 'Permissões', icon: 'key' }] : []),
     { id: 'tipologias',     label: 'Tipologias',            icon: 'types'     },
     { id: 'locais',         label: 'Locais de Assistência', icon: 'locations' },
     { id: 'categorias',     label: 'Categorias',            icon: 'key'       },
@@ -114,6 +118,7 @@ export const Definicoes = ({ currentUserId, accent, onAccentChange }) => {
       {tab === 'utilizadores'  && <UtilizadoresPanel currentUserId={currentUserId}/>}
       {tab === 'tecnicos'      && <TecnicosPanel/>}
       {tab === 'notificacoes'  && <NotificacoesPanel/>}
+      {tab === 'permissoes' && podeGerirPermissoes && <PermissoesPanel/>}
     </div>
   );
 };

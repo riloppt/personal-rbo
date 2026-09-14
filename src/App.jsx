@@ -13,6 +13,7 @@ import { ClientesPage } from './pages/Clientes';
 import { Definicoes } from './pages/Definicoes';
 import { Tickets } from './pages/Tickets';
 import { Equipamentos } from './pages/Equipamentos';
+import { checkPermission } from './lib/permissions';
 
 const checkMobile = () => {
   const w = window.visualViewport?.width ?? window.innerWidth;
@@ -36,6 +37,7 @@ export default function App() {
   const [isMobile,    setIsMobile]    = useState(checkMobile);
   const [session,     setSession]     = useState(null);
   const [profile,     setProfile]     = useState(null);   // rbo_profiles row
+  const [permissions, setPermissions] = useState([]);      // rbo_permissions rows
   const [authLoading, setAuthLoading] = useState(true);
   const initialLoadDone = useRef(false);
 
@@ -44,8 +46,12 @@ export default function App() {
   // ── Auth ──────────────────────────────────────────────────────────────────
   const loadProfile = useCallback(async (userId) => {
     if (!initialLoadDone.current) setAuthLoading(true);
-    const { data } = await sb.from("rbo_profiles").select("*").eq("id", userId).single();
+    const [{ data }, { data: perms }] = await Promise.all([
+      sb.from("rbo_profiles").select("*").eq("id", userId).single(),
+      sb.from("rbo_permissions").select("*"),
+    ]);
     setProfile(data || null);
+    setPermissions(perms || []);
     if (data) {
       setDarkMode(data.dark_mode ?? true);
       setAccent(data.accent || 'teal');
@@ -98,8 +104,14 @@ export default function App() {
   useEffect(()=>{ if(isMobile) setSideOpen(false); },[isMobile]);
 
   const currentUserId = session?.user?.id || null;
+  const hasPermission = useCallback(chave => checkPermission(profile, permissions, chave), [profile, permissions]);
+  const visibleNavItems = navItems.filter(item => item.id !== 'definicoes' || hasPermission('access_definicoes'));
 
   const navigate = id => { setPage(id); if(isMobile) setSideOpen(false); };
+
+  useEffect(() => {
+    if (page === 'definicoes' && profile && !hasPermission('access_definicoes')) setPage('dashboard');
+  }, [page, profile, hasPermission]);
 
   const toggleDark = async () => {
     const next = !darkMode;
@@ -122,7 +134,7 @@ export default function App() {
     clientes:   <ClientesPage/>,
     equipamentos: <Equipamentos navigate={navigate}/>,
     tickets:    <Tickets currentUserId={currentUserId}/>,
-    definicoes: <Definicoes currentUserId={currentUserId} accent={accent} onAccentChange={changeAccent}/>,
+    definicoes: <Definicoes currentUserId={currentUserId} profile={profile} accent={accent} onAccentChange={changeAccent}/>,
   };
 
   // Auth guards
@@ -152,7 +164,7 @@ export default function App() {
             darkMode={darkMode}
             toggleDark={toggleDark}
             profile={profile}
-            navItems={navItems}
+            navItems={visibleNavItems}
           />
         )}
 
@@ -194,7 +206,7 @@ export default function App() {
           onNavigate={navigate}
           darkMode={darkMode}
           onToggleDark={toggleDark}
-          navItems={navItems}
+          navItems={visibleNavItems}
         />
       )}
     </ThemeCtx.Provider>

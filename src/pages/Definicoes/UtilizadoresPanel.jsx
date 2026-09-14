@@ -46,7 +46,7 @@ export const UtilizadoresPanel = ({ currentUserId }) => {
   const [saving,       setSaving]       = useState(false);
   const [uploading,    setUploading]    = useState(false);
   const [errMsg,       setErrMsg]       = useState(null);
-  const [form,         setForm]         = useState({ email: '', nome: '', password: '', is_tecnico: false, avatar_url: '' });
+  const [form,         setForm]         = useState({ email: '', nome: '', password: '', is_tecnico: false, is_supervisor: false, avatar_url: '' });
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -74,7 +74,7 @@ export const UtilizadoresPanel = ({ currentUserId }) => {
   };
 
   const openEdit = user => {
-    setForm({ id: user.id, nome: user.nome || '', email: user.email || '', password: '', is_tecnico: !!user.is_tecnico, avatar_url: user.avatar_url || '' });
+    setForm({ id: user.id, nome: user.nome || '', email: user.email || '', password: '', is_tecnico: !!user.is_tecnico, is_supervisor: !!user.is_supervisor, avatar_url: user.avatar_url || '' });
     setErrMsg(null);
     setModal('edit');
   };
@@ -98,7 +98,7 @@ export const UtilizadoresPanel = ({ currentUserId }) => {
     if (!form.id) return;
     setSaving(true); setErrMsg(null);
     const { error: profErr } = await sb.from('rbo_profiles')
-      .update({ nome: form.nome || null, is_tecnico: form.is_tecnico, avatar_url: form.avatar_url || null })
+      .update({ nome: form.nome || null, is_tecnico: form.is_tecnico, is_supervisor: form.is_supervisor, avatar_url: form.avatar_url || null })
       .eq('id', form.id);
     if (profErr) { setErrMsg('Erro ao guardar: ' + profErr.message); setSaving(false); return; }
     await syncTecnicoRecord(form.id, form.nome, form.email, form.is_tecnico);
@@ -127,11 +127,12 @@ export const UtilizadoresPanel = ({ currentUserId }) => {
       });
       if (fnErr) { setErrMsg('Utilizador criado mas erro ao guardar perfil: ' + fnErr.message); setSaving(false); return; }
       await syncTecnicoRecord(uid, form.nome, form.email, form.is_tecnico);
+      if (form.is_supervisor) await sb.from('rbo_profiles').update({ is_supervisor: true }).eq('id', uid);
     }
     await load();
     setSaving(false);
     setModal(false);
-    setForm({ email: '', nome: '', password: '', is_tecnico: false, avatar_url: '' });
+    setForm({ email: '', nome: '', password: '', is_tecnico: false, is_supervisor: false, avatar_url: '' });
   };
 
   const closeModal = () => { setModal(false); setErrMsg(null); };
@@ -140,7 +141,7 @@ export const UtilizadoresPanel = ({ currentUserId }) => {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <span style={{ fontSize: 13, color: C.grey400 }}>{users.length} utilizador{users.length !== 1 ? 'es' : ''}</span>
-        <Btn icon="plus" size="sm" onClick={() => { setForm({ email: '', nome: '', password: '', is_tecnico: false, avatar_url: '' }); setErrMsg(null); setModal('new'); }}>Novo</Btn>
+        <Btn icon="plus" size="sm" onClick={() => { setForm({ email: '', nome: '', password: '', is_tecnico: false, is_supervisor: false, avatar_url: '' }); setErrMsg(null); setModal('new'); }}>Novo</Btn>
       </div>
 
       {errMsg && (
@@ -184,7 +185,10 @@ export const UtilizadoresPanel = ({ currentUserId }) => {
                       <Badge color={u.is_tecnico ? C.teal : C.grey400}>{u.is_tecnico ? 'Técnico' : '—'}</Badge>
                     </td>
                     <td style={{ padding: '10px 16px' }}>
-                      <Badge color={u.ativo ? C.green : C.grey400}>{u.ativo ? 'Ativo' : 'Inativo'}</Badge>
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                        <Badge color={u.ativo ? C.green : C.grey400}>{u.ativo ? 'Ativo' : 'Inativo'}</Badge>
+                        {u.is_supervisor && <Badge color={C.amber}>Supervisor</Badge>}
+                      </div>
                     </td>
                     <td style={{ padding: '8px 16px' }}>
                       <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
@@ -273,6 +277,13 @@ export const UtilizadoresPanel = ({ currentUserId }) => {
                 style={{ width: 16, height: 16, accentColor: C.teal, cursor: 'pointer' }}/>
               <label htmlFor="frm_is_tecnico" style={{ fontSize: 14, color: C.grey800, cursor: 'pointer' }}>
                 É <strong>técnico</strong> (aparece na seleção de assistências)
+              </label>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: C.grey50, borderRadius: 8, border: `1px solid ${C.grey100}` }}>
+              <input type="checkbox" id="frm_is_supervisor" checked={!!form.is_supervisor} onChange={e => setForm(f => ({ ...f, is_supervisor: e.target.checked }))}
+                style={{ width: 16, height: 16, accentColor: C.teal, cursor: 'pointer' }}/>
+              <label htmlFor="frm_is_supervisor" style={{ fontSize: 14, color: C.grey800, cursor: 'pointer' }}>
+                É <strong>supervisor</strong> (acesso alargado conforme permissões)
               </label>
             </div>
           </div>
