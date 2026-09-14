@@ -95,6 +95,7 @@ export const EquipamentoDetalhe = ({ equipamentoId, onBack, navigate }) => {
           <Field label="Nº de Série" value={eq.num_serie} />
           <Field label="Tipo" value={eq.tipo?.nome} />
           <Field label="Localização" value={eq.localizacao} />
+          {eq.ip && <Field label="Endereço IP" value={eq.ip} />}
           <div>
             <div style={{ fontSize: 11, fontWeight: 600, color: C.grey400, textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 4 }}>Estado</div>
             <Badge color={eq.ativo === false ? C.grey400 : C.green}>{eq.ativo === false ? 'Inativo' : 'Ativo'}</Badge>
