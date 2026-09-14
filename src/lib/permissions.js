@@ -1,5 +1,5 @@
 // Admin fixo: acesso total, ignora rbo_permissions.
-export const ADMIN_EMAIL = 'sergio.henriques@gmail.com';
+export const ADMIN_EMAIL = 'sergiohenriques@graficaideal.pt';
 
 export const isAdmin = profile => profile?.email === ADMIN_EMAIL;
 
