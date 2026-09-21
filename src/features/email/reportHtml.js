@@ -140,6 +140,7 @@ body{font-family:'DM Sans',sans-serif;background:#f8fafb;color:#1e3236;}
 };
 
 export const buildReportHtml = ({ mov, cliente, tipologia, tecnico, local, equipamento, forEmail = false }) => {
+  const isCredito = mov.tipo === 'credito';
   const duracao = mov.hora_inicio && mov.hora_fim ? (() => {
     const [h1,m1]=mov.hora_inicio.split(":").map(Number);
     const [h2,m2]=mov.hora_fim.split(":").map(Number);
@@ -179,25 +180,25 @@ ${forEmail ? '' : "@import url('https://fonts.googleapis.com/css2?family=DM+Sans
   <div class="section"><div class="sec-title">Dados do Cliente</div>
     <div class="grid">
       <div class="field"><label>Empresa</label><div class="val">${cliente?.nome||"—"}</div></div>
-      <div class="field"><label>Técnico</label><div class="val">${tecnico?.nome||"—"}</div></div>
+      ${isCredito ? '' : `<div class="field"><label>Técnico</label><div class="val">${tecnico?.nome||"—"}</div></div>`}
       <div class="field"><label>Morada</label><div class="val">${cliente?.morada||"—"}, ${cliente?.localidade||""}</div></div>
       <div class="field"><label>Contacto</label><div class="val">${cliente?.telefone||"—"}</div></div>
     </div>
   </div>
-  <div class="section"><div class="sec-title">Detalhe da Assistência</div>
+  <div class="section"><div class="sec-title">${isCredito ? 'Detalhe do Crédito' : 'Detalhe da Assistência'}</div>
     <div class="grid" style="margin-bottom:16px;">
       <div class="field"><label>Data</label><div class="val">${fmtDate(mov.data)}</div></div>
-      <div class="field"><label>Duração</label><div class="val">${duracao}</div></div>
+      ${isCredito ? '' : `<div class="field"><label>Duração</label><div class="val">${duracao}</div></div>
       <div class="field"><label>Técnico</label><div class="val">${tecnico?.nome||"—"}</div></div>
-      <div class="field"><label>Local</label><div class="val">${local?.nome||"—"}</div></div>
+      <div class="field"><label>Local</label><div class="val">${local?.nome||"—"}</div></div>`}
       ${equipamento ? `<div class="field" style="grid-column:1/-1"><label>Equipamento</label><div class="val">${equipamento.descricao}${equipamento.num_serie ? ` <span style="font-family:'DM Mono',monospace;font-size:12px;color:#8fa6ab;">· N/S: ${equipamento.num_serie}</span>` : ''}</div></div>` : ''}
     </div>
     <div class="desc">${mov.descritivo||"—"}</div>
   </div>
-  <div class="section"><div class="sec-title">Créditos Consumidos</div>
+  <div class="section"><div class="sec-title">${isCredito ? 'Créditos Carregados' : 'Créditos Consumidos'}</div>
     <div class="cred-box">
       <div class="cred-val ${mov.creditos<0?"neg":"pos"}">${mov.creditos>0?"+":""}${mov.creditos}</div>
-      <div class="cred-label">créditos nesta assistência</div>
+      <div class="cred-label">${isCredito ? 'créditos adicionados ao contrato' : 'créditos nesta assistência'}</div>
     </div>
   </div>
 </div>

@@ -11,6 +11,7 @@ import { fmtDate } from '../../utils/formatters';
 export const EmailConfirmModal = ({ mov, lookup, onSent, onClose }) => {
   const C = useTheme();
   const { cliente, tipologia, tecnico, local, equipamento } = lookup(mov);
+  const isCredito = mov.tipo === "credito";
   const [emailTo,  setEmailTo]  = useState(cliente?.email || "");
   const [sending,  setSending]  = useState(false);
   const [result,   setResult]   = useState(null);
@@ -20,7 +21,7 @@ export const EmailConfirmModal = ({ mov, lookup, onSent, onClose }) => {
     setSending(true); setResult(null);
     try {
       const html    = buildReportHtml({ mov, cliente, tipologia, tecnico, local, equipamento, forEmail: true });
-      const subject = `Relatório de Assistência Técnica — ${cliente?.nome||""} — ${fmtDate(mov.data)}`;
+      const subject = `${isCredito ? "Carregamento de Créditos" : "Relatório de Assistência Técnica"} — ${cliente?.nome||""} — ${fmtDate(mov.data)}`;
       await sendEmailResend({ to: emailTo, subject, html });
       await onSent(mov.id);
       setResult("ok");
@@ -47,7 +48,7 @@ export const EmailConfirmModal = ({ mov, lookup, onSent, onClose }) => {
           <div style={{background:C.grey50,borderRadius:10,padding:"14px 16px",marginBottom:20,border:`1px solid ${C.grey100}`}}>
             <div style={{fontSize:12,fontWeight:600,color:C.grey400,textTransform:"uppercase",letterSpacing:".5px",marginBottom:8}}>Relatório a enviar</div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-              {[["Cliente",cliente?.nome],["Data",fmtDate(mov.data)],["Tipologia",tipologia?.nome],["Técnico",tecnico?.nome||"—"],["Créditos",`${mov.creditos>0?"+":""}${mov.creditos}`],["Local",local?.nome||"—"]].map(([l,v])=>(
+              {[["Cliente",cliente?.nome],["Data",fmtDate(mov.data)],["Tipologia",tipologia?.nome],["Créditos",`${mov.creditos>0?"+":""}${mov.creditos}`],...(isCredito?[]:[["Técnico",tecnico?.nome||"—"],["Local",local?.nome||"—"]])].map(([l,v])=>(
                 <div key={l}>
                   <div style={{fontSize:11,fontWeight:600,color:C.grey400,textTransform:"uppercase",letterSpacing:".4px"}}>{l}</div>
                   <div style={{fontSize:13,color:C.grey800,marginTop:1}}>{v||"—"}</div>

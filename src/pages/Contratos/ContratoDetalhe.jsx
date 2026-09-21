@@ -324,9 +324,9 @@ export const ContratoDetalhe = ({ contrato, onBack, onDelete }) => {
           onSort={toggleSort}
           onEdit={openEdit}
           onDelete={delMov}
-          extraActions={row=>row.tipo==="assistencia"?(
+          extraActions={row=>(
             <>
-              <button onClick={()=>{
+              {row.tipo==="assistencia"&&<button onClick={()=>{
                 const { cliente: cl, tipologia: tip, tecnico, local, equipamento } = lookup(row);
                 const html = buildReportHtml({ mov: row, cliente: cl, tipologia: tip, tecnico, local, equipamento });
                 const blob = new Blob([html], { type: 'text/html' });
@@ -336,10 +336,10 @@ export const ContratoDetalhe = ({ contrato, onBack, onDelete }) => {
                 onMouseEnter={e=>e.currentTarget.style.background=C.grey100}
                 onMouseLeave={e=>e.currentTarget.style.background="none"}>
                 <Icon name="qr" size={15} color={C.grey600}/>
-              </button>
+              </button>}
               <EmailReportBtn mov={row} lookup={lookup} onSent={onSent}/>
             </>
-          ):null}
+          )}
           emptyMsg="Sem movimentos neste contrato"
         />
       </Card>
