@@ -13,6 +13,15 @@ function corsHeaders(req: Request): Record<string, string> {
   return base;
 }
 
+// Accepts "a@a.com; b@b.com", "a@a.com,b@b.com" or an array of those
+export function parseRecipients(v: unknown): string[] {
+  const list = Array.isArray(v) ? v : [v];
+  return list
+    .flatMap(s => String(s ?? '').split(/[;,]/))
+    .map(s => s.trim())
+    .filter(Boolean);
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders(req) });
 
@@ -22,14 +31,22 @@ serve(async (req) => {
     const resendKey = Deno.env.get('RESEND_API_KEY');
     if (!resendKey) throw new Error('RESEND_API_KEY not configured');
 
+    const toList = parseRecipients(to);
+    if (!toList.length) {
+      return new Response(JSON.stringify({ error: 'No recipients' }), {
+        status: 400, headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
+      });
+    }
+
     const body: Record<string, unknown> = {
       from: 'Rilop <noreply@rilop.pt>',
-      to: [to],
+      to: toList,
       subject,
       html,
     };
-    if (cc?.length)  body.cc  = cc;
-    if (bcc?.length) body.bcc = bcc;
+    const ccList = parseRecipients(cc), bccList = parseRecipients(bcc);
+    if (ccList.length)  body.cc  = ccList;
+    if (bccList.length) body.bcc = bccList;
 
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
