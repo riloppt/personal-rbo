@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useTheme } from '../../theme';
 import { useSortable } from '../../hooks/useSortable';
 import { sb } from '../../lib/supabase';
@@ -15,8 +15,10 @@ import { Icon } from '../../components/ui/Icon';
 import { fmtDate } from '../../utils/formatters';
 import { ContratoDetalhe } from './ContratoDetalhe';
 
-export const Contratos = () => {
+export const Contratos = ({ initialFilter }) => {
   const C = useTheme();
+  const [filterAtivo, setFilterAtivo] = useState(initialFilter?.ativo ?? "");
+  const openContratoId = useRef(initialFilter?.contratoId ?? null); // consumido no primeiro load
   const [rows,       setRows]       = useState([]);
   const [clientes,   setClientes]   = useState([]);
   const [tipologias, setTipologias] = useState([]);
@@ -37,6 +39,11 @@ export const Contratos = () => {
       sb.from("rbo_movimentos").select("id,contrato_id,creditos,tipo,data").order("data",{ascending:false}),
     ]);
     setRows(conRes.data||[]);
+    if (openContratoId.current) {
+      const alvo = (conRes.data||[]).find(c=>c.id===openContratoId.current);
+      if (alvo) setDetalhe(alvo);
+      openContratoId.current = null;
+    }
     setClientes(cliRes.data||[]);
     setTipologias(tipRes.data||[]);
     const stats = {};
@@ -62,6 +69,7 @@ export const Contratos = () => {
   };
 
   const filtered = rows.filter(c=>{
+    if (filterAtivo && String(!!c.ativo)!==filterAtivo) return false;
     const cli = clientes.find(x=>x.id===c.cliente_id);
     const tip = tipologias.find(x=>x.id===c.tipologia_id);
     const q   = search.toLowerCase();
@@ -91,9 +99,15 @@ export const Contratos = () => {
     <div>
       <PageHeader title="Contratos" subtitle={`${rows.length} contratos`} action={<Btn icon="plus" onClick={()=>setModal(true)}>Novo Contrato</Btn>}/>
       <Card style={{padding:0,overflow:"hidden"}}>
-        <div style={{padding:"14px 20px",borderBottom:`1px solid ${C.grey100}`}}>
+        <div style={{padding:"14px 20px",borderBottom:`1px solid ${C.grey100}`,display:"flex",gap:10,flexWrap:"wrap",alignItems:"center"}}>
           <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Pesquisar por cliente ou tipologia..."
-            style={{width:"100%",maxWidth:320,border:`1.5px solid ${C.grey200}`,borderRadius:8,padding:"7px 12px",fontSize:13,outline:"none",background:C.white,color:C.grey800}}/>
+            style={{flex:1,minWidth:200,maxWidth:320,border:`1.5px solid ${C.grey200}`,borderRadius:8,padding:"7px 12px",fontSize:13,outline:"none",background:C.white,color:C.grey800}}/>
+          <select value={filterAtivo} onChange={e=>setFilterAtivo(e.target.value)}
+            style={{border:`1.5px solid ${C.grey200}`,borderRadius:8,padding:"7px 12px",fontSize:13,outline:"none",background:C.white,color:C.grey800,cursor:"pointer",fontFamily:"inherit"}}>
+            <option value="">Todos os estados</option>
+            <option value="true">Ativos</option>
+            <option value="false">Inativos</option>
+          </select>
         </div>
         {loading?<Loading/>:<Table
           cols={[

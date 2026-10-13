@@ -13,6 +13,7 @@ import { ClientesPage } from './pages/Clientes';
 import { Definicoes } from './pages/Definicoes';
 import { Tickets } from './pages/Tickets';
 import { Equipamentos } from './pages/Equipamentos';
+import { Assistencias } from './pages/Assistencias';
 import { checkPermission } from './lib/permissions';
 
 const checkMobile = () => {
@@ -31,6 +32,7 @@ export const navItems = [
 
 export default function App() {
   const [page,        setPage]        = useState("dashboard");
+  const [pageParams,  setPageParams]  = useState(null);   // filtro inicial passado via navigate(id, params)
   const [sideOpen,    setSideOpen]    = useState(false);
   const [darkMode,    setDarkMode]    = useState(true); // default até o perfil carregar
   const [accent,      setAccent]      = useState('teal');
@@ -107,7 +109,7 @@ export default function App() {
   const hasPermission = useCallback(chave => checkPermission(profile, permissions, chave), [profile, permissions]);
   const visibleNavItems = navItems.filter(item => item.id !== 'definicoes' || hasPermission('access_definicoes'));
 
-  const navigate = id => { setPage(id); if(isMobile) setSideOpen(false); };
+  const navigate = (id, params = null) => { setPage(id); setPageParams(params); if(isMobile) setSideOpen(false); };
 
   useEffect(() => {
     if (page === 'definicoes' && profile && !hasPermission('access_definicoes')) setPage('dashboard');
@@ -129,11 +131,12 @@ export default function App() {
   };
 
   const pages = {
-    dashboard:  <Dashboard/>,
-    contratos:  <Contratos/>,
+    dashboard:  <Dashboard navigate={navigate}/>,
+    contratos:  <Contratos initialFilter={pageParams}/>,
     clientes:   <ClientesPage/>,
     equipamentos: <Equipamentos navigate={navigate}/>,
-    tickets:    <Tickets currentUserId={currentUserId}/>,
+    tickets:    <Tickets currentUserId={currentUserId} initialFilter={pageParams}/>,
+    assistencias: <Assistencias navigate={navigate}/>,
     definicoes: <Definicoes currentUserId={currentUserId} profile={profile} accent={accent} onAccentChange={changeAccent}/>,
   };
 
@@ -182,7 +185,7 @@ export default function App() {
                 <span style={{color:"#ffffff",fontWeight:700,fontSize:15}}>RBO</span>
               </div>
               <span style={{color:theme.sidebarFg,fontSize:13,fontWeight:500}}>
-                {navItems.find(n=>n.id===page)?.label||""}
+                {navItems.find(n=>n.id===page)?.label||(page==="assistencias"?"Assistências":"")}
               </span>
             </div>
           )}

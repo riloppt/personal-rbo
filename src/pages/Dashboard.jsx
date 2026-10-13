@@ -4,13 +4,14 @@ import { sb } from '../lib/supabase';
 import { PageHeader } from '../components/ui/PageHeader';
 import { StatCard } from '../components/ui/StatCard';
 import { Badge } from '../components/ui/Badge';
+import { Btn } from '../components/ui/Btn';
 import { Card } from '../components/ui/Card';
 import { Loading } from '../components/ui/Loading';
 import { Icon } from '../components/ui/Icon';
 import { fmtDate } from '../utils/formatters';
 import { ESTADOS, estadoCor, estadoLabel } from './Tickets/helpers';
 
-export const Dashboard = () => {
+export const Dashboard = ({ navigate }) => {
   const C = useTheme();
   const [stats,      setStats]      = useState({ clientes: 0, contratos: 0, creditos: 0, assistencias: 0 });
   const [recentes,   setRecentes]   = useState([]);
@@ -49,7 +50,7 @@ export const Dashboard = () => {
 
       const recentAssis = assis.slice(0, 5);
       if (recentAssis.length) {
-        const { data: tecRec } = await sb.from("rbo_tecnicos").select("id,nome").eq("ativo", true);
+        const { data: tecRec } = await sb.from("rbo_tecnicos").select("id,nome");
         setRecentes(recentAssis.map(m => {
           const con = cons.find(c => c.id === m.contrato_id);
           const tec = m.tecnico_id ? (tecRec || []).find(t => t.id === m.tecnico_id) : null;
@@ -80,12 +81,12 @@ export const Dashboard = () => {
       <PageHeader title="Dashboard" subtitle="Visão geral do sistema RBO" />
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 16, marginBottom: 28 }}>
-        <StatCard label="Clientes"         value={stats.clientes}     icon="clients"   color={C.teal} />
-        <StatCard label="Contratos Ativos" value={stats.contratos}    icon="contracts" color={C.tealL} />
+        <StatCard label="Clientes"         value={stats.clientes}     icon="clients"   color={C.teal}  onClick={() => navigate("clientes")} />
+        <StatCard label="Contratos Ativos" value={stats.contratos}    icon="contracts" color={C.tealL} onClick={() => navigate("contratos", { ativo: "true" })} />
         <StatCard label="Créditos Totais"  value={stats.creditos}     icon="credit"    color={C.green} />
-        <StatCard label="Assistências"     value={stats.assistencias} icon="wrench"    color={C.amber} />
-        <StatCard label="Tickets Abertos"  value={ticketsAbertos}     icon="wrench"    color={C.teal} />
-        <StatCard label="Requerem Atenção" value={ticketsAtencao}     icon="alert"     color={C.amber} />
+        <StatCard label="Assistências"     value={stats.assistencias} icon="wrench"    color={C.amber} onClick={() => navigate("assistencias")} />
+        <StatCard label="Tickets Abertos"  value={ticketsAbertos}     icon="wrench"    color={C.teal}  onClick={() => navigate("tickets", { estado: "", hideClosed: true })} />
+        <StatCard label="Requerem Atenção" value={ticketsAtencao}     icon="alert"     color={C.amber} onClick={() => navigate("tickets", { estado: "submetido" })} />
       </div>
 
       <style>{`@media(max-width:700px){.db-grid{grid-template-columns:1fr!important}}`}</style>
@@ -93,8 +94,9 @@ export const Dashboard = () => {
 
         {/* Últimas Assistências */}
         <Card style={{ padding: 0, overflow: "hidden" }}>
-          <div style={{ padding: "16px 20px", borderBottom: `1px solid ${C.grey100}` }}>
+          <div style={{ padding: "16px 20px", borderBottom: `1px solid ${C.grey100}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <h3 style={{ fontSize: 15, fontWeight: 600, color: C.grey800, margin: 0 }}>Últimas Assistências</h3>
+            <Btn variant="ghost" size="sm" onClick={() => navigate("assistencias")}>Ver todas</Btn>
           </div>
           {recentes.length === 0 && (
             <div style={{ padding: 24, color: C.grey400, fontSize: 13, textAlign: "center" }}>Sem assistências registadas</div>
