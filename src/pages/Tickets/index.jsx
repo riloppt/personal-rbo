@@ -14,7 +14,7 @@ import { ESTADOS, estadoLabel, estadoCor } from './helpers';
 import { TicketDetalhe } from './TicketDetalhe';
 import { TicketNovoModal } from './TicketNovoModal';
 
-export const Tickets = ({ currentUserId }) => {
+export const Tickets = ({ currentUserId, initialFilter }) => {
   const C = useTheme();
   const [tickets,       setTickets]       = useState([]);
   const [tecnicos,      setTecnicos]      = useState([]);
@@ -22,9 +22,11 @@ export const Tickets = ({ currentUserId }) => {
   const [detalhe,       setDetalhe]       = useState(null);
   const [modal,         setModal]         = useState(false);
   const [search,        setSearch]        = useState('');
-  const [filterEstado,  setFilterEstado]  = useState('');
+  const [filterEstado,  setFilterEstado]  = useState(initialFilter?.estado ?? '');
   const [filterTecnico, setFilterTecnico] = useState('');
   const [hideClosed,    setHideClosed]    = useState(() => {
+    // vindo do dashboard: aplica sem gravar a preferência
+    if (initialFilter?.hideClosed !== undefined) return initialFilter.hideClosed;
     const stored = localStorage.getItem('rbo_tickets_hide_closed');
     return stored === null ? true : stored === 'true';
   });
