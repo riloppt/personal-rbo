@@ -118,9 +118,10 @@ export const ContratoDetalhe = ({ contrato, onBack, onDelete }) => {
       sb.from('rbo_definicoes_globais').select('valor').eq('chave','creditos_limiar_alerta').maybeSingle(),
       sb.from('rbo_notificacoes_config').select('*').eq('evento','creditos_baixos').maybeSingle(),
     ]);
-    if (!notifRes.data?.ativa) return;
+    const limiar = Number(limiarRes.data?.valor || 0);
+    if (!notifRes.data?.ativa || !(saldo < limiar)) return;
     setLowCreditsResult(null);
-    setLowCreditsModal({ saldo, limiar: Number(limiarRes.data?.valor || 0), notifConfig: notifRes.data });
+    setLowCreditsModal({ saldo, limiar, notifConfig: notifRes.data });
   };
 
   const saveMov = async () => {
