@@ -102,7 +102,8 @@ export const Dashboard = ({ navigate }) => {
             <div style={{ padding: 24, color: C.grey400, fontSize: 13, textAlign: "center" }}>Sem assistências registadas</div>
           )}
           {recentes.map(m => (
-            <div key={m.id} style={{ padding: "12px 20px", borderBottom: `1px solid ${C.grey100}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div key={m.id} onClick={() => navigate("contratos", { contratoId: m.contrato_id })}
+              style={{ padding: "12px 20px", borderBottom: `1px solid ${C.grey100}`, display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}>
               <div>
                 <div style={{ fontSize: 14, fontWeight: 500, color: C.grey800 }}>{m.clienteNome || "—"}</div>
                 <div style={{ fontSize: 12, color: C.grey400 }}>{m.tecnicoNome || "—"} · {fmtDate(m.data)}</div>
