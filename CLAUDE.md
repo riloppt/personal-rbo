@@ -4,7 +4,13 @@ Toda a documentação do projeto está em `manuals/instructions.md` — ler ante
 
 ## Regra de manutenção
 
-Sempre que uma alteração tocar em **base de dados** (tabelas, colunas, RLS, funções, triggers), **edge functions**, **variáveis de ambiente/secrets**, **alojamento/deploy** ou **fluxos de negócio** (estados de ticket, créditos, notificações), atualizar a secção correspondente de `manuals/instructions.md` no mesmo commit/PR.
+**Regra:** sempre que se altera a base de dados, uma edge function, variáveis de ambiente ou alojamento, atualizar o ficheiro `manuals/instructions.md`.
+
+- Base de dados inclui tabelas, colunas, constraints, RLS, funções, triggers e storage → §6 e §7.
+- Edge function → §8 (e §3 se mudar secrets).
+- Variáveis de ambiente/secrets → §3.
+- Alojamento/deploy → §2 e §11.
+- Atualizar a data de "Última revisão" no topo do manual e fazer a alteração no mesmo commit/PR.
 
 ## Convenções
 
