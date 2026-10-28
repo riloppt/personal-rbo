@@ -1,3 +1,5 @@
+import { escHtml } from '../../../utils/helpers';
+
 const estadoLabel = id => ({
   submetido: 'Submetido', pendente: 'Pendente', atribuido: 'Atribuído',
   em_curso: 'Em Curso', aguarda_cliente: 'Aguarda Cliente',
@@ -22,7 +24,7 @@ export const buildTicketEstadoEmail = ({ ticket, estadoNovo, estadoAnterior, tec
   const field = (label, value) => `
     <div style="margin-bottom:16px;">
       <div style="font-size:10px;font-weight:600;color:#999999;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">${label}</div>
-      <div style="font-size:14px;color:#1a1a1a;line-height:1.5;">${value}</div>
+      <div style="font-size:14px;color:#1a1a1a;line-height:1.5;">${escHtml(value)}</div>
     </div>`;
 
   return `<!DOCTYPE html>
@@ -79,7 +81,7 @@ export const buildTicketEstadoEmail = ({ ticket, estadoNovo, estadoAnterior, tec
         <!-- Descrição -->
         <tr><td style="padding:20px 32px 28px;">
           <div style="font-size:10px;font-weight:600;color:#999999;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Descrição do Problema</div>
-          <div style="background:#f9f9f9;border-left:3px solid #0d6e6e;border-radius:0 6px 6px 0;padding:14px 16px;font-size:14px;color:#333333;line-height:1.6;white-space:pre-wrap;">${descricao}</div>
+          <div style="background:#f9f9f9;border-left:3px solid #0d6e6e;border-radius:0 6px 6px 0;padding:14px 16px;font-size:14px;color:#333333;line-height:1.6;white-space:pre-wrap;">${escHtml(descricao)}</div>
         </td></tr>
 
         <!-- Footer -->

@@ -1,3 +1,5 @@
+import { escHtml } from '../../../utils/helpers';
+
 export const buildNewTicketEmail = ({ id, nome_empresa, nome_pessoa, email_cliente, telefone_cliente, descricao_problema, created_at }) => {
   const idPadded = String(id).padStart(4, '0');
   const dataFormatada = created_at
@@ -7,7 +9,7 @@ export const buildNewTicketEmail = ({ id, nome_empresa, nome_pessoa, email_clien
   const field = (label, value) => `
     <div>
       <div style="font-size:10px;font-weight:600;color:#999999;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">${label}</div>
-      <div style="font-size:14px;color:#1a1a1a;">${value || '—'}</div>
+      <div style="font-size:14px;color:#1a1a1a;">${escHtml(value || '—')}</div>
     </div>`;
 
   return `<!DOCTYPE html>
@@ -60,7 +62,7 @@ export const buildNewTicketEmail = ({ id, nome_empresa, nome_pessoa, email_clien
         <!-- Description -->
         <tr><td style="padding:24px 32px 28px;">
           <div style="font-size:10px;font-weight:600;color:#999999;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Descrição do Problema</div>
-          <div style="background:#f9f9f9;border-left:3px solid #0d6e6e;border-radius:0 6px 6px 0;padding:14px 16px;font-size:14px;color:#333333;line-height:1.6;white-space:pre-wrap;">${descricao_problema || '—'}</div>
+          <div style="background:#f9f9f9;border-left:3px solid #0d6e6e;border-radius:0 6px 6px 0;padding:14px 16px;font-size:14px;color:#333333;line-height:1.6;white-space:pre-wrap;">${escHtml(descricao_problema || '—')}</div>
         </td></tr>
 
         <!-- CTA -->
