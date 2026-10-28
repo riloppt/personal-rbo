@@ -14,7 +14,12 @@ function corsHeaders(req: Request): Record<string, string> {
   return base;
 }
 
+// Form fields come from anonymous visitors — escape before interpolating into the email HTML
+const esc = (s: string) => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
+
 const buildEmailHtml = (id: number, nome_empresa: string, nome_pessoa: string, email_cliente: string, telefone_cliente: string, descricao_problema: string, created_at: string) => {
+  [nome_empresa, nome_pessoa, email_cliente, telefone_cliente, descricao_problema] =
+    [nome_empresa, nome_pessoa, email_cliente, telefone_cliente, descricao_problema].map(esc);
   const idPadded = String(id).padStart(4, '0');
   const dataFormatada = new Date(created_at).toLocaleString('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 

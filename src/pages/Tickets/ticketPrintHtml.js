@@ -1,5 +1,6 @@
 import { fmtDate } from '../../utils/formatters';
 import { estadoLabel, estadoCor } from './helpers';
+import { escHtml } from '../../utils/helpers';
 
 const via = (ticket, viaLabel) => {
   const tid = `#${String(ticket.id).padStart(4, '0')}`;
@@ -19,14 +20,14 @@ const via = (ticket, viaLabel) => {
   <div class="via-tag">${viaLabel}</div>
   <div class="body">
     <div class="grid">
-      <div class="field"><label>Cliente</label><div class="val">${ticket.cliente?.nome || ticket.nome_empresa || '—'}</div></div>
+      <div class="field"><label>Cliente</label><div class="val">${escHtml(ticket.cliente?.nome || ticket.nome_empresa || '—')}</div></div>
       <div class="field"><label>Técnico</label><div class="val">${ticket.tecnico?.nome || '—'}</div></div>
       ${ticket.equipamento ? `<div class="field"><label>Equipamento</label><div class="val">${ticket.equipamento.descricao}${ticket.equipamento.num_serie ? ' — S/N ' + ticket.equipamento.num_serie : ''}</div></div>` : ''}
       <div class="field"><label>Estado</label><div class="val"><span class="badge" style="background:${cor}22;color:${cor};border-color:${cor}55">${estadoLabel(ticket.estado)}</span></div></div>
     </div>
     <div class="section">
       <label>Descrição do Problema</label>
-      <div class="desc-box">${(ticket.descricao_problema || '—').replace(/\n/g, '<br/>')}</div>
+      <div class="desc-box">${escHtml(ticket.descricao_problema || '—').replace(/\n/g, '<br/>')}</div>
     </div>
     ${ticket.solicitado_backup ? `<div class="backup-flag">⚠ Solicitado Backup</div>` : ''}
   </div>

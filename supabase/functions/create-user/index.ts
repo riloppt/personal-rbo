@@ -1,7 +1,10 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const ALLOWED_ORIGINS = (Deno.env.get('ALLOWED_ORIGINS') ?? '')
+// Keep in sync with ADMIN_EMAIL in src/lib/permissions.js
+const ADMIN_EMAIL = 'sergiohenriques@graficaideal.pt';
+
+const ALLOWED_ORIGINS =(Deno.env.get('ALLOWED_ORIGINS') ?? '')
   .split(',').map(s => s.trim()).filter(Boolean);
 
 function corsHeaders(req: Request): Record<string, string> {
@@ -37,15 +40,30 @@ serve(async (req) => {
     });
   }
 
+  // Service role bypasses RLS — upsert profile for any user id
+  const sbAdmin = createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+  );
+
+  // Caller must be allowed to manage users — mirrors checkPermission(…, 'access_definicoes') in src/lib/permissions.js
+  const [{ data: callerProfile }, { data: perm }] = await Promise.all([
+    sbAdmin.from('rbo_profiles').select('email, ativo, is_supervisor').eq('id', caller.id).maybeSingle(),
+    sbAdmin.from('rbo_permissions').select('ativo_supervisor, ativo_normal').eq('chave', 'access_definicoes').maybeSingle(),
+  ]);
+  const allowed = !!callerProfile?.ativo && (
+    callerProfile.email === ADMIN_EMAIL ||
+    (callerProfile.is_supervisor ? !!perm?.ativo_supervisor : !!perm?.ativo_normal)
+  );
+  if (!allowed) {
+    return new Response(JSON.stringify({ error: 'Sem permissão' }), {
+      status: 403, headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
+    });
+  }
+
   try {
     const { uid, email, nome, is_tecnico } = await req.json();
     if (!uid || !email) throw new Error('uid e email são obrigatórios');
-
-    // Service role bypasses RLS — upsert profile for any user id
-    const sbAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-    );
 
     const { error } = await sbAdmin.from('rbo_profiles').upsert({
       id: uid,

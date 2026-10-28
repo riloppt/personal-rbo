@@ -1,4 +1,5 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const ALLOWED_ORIGINS = (Deno.env.get('ALLOWED_ORIGINS') ?? '')
   .split(',').map(s => s.trim()).filter(Boolean);
@@ -24,6 +25,19 @@ export function parseRecipients(v: unknown): string[] {
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders(req) });
+
+  // Only active RBO users may send — otherwise the public anon key makes this an open relay
+  const sbUser = createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+    { global: { headers: { Authorization: req.headers.get('authorization') ?? '' } } },
+  );
+  const { data: isActive } = await sbUser.rpc('rbo_is_active_user');
+  if (isActive !== true) {
+    return new Response(JSON.stringify({ error: 'Não autorizado' }), {
+      status: 401, headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
+    });
+  }
 
   try {
     const { to, cc, bcc, subject, html } = await req.json();
