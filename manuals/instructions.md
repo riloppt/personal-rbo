@@ -3,8 +3,6 @@
 > Documento de passagem de testemunho. Objetivo: qualquer pessoa (ou agente de IA) consegue perceber, operar e evoluir o RBO só com este ficheiro e o repositório.
 >
 > **Última revisão:** 2026-10-28 · **Regra:** sempre que se altera a base de dados, uma edge function, variáveis de ambiente ou alojamento, atualiza-se este ficheiro no mesmo PR.
->
-> Campos marcados com **⚠️ A CONFIRMAR** são informação que não está no código e que o responsável atual deve preencher.
 
 ## Índice
 
@@ -51,14 +49,14 @@ Não há servidor próprio: o frontend fala diretamente com o Supabase (protegid
 
 ## 2. Onde está alojado
 
-| Serviço | Para quê | Onde | Dono da conta |
-|---|---|---|---|
-| **GitHub** | Código | `https://github.com/riloppt/personal-rbo` | ⚠️ A CONFIRMAR |
-| **Vercel** | Frontend | Produção: `https://rbo-gules.vercel.app` (URL usada nos emails). **Não** está na equipa Vercel pessoal `sergiohenriques-gi` | ⚠️ A CONFIRMAR (conta/equipa) |
-| **Supabase** | BD, Auth, Storage, Edge Functions | Projeto ⚠️ A CONFIRMAR (ref `xxxx` em `https://xxxx.supabase.co`) | ⚠️ A CONFIRMAR |
-| **Resend** | Envio de email | Remetente `noreply@rilop.pt` (domínio `rilop.pt` verificado no Resend) | ⚠️ A CONFIRMAR |
-| **Cloudflare Turnstile** | Captcha invisível em `/pedido` | Widget associado ao domínio de produção | ⚠️ A CONFIRMAR |
-| **DNS `rilop.pt`** | Registos SPF/DKIM do Resend | ⚠️ A CONFIRMAR (registrar/DNS) | ⚠️ A CONFIRMAR |
+| Serviço | Para quê | Onde |
+|---|---|---|
+| **GitHub** | Código | `https://github.com/riloppt/personal-rbo` |
+| **Vercel** | Frontend | Produção: `https://suporte.rilop.pt` (domínio Vercel original: `https://rbo-gules.vercel.app`) |
+| **Supabase** | BD, Auth, Storage, Edge Functions | Projeto `rbo`, ref `yomzbrhpmsbkanicpeav` (`https://yomzbrhpmsbkanicpeav.supabase.co`) |
+| **Resend** | Envio de email | Remetente `noreply@rilop.pt` (domínio `rilop.pt` verificado no Resend) |
+| **Cloudflare Turnstile** | Captcha invisível em `/pedido` | Widget associado ao domínio de produção |
+| **DNS `rilop.pt`** | Subdomínio `suporte` (→ Vercel) e registos SPF/DKIM do Resend | Gestor DNS do domínio `rilop.pt` |
 
 > Ao herdar o projeto, o primeiro passo é garantir acesso de administrador a **todas** estas contas. Sem acesso ao Supabase e ao Vercel não é possível operar o RBO.
 
@@ -98,7 +96,7 @@ Não existe ambiente de staging: **o desenvolvimento local liga à BD de produç
 | `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` | todas | Injetados automaticamente pelo Supabase |
 | `RESEND_API_KEY` | `send-email`, `public-ticket-form` | Chave da API Resend |
 | `TURNSTILE_SECRET_KEY` | `public-ticket-form` | Secret key do Turnstile |
-| `ALLOWED_ORIGINS` | todas | Origens CORS permitidas, separadas por vírgula (ex.: `https://rbo-gules.vercel.app,http://localhost:5173`). Se faltar a origem, o browser bloqueia a chamada |
+| `ALLOWED_ORIGINS` | todas | Origens CORS permitidas, separadas por vírgula (ex.: `https://suporte.rilop.pt,http://localhost:5173`). Se faltar a origem, o browser bloqueia a chamada |
 
 ---
 
@@ -438,7 +436,7 @@ Ordenado por prioridade.
 9. **Sem testes, lint ou CI.**
 10. **Navegação sem URLs** — não há deep links nem botão "voltar" do browser.
 11. **HTML gerado por string.** Os relatórios (`reportHtml.js`) ainda interpolam dados de clientes sem `escHtml` (dados introduzidos por utilizadores internos — risco baixo, mas convém uniformizar).
-12. **URL de produção hardcoded** (`https://rbo-gules.vercel.app`) no email da função `public-ticket-form`.
+12. **URL de produção hardcoded** no botão "Abrir no RBO" do email da função `public-ticket-form`: aponta para `https://rbo-gules.vercel.app` em vez de `https://suporte.rilop.pt`.
 13. **Sem ambiente de staging** — dev local usa a BD de produção.
 
 ### Histórico de segurança
