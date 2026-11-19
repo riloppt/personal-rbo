@@ -12,7 +12,8 @@ import { fmtDate, fmtDateTime } from '../../utils/formatters';
 import { estadoLabel, estadoCor, TRANSICOES, transicaoLabel } from './helpers';
 import { buildTicketPrintHtml } from './ticketPrintHtml';
 import { buildTicketEstadoEmail } from '../../features/email/templates/ticketEstadoEmail';
-import { sendEmailResend } from '../../lib/email';
+import { buildLowCreditsEmail } from '../../features/email/templates/lowCreditsEmail';
+import { EnviarEmailModal } from '../../features/email/EnviarEmailModal';
 
 // ── Pure helpers ──────────────────────────────────────────────────────────────
 
@@ -224,27 +225,53 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
   // ── Notificação de mudança de estado ─────────────────────────────────────────
   const ESTADOS_NOTIFICAR = new Set(['atribuido', 'em_curso', 'aguarda_cliente', 'reaberto', 'concluido', 'cancelado']);
 
-  const sendEstadoNotification = async (estadoNovo, estadoAnterior, tecnicoOverride) => {
-    if (!ESTADOS_NOTIFICAR.has(estadoNovo)) return;
-    try {
-      const { data: cfg } = await sb
-        .from('rbo_notificacoes_config')
-        .select('ativa, destinatarios, enviar_cliente')
-        .eq('evento', 'ticket_estado')
-        .maybeSingle();
-      if (!cfg?.ativa) return;
-      const clientEmail = cfg.enviar_cliente ? (ticket.email_cliente || ticket.cliente?.email || null) : null;
-      const ccList = (cfg.destinatarios || []).filter(Boolean);
-      const to = clientEmail || (ccList.length ? ccList[0] : null);
-      if (!to) return;
-      const cc = clientEmail ? ccList : ccList.slice(1);
-      const tec = tecnicoOverride ?? (ticket.tecnico_id ? tecnicos.find(t => t.id === ticket.tecnico_id) : null);
-      const html = buildTicketEstadoEmail({ ticket, estadoNovo, estadoAnterior, tecnico: tec });
-      const subject = `Pedido #${String(ticket.id).padStart(4, '0')} — ${estadoLabel(estadoNovo)}`;
-      await sendEmailResend({ to, cc: cc.length ? cc : undefined, subject, html });
-    } catch (err) {
-      console.error('[ticket_estado email]', err);
-    }
+  // Emails ficam em fila e só saem após confirmação no EnviarEmailModal (um de cada vez)
+  const [emailQueue, setEmailQueue] = useState([]);
+  const enqueueEmail = (...es) => setEmailQueue(q => [...q, ...es.filter(Boolean).map(e => ({ ...e, _id: crypto.randomUUID() }))]);
+
+  const prepararEmailEstado = async (estadoNovo, estadoAnterior, tecnicoOverride) => {
+    if (!ESTADOS_NOTIFICAR.has(estadoNovo)) return null;
+    const { data: cfg } = await sb
+      .from('rbo_notificacoes_config')
+      .select('ativa, destinatarios, enviar_cliente')
+      .eq('evento', 'ticket_estado')
+      .maybeSingle();
+    if (!cfg?.ativa) return null;
+    const clientEmail = cfg.enviar_cliente ? (ticket.email_cliente || ticket.cliente?.email || null) : null;
+    const ccList = (cfg.destinatarios || []).filter(Boolean);
+    const to = clientEmail || ccList[0] || '';
+    const cc = clientEmail ? ccList : ccList.slice(1);
+    const tec = tecnicoOverride ?? (ticket.tecnico_id ? tecnicos.find(t => t.id === ticket.tecnico_id) : null);
+    return {
+      titulo:  `Enviar notificação — ${estadoLabel(estadoNovo)}?`,
+      to, cc,
+      subject: `Pedido #${String(ticket.id).padStart(4, '0')} — ${estadoLabel(estadoNovo)}`,
+      html:    buildTicketEstadoEmail({ ticket, estadoNovo, estadoAnterior, tecnico: tec }),
+    };
+  };
+
+  // Mesma regra do detalhe do contrato: abaixo do limiar + evento creditos_baixos ativo com envio ao cliente
+  const prepararEmailCreditosBaixos = async (contratoId, novoSaldo) => {
+    const [limiarRes, notifRes, conRes] = await Promise.all([
+      sb.from('rbo_definicoes_globais').select('valor').eq('chave', 'creditos_limiar_alerta').maybeSingle(),
+      sb.from('rbo_notificacoes_config').select('*').eq('evento', 'creditos_baixos').maybeSingle(),
+      sb.from('rbo_contratos').select('*').eq('id', contratoId).single(),
+    ]);
+    const limiar = Number(limiarRes.data?.valor || 0);
+    const cfg = notifRes.data;
+    if (!(limiar > 0 && novoSaldo < limiar && cfg?.ativa && cfg?.enviar_cliente)) return null;
+    const contrato  = conRes.data;
+    const cliente   = ticket.cliente;
+    const tipologia = tipologias.find(t => t.id === contrato?.tipologia_id) || null;
+    const to = cliente?.email || '';
+    return {
+      titulo:  'Enviar aviso de créditos baixos?',
+      to,
+      bcc:     (cfg.destinatarios || []).filter(e => e && e !== to),
+      subject: `Aviso: créditos do contrato a terminar — ${cliente?.nome || ''}`,
+      html:    buildLowCreditsEmail({ cliente, contrato, tipologia, saldo: novoSaldo, limiar }),
+      onSent:  () => sb.from('rbo_contratos').update({ notificacao_creditos_enviada_em: new Date().toISOString() }).eq('id', contratoId),
+    };
   };
 
   // ── Triage helper: insert historico entry when submetido → pendente ──
@@ -332,7 +359,11 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
     }
     const estadoAnterior = ticket.estado;
     const estadosAvancados = ['em_curso', 'aguarda_cliente', 'concluido', 'reaberto', 'cancelado'];
-    if (!estadosAvancados.includes(estadoAnterior)) {
+    if (estadoAnterior === 'atribuido') {
+      // Troca de técnico: sem novo registo no histórico, mas oferece reenviar com o técnico novo
+      await sb.from('rbo_tickets').update({ tecnico_id: novoTecnicoId }).eq('id', ticket.id);
+      enqueueEmail(await prepararEmailEstado('atribuido', null, tecnico));
+    } else if (!estadosAvancados.includes(estadoAnterior)) {
       setTicket(t => ({ ...t, estado: 'atribuido' }));
       await sb.from('rbo_ticket_historico').insert([{
         ticket_id:       ticket.id,
@@ -342,7 +373,7 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
         nota:            'Técnico atribuído',
       }]);
       await sb.from('rbo_tickets').update({ tecnico_id: novoTecnicoId, estado: 'atribuido' }).eq('id', ticket.id);
-      sendEstadoNotification('atribuido', estadoAnterior, tecnico);
+      enqueueEmail(await prepararEmailEstado('atribuido', estadoAnterior, tecnico));
     } else {
       await sb.from('rbo_tickets').update({ tecnico_id: novoTecnicoId }).eq('id', ticket.id);
     }
@@ -412,8 +443,12 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
       if (movErr) { setSaveError('Erro ao registar movimento: ' + movErr.message); return; }
       if (mov) await sb.from('rbo_tickets').update({ movimento_id: mov.id }).eq('id', ticket.id);
     }
-    sendEstadoNotification(estado, estadoAnterior);
-    await load();
+    const emailEstado = await prepararEmailEstado(estado, estadoAnterior);
+    const emailCreditos = descontar && ticket.contrato_id
+      ? await prepararEmailCreditosBaixos(ticket.contrato_id, saldoContrato + Number(creditos))
+      : null;
+    await load(); // antes da fila: load() mostra <Loading/> e desmontaria o modal
+    enqueueEmail(emailEstado, emailCreditos);
     setNovoEstado(''); setNotaEstado('');
     setShowModalConcluir(false);
     onUpdated?.();
@@ -868,6 +903,10 @@ export const TicketDetalhe = ({ ticket: initialTicket, onBack, currentUserId, on
             </Btn>
           </div>
         </Modal>
+      )}
+
+      {emailQueue[0] && (
+        <EnviarEmailModal key={emailQueue[0]._id} {...emailQueue[0]} onClose={() => setEmailQueue(q => q.slice(1))}/>
       )}
     </div>
   );

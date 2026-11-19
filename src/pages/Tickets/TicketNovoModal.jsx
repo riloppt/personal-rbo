@@ -7,12 +7,13 @@ import { Select } from '../../components/ui/Select';
 import { Btn } from '../../components/ui/Btn';
 import { Badge } from '../../components/ui/Badge';
 import { maskNif, maskPhone, maskCP } from '../../utils/formatters';
-import { sendEmailResend } from '../../lib/email';
+import { EnviarEmailModal } from '../../features/email/EnviarEmailModal';
 import { buildNewTicketEmail } from '../../features/email/templates/newTicketEmail';
 
 export const TicketNovoModal = ({ onClose, onCreated, currentUserId }) => {
   const C = useTheme();
   const [step, setStep] = useState(1);
+  const [emailPendente, setEmailPendente] = useState(null);
 
   // Data
   const [clientes,   setClientes]   = useState([]);
@@ -177,27 +178,29 @@ export const TicketNovoModal = ({ onClose, onCreated, currentUserId }) => {
       ticket_id: ticket.id, estado_anterior: null, estado_novo: 'pendente',
       alterado_por_id: currentUserId || null, nota: null,
     }]);
-    // Notificação por email — falha silenciosa para não bloquear criação
-    sb.from('rbo_notificacoes_config').select('ativa, destinatario_principal, destinatarios').eq('evento', 'ticket_novo').maybeSingle()
-      .then(({ data: notif }) => {
-        if (!notif?.ativa || !notif?.destinatario_principal) return;
-        const subject = `Novo pedido de assistência #${String(ticket.id).padStart(4, '0')}`;
-        const html = buildNewTicketEmail({
-          id: ticket.id,
-          nome_empresa: clienteSeleccionado?.nome || null,
-          nome_pessoa: null,
-          email_cliente: null,
-          telefone_cliente: null,
-          descricao_problema: form3.descricao_problema.trim(),
-          created_at: ticket.created_at,
-        });
-        const cc = (notif.destinatarios || []).filter(e => e !== notif.destinatario_principal);
-        return sendEmailResend({ to: notif.destinatario_principal, cc, subject, html });
-      })
-      .catch(e => console.error('[email] novo ticket:', e?.message || e));
+    // Ticket já gravado; a notificação só sai após confirmação no EnviarEmailModal
+    const { data: notif } = await sb.from('rbo_notificacoes_config').select('ativa, destinatario_principal, destinatarios').eq('evento', 'ticket_novo').maybeSingle();
     setSaving(false);
-    onCreated?.();
+    // ativa ?? true: sem configuração conta como ativa, igual à edge function public-ticket-form
+    if (!(notif?.ativa ?? true) || !notif?.destinatario_principal) { onCreated?.(); return; }
+    setEmailPendente({
+      titulo:  'Enviar notificação de novo ticket?',
+      to:      notif.destinatario_principal,
+      cc:      (notif.destinatarios || []).filter(e => e && e !== notif.destinatario_principal),
+      subject: `Novo pedido de assistência #${String(ticket.id).padStart(4, '0')}`,
+      html:    buildNewTicketEmail({
+        id: ticket.id,
+        nome_empresa: clienteSeleccionado?.nome || null,
+        nome_pessoa: null,
+        email_cliente: null,
+        telefone_cliente: null,
+        descricao_problema: form3.descricao_problema.trim(),
+        created_at: ticket.created_at,
+      }),
+    });
   };
+
+  if (emailPendente) return <EnviarEmailModal {...emailPendente} onClose={() => onCreated?.()}/>;
 
   const lb = { fontSize: 11, fontWeight: 600, color: C.grey400, textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 6 };
   const stepLabel = ['Selecionar Cliente', 'Equipamento (opcional)', 'Detalhes do Ticket'];
