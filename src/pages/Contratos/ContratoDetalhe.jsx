@@ -42,28 +42,38 @@ export const ContratoDetalhe = ({ contrato, onBack, onDelete }) => {
   const [lowCreditsSending,      setLowCreditsSending]      = useState(false);
   const [lowCreditsResult,       setLowCreditsResult]       = useState(null);
   const [notifEnviadaEm,         setNotifEnviadaEm]         = useState(contrato.notificacao_creditos_enviada_em || null);
-  const [contratoData,   setContratoData]   = useState(contrato.data_contrato);
-  const [editDateModal,  setEditDateModal]  = useState(false);
-  const [editDateValue,  setEditDateValue]  = useState('');
+  // Cópia local: emails/relatórios leem daqui para refletir edições sem sair do detalhe
+  const [contratoAtual,    setContratoAtual]    = useState(contrato);
+  const [tipologiasAtivas, setTipologiasAtivas] = useState([]);
+  const [editModal,        setEditModal]        = useState(false);
+  const [editForm,         setEditForm]         = useState({ tipologia_id: '', data_contrato: '' });
 
-  const saveDataContrato = async () => {
-    if (!editDateValue) return;
+  const openEditContrato = () => {
+    setEditForm({ tipologia_id: String(contratoAtual.tipologia_id ?? ''), data_contrato: contratoAtual.data_contrato || '' });
+    setEditModal(true);
+  };
+
+  const saveContrato = async () => {
+    if (!editForm.tipologia_id || !editForm.data_contrato) return;
     setSaving(true);
-    const { error } = await sb.from('rbo_contratos').update({ data_contrato: editDateValue }).eq('id', contrato.id);
+    const { data, error } = await sb.from('rbo_contratos')
+      .update({ tipologia_id: Number(editForm.tipologia_id), data_contrato: editForm.data_contrato })
+      .eq('id', contrato.id).select().single();
     if (error) alert('Erro: ' + error.message);
-    else { setContratoData(editDateValue); setEditDateModal(false); }
+    else { setContratoAtual(data); setEditModal(false); } // mudar tipologia_id dispara load()
     setSaving(false);
   };
 
   const load = useCallback(async()=>{
     setLoading(true);
-    const [movRes,tecRes,locRes,cliRes,tipRes,eqRes] = await Promise.all([
+    const [movRes,tecRes,locRes,cliRes,tipRes,eqRes,tipAtivasRes] = await Promise.all([
       sb.from("rbo_movimentos").select("*").eq("contrato_id",contrato.id).order("data",{ascending:false}),
       sb.from("rbo_tecnicos").select("id,nome,email").eq("ativo",true).order("nome"),
       sb.from("rbo_locais").select("*").order("nome"),
       sb.from("rbo_clientes").select("*").eq("id",contrato.cliente_id).single(),
-      sb.from("rbo_tipologias").select("*").eq("id",contrato.tipologia_id).single(),
+      sb.from("rbo_tipologias").select("*").eq("id",contratoAtual.tipologia_id).single(),
       sb.from("rbo_client_equipment").select("id,descricao,tipo_id,num_serie").eq("cliente_id",contrato.cliente_id).eq("ativo",true),
+      sb.from("rbo_tipologias").select("*").eq("ativo",true).order("nome"),
     ]);
     setMovimentos(movRes.data||[]);
     setTecnicos(tecRes.data||[]);
@@ -71,8 +81,9 @@ export const ContratoDetalhe = ({ contrato, onBack, onDelete }) => {
     setCliente(cliRes.data);
     setTipologia(tipRes.data);
     setEquipamentos(eqRes.data||[]);
+    setTipologiasAtivas(tipAtivasRes.data||[]);
     setLoading(false);
-  },[contrato.id]);
+  },[contrato.id, contratoAtual.tipologia_id]);
 
   useEffect(()=>{ load(); },[load]);
 
@@ -96,7 +107,7 @@ export const ContratoDetalhe = ({ contrato, onBack, onDelete }) => {
     if (!lowCreditsModal) return;
     setLowCreditsSending(true); setLowCreditsResult(null);
     try {
-      const html    = buildLowCreditsEmail({ cliente, contrato, tipologia, saldo: lowCreditsModal.saldo, limiar: lowCreditsModal.limiar });
+      const html    = buildLowCreditsEmail({ cliente, contrato: contratoAtual, tipologia, saldo: lowCreditsModal.saldo, limiar: lowCreditsModal.limiar });
       const subject = `Aviso: créditos do contrato a terminar — ${cliente?.nome || ''}`;
       const to      = cliente?.email;
       if (!to) throw new Error('O cliente não tem email registado');
@@ -175,7 +186,7 @@ export const ContratoDetalhe = ({ contrato, onBack, onDelete }) => {
       .filter(m => m.data >= periodDates.inicio && m.data <= periodDates.fim)
       .sort((a, b) => a.data.localeCompare(b.data));
     return buildPeriodReportHtml({
-      contrato, cliente, tipologia,
+      contrato: contratoAtual, cliente, tipologia,
       inicio: periodDates.inicio, fim: periodDates.fim,
       movimentos: periodoMovs, saldoTotal: saldo,
       tecnicos, locais, equipamentos,
@@ -250,8 +261,8 @@ export const ContratoDetalhe = ({ contrato, onBack, onDelete }) => {
           <h1 style={{fontSize:22,fontWeight:700,color:C.grey800}}>{cliente?.nome}</h1>
           <div style={{display:"flex",gap:8,marginTop:6,flexWrap:"wrap",alignItems:"center"}}>
             <Badge>{tipologia?.nome}</Badge>
-            <Badge color={C.grey400}>Desde {fmtDate(contratoData)}</Badge>
-            <button onClick={()=>{ setEditDateValue(contratoData); setEditDateModal(true); }} title="Editar data do contrato" style={{background:"none",border:"none",cursor:"pointer",padding:"2px 4px",display:"flex",alignItems:"center"}}>
+            <Badge color={C.grey400}>Desde {fmtDate(contratoAtual.data_contrato)}</Badge>
+            <button onClick={openEditContrato} title="Editar contrato" style={{background:"none",border:"none",cursor:"pointer",padding:"2px 4px",display:"flex",alignItems:"center"}}>
               <Icon name="edit" size={13} color={C.grey400}/>
             </button>
             <Badge color={saldo>10?C.green:saldo>0?C.amber:C.red}>{saldo} créditos</Badge>
@@ -460,12 +471,16 @@ export const ContratoDetalhe = ({ contrato, onBack, onDelete }) => {
         </Modal>
       )}
 
-      {editDateModal && (
-        <Modal title="Editar Data do Contrato" onClose={()=>setEditDateModal(false)}>
-          <Input label="Data do contrato" value={editDateValue} onChange={v=>setEditDateValue(v)} type="date"/>
+      {editModal && (
+        <Modal title="Editar Contrato" onClose={()=>setEditModal(false)}>
+          <div style={{display:"flex",flexDirection:"column",gap:14}}>
+            {/* ponytail: só ativas — se a atual estiver inativa, o select abre vazio e obriga a escolher */}
+            <Select label="Tipologia" value={editForm.tipologia_id} onChange={v=>setEditForm(f=>({...f,tipologia_id:v}))} options={tipologiasAtivas.map(t=>({value:String(t.id),label:t.nome}))} required/>
+            <Input label="Data do contrato" value={editForm.data_contrato} onChange={v=>setEditForm(f=>({...f,data_contrato:v}))} type="date"/>
+          </div>
           <div style={{display:"flex",gap:10,justifyContent:"flex-end",marginTop:20}}>
-            <Btn variant="secondary" onClick={()=>setEditDateModal(false)}>Cancelar</Btn>
-            <Btn onClick={saveDataContrato} disabled={saving}>{saving?"A guardar...":"Guardar"}</Btn>
+            <Btn variant="secondary" onClick={()=>setEditModal(false)}>Cancelar</Btn>
+            <Btn onClick={saveContrato} disabled={saving||!editForm.tipologia_id||!editForm.data_contrato}>{saving?"A guardar...":"Guardar"}</Btn>
           </div>
         </Modal>
       )}
