@@ -1,40 +1,60 @@
 import { fmtDate } from '../../utils/formatters';
+import { escHtml } from '../../utils/helpers';
 
-export const buildPeriodReportHtml = ({ contrato, cliente, tipologia, inicio, fim, movimentos, saldoTotal, tecnicos, locais, equipamentos }) => {
+// Ordem cronológica: data → hora_inicio (sem hora, ex. carregamentos, fica no fim do dia) → id (ordem de registo)
+export const ordemMovimentos = (a, b) =>
+  a.data.localeCompare(b.data)
+  || (a.hora_inicio || '99:99').localeCompare(b.hora_inicio || '99:99')
+  || a.id - b.id;
+
+export const buildPeriodReportHtml = ({ contrato, cliente, tipologia, inicio, fim, movimentos: movs, saldoInicial = 0, saldoTotal, tecnicos, locais, equipamentos }) => {
+  const movimentos = [...movs].sort(ordemMovimentos);
   const hasEq     = movimentos.some(m => m.equipment_id);
   const loaded    = movimentos.filter(m => m.creditos > 0).reduce((s, m) => s + m.creditos, 0);
   const consumed  = Math.abs(movimentos.filter(m => m.creditos < 0).reduce((s, m) => s + m.creditos, 0));
   const pSaldo    = loaded - consumed;
+  const saldoFinal = saldoInicial + pSaldo;
   const nLoaded   = movimentos.filter(m => m.creditos > 0).length;
   const nConsumed = movimentos.filter(m => m.creditos < 0).length;
-  const colCount  = hasEq ? 6 : 5;
+  const colCount  = hasEq ? 7 : 6;
   const psColor   = pSaldo   >= 0 ? '#2db87d' : '#e05a5a';
-  const stColor   = saldoTotal >= 0 ? '#2db87d' : '#e05a5a';
+  const sfColor   = saldoFinal >= 0 ? '#2db87d' : '#e05a5a';
+  const num       = "text-align:right;white-space:nowrap;font-family:'DM Mono',monospace";
+  // Saldo é neutro; só fica vermelho quando negativo, para não competir com a coluna Créditos
+  const saldoCell = v => `<td style="${num};color:${v < 0 ? '#e05a5a' : '#4a6468'}">${v}</td>`;
 
   const eqHeader = hasEq ? '<th>Equipamento</th>' : '';
 
+  const inicialRow = `<tr class="row-inicial">
+          <td colspan="${colCount - 1}">Saldo antes de ${fmtDate(inicio)}</td>
+          ${saldoCell(saldoInicial)}
+        </tr>`;
+
+  let corrente = saldoInicial;
   const rowsHtml = movimentos.length === 0
     ? `<tr><td colspan="${colCount}" style="text-align:center;padding:40px 20px;color:#8fa6ab;font-size:14px;font-style:italic">Sem movimentos no período selecionado</td></tr>`
     : movimentos.map(m => {
+        corrente += m.creditos;
         const tecNome  = m.tecnico_id ? (tecnicos.find(t => t.id === m.tecnico_id)?.nome    || '—') : '—';
         const locNome  = m.local_id           ? (locais.find(l => l.id === m.local_id)?.nome               || '—') : '—';
         const eqNome   = m.equipment_id       ? (equipamentos.find(e => e.id === m.equipment_id)?.descricao || '—') : '';
         const isPos    = m.creditos > 0;
         const credColor = isPos ? '#2db87d' : '#e05a5a';
-        const eqCell   = hasEq ? `<td>${eqNome || '—'}</td>` : '';
+        const eqCell   = hasEq ? `<td>${escHtml(eqNome || '—')}</td>` : '';
         return `<tr>
           <td style="white-space:nowrap">${fmtDate(m.data)}</td>
-          <td>${tecNome}</td>
-          <td>${locNome}</td>
+          <td>${escHtml(tecNome)}</td>
+          <td>${escHtml(locNome)}</td>
           ${eqCell}
-          <td style="color:#4a6468;max-width:300px;word-break:break-word">${m.descritivo || '—'}</td>
-          <td style="text-align:right;white-space:nowrap;color:${credColor};font-weight:700;font-family:'DM Mono',monospace">${isPos ? '+' : ''}${m.creditos}</td>
+          <td style="color:#4a6468;max-width:300px;word-break:break-word">${escHtml(m.descritivo || '—')}</td>
+          <td style="${num};color:${credColor};font-weight:700">${isPos ? '+' : ''}${m.creditos}</td>
+          ${saldoCell(corrente)}
         </tr>`;
       }).join('\n');
 
   return `<!DOCTYPE html><html lang="pt"><head><meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Relatório de Assistências — ${cliente?.nome || ''}</title>
+<title>Relatório de Assistências — ${escHtml(cliente?.nome || '')}</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -60,6 +80,9 @@ body{font-family:'DM Sans',sans-serif;background:#f8fafb;color:#1e3236;}
 .mov-table td{padding:10px;border-bottom:1px solid #f2f6f7;vertical-align:top;line-height:1.4;}
 .mov-table tr:last-child td{border-bottom:none;}
 .mov-table tbody tr:hover td{background:#f8fbfb;}
+.mov-table th.num{text-align:right;}
+.mov-table .row-inicial td{background:#f8fafb;color:#8fa6ab;font-style:italic;border-bottom:2px solid #eef2f3;}
+.sa-extra{font-size:12px;color:#8fa6ab;margin-top:8px;text-align:right;}
 .totals-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px;}
 .tot-box{border-radius:10px;padding:16px 18px;}
 .tot-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;}
@@ -70,7 +93,7 @@ body{font-family:'DM Sans',sans-serif;background:#f8fafb;color:#1e3236;}
 .tot-periodo{background:#eef8f8;}.tot-periodo .tot-label{color:#0d5e5e;}.tot-periodo .tot-val{color:${psColor};}
 .saldo-atual{background:#0d5e5e;border-radius:10px;padding:16px 22px;display:flex;justify-content:space-between;align-items:center;}
 .sa-label{font-size:13px;font-weight:600;color:#fff;}.sa-sub{font-size:11px;color:#b3e0e0;margin-top:2px;}
-.sa-val{font-size:32px;font-weight:700;font-family:'DM Mono',monospace;color:${stColor};}
+.sa-val{font-size:32px;font-weight:700;font-family:'DM Mono',monospace;color:${sfColor};}
 .footer{background:#f8fafb;padding:22px 40px;border-top:1px solid #eef2f3;display:flex;justify-content:space-between;align-items:center;}
 .footer-brand{font-size:11px;color:#8fa6ab;}.footer-brand strong{color:#1e3236;display:block;font-size:12px;}
 .btn-pdf{background:#1a7a7a;color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:500;}
@@ -79,8 +102,8 @@ body{font-family:'DM Sans',sans-serif;background:#f8fafb;color:#1e3236;}
 <div class="header">
   <div>
     <div class="logo">RBO</div><div class="logo-sub">Rilop BackOffice</div>
-    <div class="client-name">${cliente?.nome || '—'}</div>
-    <span class="tag">${tipologia?.nome || '—'}</span>
+    <div class="client-name">${escHtml(cliente?.nome || '—')}</div>
+    <span class="tag">${escHtml(tipologia?.nome || '—')}</span>
   </div>
   <div class="ref">
     <div class="ref-title">Relatório de Assistências</div>
@@ -91,19 +114,20 @@ body{font-family:'DM Sans',sans-serif;background:#f8fafb;color:#1e3236;}
 <div class="body">
   <div class="section"><div class="sec-title">Dados do Cliente</div>
     <div class="grid">
-      <div class="field"><label>Empresa</label><div class="val">${cliente?.nome || '—'}</div></div>
-      <div class="field"><label>Contacto</label><div class="val">${cliente?.telefone || '—'}</div></div>
-      <div class="field"><label>Morada</label><div class="val">${cliente?.morada ? cliente.morada + (cliente.localidade ? ', ' + cliente.localidade : '') : '—'}</div></div>
-      <div class="field"><label>Email</label><div class="val">${cliente?.email || '—'}</div></div>
+      <div class="field"><label>Empresa</label><div class="val">${escHtml(cliente?.nome || '—')}</div></div>
+      <div class="field"><label>Contacto</label><div class="val">${escHtml(cliente?.telefone || '—')}</div></div>
+      <div class="field"><label>Morada</label><div class="val">${escHtml(cliente?.morada ? cliente.morada + (cliente.localidade ? ', ' + cliente.localidade : '') : '—')}</div></div>
+      <div class="field"><label>Email</label><div class="val">${escHtml(cliente?.email || '—')}</div></div>
     </div>
   </div>
   <div class="section">
     <div class="sec-title">Movimentos do Período · ${movimentos.length} ${movimentos.length === 1 ? 'registo' : 'registos'}</div>
     <table class="mov-table">
       <thead><tr>
-        <th>Data</th><th>Técnico</th><th>Local</th>${eqHeader}<th>Descritivo</th><th>Créditos</th>
+        <th>Data</th><th>Técnico</th><th>Local</th>${eqHeader}<th>Descritivo</th><th class="num">Créditos</th><th class="num">Saldo</th>
       </tr></thead>
-      <tbody>${rowsHtml}</tbody>
+      <tbody>${inicialRow}
+${rowsHtml}</tbody>
     </table>
   </div>
   <div class="section"><div class="sec-title">Resumo</div>
@@ -119,17 +143,18 @@ body{font-family:'DM Sans',sans-serif;background:#f8fafb;color:#1e3236;}
         <div class="tot-sub">${nConsumed} ${nConsumed === 1 ? 'assistência' : 'assistências'}</div>
       </div>
       <div class="tot-box tot-periodo">
-        <div class="tot-label">Saldo do Período</div>
+        <div class="tot-label">Variação no Período</div>
         <div class="tot-val">${pSaldo >= 0 ? '+' : ''}${pSaldo}</div>
       </div>
     </div>
     <div class="saldo-atual">
       <div>
-        <div class="sa-label">Saldo Atual do Contrato</div>
-        <div class="sa-sub">Total acumulado de todos os movimentos</div>
+        <div class="sa-label">Saldo a ${fmtDate(fim)}</div>
+        <div class="sa-sub">Saldo antes de ${fmtDate(inicio)}: ${saldoInicial} · Variação: ${pSaldo >= 0 ? '+' : ''}${pSaldo}</div>
       </div>
-      <div class="sa-val">${saldoTotal >= 0 ? '+' : ''}${saldoTotal}</div>
+      <div class="sa-val">${saldoFinal}</div>
     </div>
+    ${saldoTotal !== saldoFinal ? `<div class="sa-extra">Saldo atual do contrato: <strong>${saldoTotal}</strong> (inclui movimentos posteriores ao período)</div>` : ''}
   </div>
 </div>
 <div class="footer">
