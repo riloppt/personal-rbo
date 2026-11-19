@@ -182,13 +182,12 @@ export const ContratoDetalhe = ({ contrato, onBack, onDelete }) => {
   };
 
   const buildPeriodHtml = () => {
-    const periodoMovs = [...movimentos]
-      .filter(m => m.data >= periodDates.inicio && m.data <= periodDates.fim)
-      .sort((a, b) => a.data.localeCompare(b.data));
+    const periodoMovs  = movimentos.filter(m => m.data >= periodDates.inicio && m.data <= periodDates.fim);
+    const saldoInicial = movimentos.filter(m => m.data < periodDates.inicio).reduce((s, m) => s + m.creditos, 0);
     return buildPeriodReportHtml({
       contrato: contratoAtual, cliente, tipologia,
       inicio: periodDates.inicio, fim: periodDates.fim,
-      movimentos: periodoMovs, saldoTotal: saldo,
+      movimentos: periodoMovs, saldoInicial, saldoTotal: saldo,
       tecnicos, locais, equipamentos,
     });
   };
