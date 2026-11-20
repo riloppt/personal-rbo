@@ -218,10 +218,10 @@ const NotificacaoCard = ({ config, onUpdate, limiar, setLimiar, saveLimiar, savi
             </div>
           )}
 
-          {/* CC */}
+          {/* CC — em creditos_baixos estes destinatários seguem em BCC (ver ContratoDetalhe / TicketDetalhe) */}
           <div>
             <div style={{ fontSize: 11, fontWeight: 600, color: C.grey400, textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 6 }}>
-              CC
+              {config.evento === 'creditos_baixos' ? 'BCC' : 'CC'}
             </div>
             {config.destinatarios.length > 0 && (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
@@ -237,7 +237,7 @@ const NotificacaoCard = ({ config, onUpdate, limiar, setLimiar, saveLimiar, savi
                   value={inputEmail}
                   onChange={e => { setInputEmail(e.target.value); setEmailError(''); }}
                   onKeyDown={handleKey}
-                  placeholder="cc@email.pt"
+                  placeholder={config.evento === 'creditos_baixos' ? 'bcc@email.pt' : 'cc@email.pt'}
                   style={{
                     width: '100%', boxSizing: 'border-box',
                     padding: '7px 12px', borderRadius: 8, fontSize: 13,
